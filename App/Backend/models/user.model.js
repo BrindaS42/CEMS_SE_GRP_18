@@ -30,15 +30,9 @@ const userSchema = new mongoose.Schema(
             areasOfInterest: [String],
             resumeUrl: {
                 type: String,
-                required: function () {
-                    return this.role === 'student';
-                },
             },
             graduationYear: {
                 type: Number,
-                required: function () {
-                    return this.role === 'student';
-                },
             },
         },
         preferences: {
