@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema(
       enum: ["jwt", "google", "github"],
       default: "jwt",
     },
-    email: { type: String, required: false, unique: true },
+    email: { type: String, required: true, unique: false },
     passwordHash: { type: String },
     profile: {
       name: { type: String, required: true },
