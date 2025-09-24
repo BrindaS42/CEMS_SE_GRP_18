@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import 'dotenv/config';
-import User from './user.js';
+import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 const generateTokenAndSetCookie = (res, user) => {
@@ -24,9 +24,9 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(409).json({ error: 'Email already in use' });
+      return res.status(409).json({ error: 'Username already in use' });
     }
 
     const passwordHash = await bcrypt.hash(password, Number(process.env.HASHROUND));
