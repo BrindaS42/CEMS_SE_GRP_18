@@ -6,7 +6,8 @@ const EventSchema = new mongoose.Schema({
     categoryTags: [String],
     ruleBook: { type: String }, // URL
     poc: { name: String, contact: String },
-    venue: {
+    venue: { type: String },
+    location: {
         address: { type: String }, // textual address
         coordinates: {
             lat: { type: Number }, // latitude
