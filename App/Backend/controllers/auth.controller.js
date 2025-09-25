@@ -4,7 +4,7 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 const generateTokenAndSetCookie = (res, user) => {
-  const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWTKEY, {
+  const token = jwt.sign({ id: user._id, username: user.username  , role : user.role}, process.env.JWTKEY, {
     expiresIn: '7d',
   });
 

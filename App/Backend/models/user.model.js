@@ -3,6 +3,11 @@ import validator from "validator";
 
 const userSchema = new mongoose.Schema(
   {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     role: {
       type: String,
       enum: ["student", "organizer", "sponsor", "admin"],
@@ -16,7 +21,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: false },
     passwordHash: { type: String },
     profile: {
-      name: { type: String, required: true },
+      name: { type: String, required: false },
       profilePic: { type: String },
       contactNo: { type: String },
       linkedin: { type: String },

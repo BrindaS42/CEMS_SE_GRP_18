@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import 'dotenv/config';
 
-const authMiddleware = (req, res, next) => {
+const authentication = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
@@ -23,4 +23,16 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-export default authMiddleware;
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ error: "Access denied. Insufficient permissions." });
+    }
+    next();
+  };
+};
+
+export default { authentication, authorizeRoles };
