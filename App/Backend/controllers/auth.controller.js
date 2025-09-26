@@ -4,7 +4,7 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 const generateTokenAndSetCookie = (res, user) => {
-  const token = jwt.sign({ id: user._id, username: user.username  , role : user.role}, process.env.JWTKEY, {
+  const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWTKEY, {
     expiresIn: '7d',
   });
 
@@ -14,6 +14,8 @@ const generateTokenAndSetCookie = (res, user) => {
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+
+  return token;
 };
 
 const register = async (req, res) => {
@@ -33,9 +35,18 @@ const register = async (req, res) => {
 
     const user = await User.create({ username, email, passwordHash, role });
 
-    generateTokenAndSetCookie(res, user);
+    const token = generateTokenAndSetCookie(res, user);
 
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
@@ -57,9 +68,18 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    generateTokenAndSetCookie(res, user);
+    const token = generateTokenAndSetCookie(res, user);
 
-    res.status(200).json({ message: 'Login successful' });
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
