@@ -21,11 +21,8 @@
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",
     "react-hot-toast": "^2.6.0",
-<<<<<<< HEAD
     "react-leaflet": "^5.0.0",
     "react-leaflet-draw": "^0.21.0",
-=======
->>>>>>> fd6110422c3da3f77fd3278634fcd0ae7b52e139
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.1",
