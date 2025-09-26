@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, registerUser } from '../Store/auth.slice.js';
 
-export default function LoginPage() {
+export default function Login() {
   const dispatch = useDispatch();
   const { status, error, isAuthenticated } = useSelector((s) => s.auth);
 
