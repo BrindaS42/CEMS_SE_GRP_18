@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 
 import connectDB from './config/database.js';
 import authRouter from './routes/auth.route.js';
+import eventRouter from './routes/event.route.js';
 import auth from './middleware/auth.middleware.js';
 const { authentication, authorizeRoles } = auth;
 const app = express();
@@ -26,6 +27,7 @@ app.use(cookieParser());
 app.use(morgan("dev")); 
 
 app.use('/api/auth', authRouter);
+app.use('/api', eventRouter);
 
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
