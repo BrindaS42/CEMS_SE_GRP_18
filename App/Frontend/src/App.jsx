@@ -1,24 +1,23 @@
 import React from "react";
 import { useSelector } from 'react-redux';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './Pages/Login.page.jsx';
 import HomePage from './Pages/Home.page.jsx';
-import LeafletMap from "./Components/EventComponents/Map/mapWindow.jsx";
+import DashboardPage from './Pages/Dashboard.page.jsx';
 
 
 function App() {
   const { isAuthenticated } = useSelector((s) => s.auth);
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   return (
     <div className="App">
-      <HomePage />
-      <div className="mt-6">
-        <h2 className="text-xl font-bold text-center p-4">Leaflet Map Demo</h2>
-        <LeafletMap />
-      </div>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/dashboard" element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" replace />} />
+        <Route path="/home" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </div>
   );
 }
