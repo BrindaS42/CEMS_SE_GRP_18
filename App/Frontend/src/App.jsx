@@ -1,26 +1,34 @@
 import React from "react";
-import { useSelector } from 'react-redux';
-import LoginPage from './Pages/Login.page.jsx';
-import HomePage from './Pages/Home.page.jsx';
-import LeafletMap from "./Components/EventComponents/Map/mapWindow.jsx";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import OrganizerProfile from "./Pages/organizer_profile.page.jsx";
+import Dashboard from "./Pages/dashboard.page.jsx";
+import Sidebar from "./components/general/sidebar.jsx"
+
+const AppLayout = ({ children }) => {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex-1 bg-gray-100 p-8 overflow-y-auto">{children}</div>
+    </div>
+  );
+};
 
 
 function App() {
-  const { isAuthenticated } = useSelector((s) => s.auth);
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   return (
-    <div className="App">
-      <HomePage />
-      <div className="mt-6">
-        <h2 className="text-xl font-bold text-center p-4">Leaflet Map Demo</h2>
-        <LeafletMap />
-      </div>
-    </div>
+    <>
+      <Router>
+        <Routes>
+          {/* Route for /profile */}
+          <Route path="/profile" element={<AppLayout><OrganizerProfile /></AppLayout>} />
+          <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+          <Route path="*" element={<div>404 Not Found</div>} />
+        </Routes>
+      </Router>
+    </>
+
   );
 }
 
+export default App;
 export default App;
