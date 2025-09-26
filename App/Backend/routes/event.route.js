@@ -14,11 +14,11 @@ const router = Router()
 // All routes require organizer or admin role
 router.use(authentication, authorizeRoles('organizer', 'admin'))
 
-router.get('/dashboard/events', getEventsForUser)
-router.get('/dashboard/events/published', getPublishedEvents)
-router.get('/dashboard/events/drafts', getDraftEvents)
-router.get('/dashboard/events/:eventId/registrations', getRegistrationLogs)
-router.get('/dashboard/events/:eventId/checkins', getCheckIns)
+router.get('/events', getEventsForUser)
+router.get('/events/published', getPublishedEvents)
+router.get('/events/drafts', getDraftEvents)
+router.get('/events/:eventId/registrations', getRegistrationLogs)
+router.get('/events/:eventId/checkins', getCheckIns)
 
 export default router
 
