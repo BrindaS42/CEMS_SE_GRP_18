@@ -22,7 +22,7 @@ function App() {
           {/* Route for /profile */}
           <Route path="/profile" element={<AppLayout><OrganizerProfile /></AppLayout>} />
           <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
-          <Route path="*" element={<div>404 Not Found</div>} />
+          <Route path="*" element={<div>hii i am Not Found</div>} />
         </Routes>
       </Router>
     </>
