@@ -1,33 +1,47 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
+import { logoutSuccess } from '../Store/auth.slice.js';
 import { fetchDraftEvents, fetchPublishedEvents, fetchEventRegistrations, fetchEventCheckIns } from '../Store/event.slice.js'
 import PublishedList from '../Components/Dashboard/PublishedList.jsx'
 import DraftList from '../Components/Dashboard/DraftList.jsx'
-import LeafletMap from "../Components/EventComponents/Map/mapWindow.jsx";
 
-export default function DashboardPage() {
+export default function Dashboard() {
   const dispatch = useDispatch();
-  const { published, drafts, logsByEventId, checkInsByEventId, status } = useSelector((s) => s.events)
   const { isAuthenticated } = useSelector((s) => s.auth);
+  const { published, drafts, logsByEventId, checkInsByEventId, status } = useSelector((s) => s.events)
   const [selectedEventId, setSelectedEventId] = useState('')
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    dispatch(fetchPublishedEvents())
-    dispatch(fetchDraftEvents())
-  }, [dispatch, isAuthenticated])
+  const logout = () => {
+    // Backend doesn't expose logout; clear client state. Cookie will expire later or can be cleared via server in future.
+    dispatch(logoutSuccess());
+  };
 
   useEffect(() => {
-    if (!isAuthenticated || !selectedEventId) return;
-    dispatch(fetchEventRegistrations(selectedEventId))
-    dispatch(fetchEventCheckIns(selectedEventId))
-  }, [dispatch, isAuthenticated, selectedEventId])
+    dispatch(fetchPublishedEvents())
+    dispatch(fetchDraftEvents())
+  }, [dispatch])
+
+  useEffect(() => {
+    if (selectedEventId) {
+      dispatch(fetchEventRegistrations(selectedEventId))
+      dispatch(fetchEventCheckIns(selectedEventId))
+    }
+  }, [dispatch, selectedEventId])
 
   return (
     <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Organizer Dashboard</h1>
-        <p className="text-sm text-gray-600">Manage events, view history, registrations, and check-ins.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Organizer Dashboard</h1>
+          <p className="text-sm text-gray-600">Manage events, view history, registrations, and check-ins.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isAuthenticated && (
+            <button onClick={logout} className="bg-gray-200 rounded px-3 py-1">Logout</button>
+          )}
+          <a href="/admin/events/new" className="px-4 py-2 bg-blue-600 text-white rounded">Create Event</a>
+          <a href="/admin" className="px-4 py-2 bg-gray-900 text-white rounded">Admin Panel</a>
+        </div>
       </div>
 
       <section className="grid md:grid-cols-2 gap-6">
@@ -45,7 +59,7 @@ export default function DashboardPage() {
         <h2 className="font-semibold mb-2">Select Event for Logs & Check-ins</h2>
         <select className="w-full border rounded px-3 py-2 bg-white" onChange={(e) => setSelectedEventId(e.target.value)}>
           <option value="">-- Choose an event --</option>
-          {[...(published || []), ...(drafts || [])].map((e) => (
+          {[...published, ...drafts].map((e) => (
             <option key={e._id || e.id} value={e._id || e.id}>{e.title}</option>
           ))}
         </select>
@@ -76,11 +90,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
-
-      <div className="mt-6">
-        <h2 className="text-xl font-bold text-center p-4">Leaflet Map Demo</h2>
-        <LeafletMap />
-      </div>
     </div>
   );
 }
