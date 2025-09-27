@@ -51,8 +51,8 @@ const EventSchema = new mongoose.Schema({
     ],
     status: { type: String, enum: ["draft", "published"], default: "draft" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+},{
+    timestamps: true
 });
 
 const Event = mongoose.model("Event", EventSchema);
