@@ -9,6 +9,8 @@ import eventRouter from './routes/event.route.js';
 import auth from './middleware/auth.middleware.js';
 import profileRouter from './routes/profile.route.js';
 const { authentication, authorizeRoles } = auth;
+import teamRouter from './routes/event.team.route.js';
+
 const app = express();
 dotenv.config();
 
@@ -28,6 +30,7 @@ app.use(morgan("dev"));
 app.use('/api/auth', authRouter);
 app.use('/api/dashboard', eventRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/team', teamRouter);
 
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
