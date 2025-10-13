@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import OrganizerProfile from "./Pages/organizer_profile.page.jsx";
 import Dashboard from "./Pages/dashboard.page.jsx";
 import Sidebar from "./components/general/sidebar.jsx"
+import HomePage from "./Pages/Home.page.jsx";
 
 const AppLayout = ({ children }) => {
   return (
@@ -14,19 +15,26 @@ const AppLayout = ({ children }) => {
 };
 
 
+// Frontend/src/App.jsx - EDITED FUNCTION
+
 function App() {
   return (
     <>
       <Router>
         <Routes>
-          {/* Route for /profile */}
+          
+          {/* NEW ROOT ROUTE: Public Home Page (no sidebar/layout) */}
+          <Route path="/" element={<HomePage />} /> 
+
+          {/* Existing Authenticated Routes (with AppLayout/Sidebar) */}
           <Route path="/profile" element={<AppLayout><OrganizerProfile /></AppLayout>} />
           <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+          
+          {/* Fallback Route */}
           <Route path="*" element={<div>hii i am Not Found</div>} />
         </Routes>
       </Router>
     </>
-
   );
 }
 
