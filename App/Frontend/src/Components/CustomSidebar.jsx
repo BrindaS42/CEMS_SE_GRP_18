@@ -1,4 +1,4 @@
-// CustomSidebar.jsx
+// src/components/CustomSidebar.jsx
 
 import React, { useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -89,10 +89,9 @@ export function CustomSidebar() {
     if (hovered) {
       dispatch(setSidebarHovered(true));
     } else {
-      // Add 1 second delay before closing
       hoverTimeoutRef.current = setTimeout(() => {
         dispatch(setSidebarHovered(false));
-      }, 500);
+      }, 100);
     }
   };
 
@@ -113,7 +112,6 @@ export function CustomSidebar() {
       onMouseEnter={() => dispatch(setSidebarPanelHovered(true))}
       onMouseLeave={() => dispatch(setSidebarPanelHovered(false))}
     >
-      {/* Triangular design elements */}
       <div className="absolute top-0 right-0 w-0 h-0 border-l-[30px] border-l-transparent border-t-[30px] border-t-college-yellow opacity-20"></div>
       <div className="absolute top-8 right-2 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-college-red opacity-30"></div>
       
@@ -124,8 +122,11 @@ export function CustomSidebar() {
           {navigationItems.map((item) => (
             <Button
               key={item.id}
-              variant={currentPage.toLowerCase().includes(item.id.toLowerCase()) ? "default" : "ghost"}
-              className="w-full justify-start h-12 px-4 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className={`w-full justify-start h-12 px-4 transition-colors ${
+                currentPage.toLowerCase().includes(item.id.toLowerCase())
+                  ? 'bg-primary text-primary-foreground' // Active: Blue background, White text
+                  : 'bg-transparent text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground' // Inactive: Blue text, Yellow hover
+              }`}
               onClick={() => handleNavigation(item.id)}
             >
               <item.icon className="h-4 w-4 mr-3 flex-shrink-0" />
@@ -134,7 +135,6 @@ export function CustomSidebar() {
           ))}
         </div>
 
-        {/* Profile section with logout */}
         {currentPage === "Profile" && (
           <div className="border-t border-sidebar-border pt-4 mt-4">
             <Button

@@ -6,14 +6,10 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { store } from './store/store';
 import { setCurrentPage } from './store/slices/uiSlice';
-
-// Main App Components
 import { Header } from './components/Header';
 import { CustomSidebar } from './components/CustomSidebar';
 import { CollapsibleActionPanel } from './components/CollapsibleActionPanel';
 import { Toaster } from './components/ui/sonner';
-
-// Your existing pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CreateTeam from './pages/CreateTeam';
@@ -22,24 +18,21 @@ import ProfileSimple from './pages/ProfileSimple';
 import Inbox from './pages/Inbox';
 import Settings from './pages/Settings';
 
-// --- NEWLY ADDED from the second file ---
-import Home from './Pages/Home.page.jsx';
-import OrganizerProfile from "./Pages/organizer_profile.page.jsx";
-// --- END NEWLY ADDED ---
-
-
-// Error Boundary Component (from your main file)
+// Error Boundary Component
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false };
   }
+
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
+
   componentDidCatch(error, errorInfo) {
     console.error('Application Error:', error, errorInfo);
   }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -57,17 +50,20 @@ class ErrorBoundary extends Component {
         </div>
       );
     }
+
     return this.props.children;
   }
 }
+
 ErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Main Layout component for authenticated routes (from your main file)
+// Layout component for authenticated routes
 function Layout({ children }) {
   const { sidebarOpen, rightPanelOpen, sidebarHovered, darkMode } = useSelector((state) => state.ui);
 
+  // Apply dark mode to document
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -81,6 +77,7 @@ function Layout({ children }) {
       <div className="flex-1">
         <Header />
         <CustomSidebar />
+        
         <div className={`transition-all duration-300 ease-in-out ${
           sidebarOpen ? 'ml-[20%]' : 'ml-0'
         } ${
@@ -88,7 +85,10 @@ function Layout({ children }) {
         } min-h-[calc(100vh-4rem)] relative`}>
           {children}
         </div>
+
         <CollapsibleActionPanel />
+
+        {/* Overlay backdrop when hovering */}
         {sidebarHovered && !sidebarOpen && (
           <div className="fixed inset-0 bg-black/30 z-30 pointer-events-none transition-opacity duration-300" />
         )}
@@ -96,65 +96,111 @@ function Layout({ children }) {
     </div>
   );
 }
+
 Layout.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Protected Route component (from your main file)
+// Protected Route component
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useSelector((state) => state.auth);
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+  
   return <Layout>{children}</Layout>;
 }
+
 ProtectedRoute.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
 // Fallback component for unmatched routes
 function NotFound() {
-  // ... (code for NotFound remains the same)
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  useEffect(() => {
+    // Auto-redirect after a short delay
+    const timer = setTimeout(() => {
+      if (isAuthenticated) {
+        window.location.hash = '#/dashboard';
+      } else {
+        window.location.hash = '#/login';
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+      <div className="text-center p-8">
+        <h1 className="text-2xl font-semibold text-college-blue mb-4">Loading...</h1>
+        <p className="text-muted-foreground">Redirecting to {isAuthenticated ? 'dashboard' : 'login'}...</p>
+      </div>
+    </div>
+  );
 }
 
-// Wrapper component to set page title
+// AdminDashboard wrapper component
 function AdminDashboard() {
   const dispatch = useDispatch();
+  
   useEffect(() => {
     dispatch(setCurrentPage('Admin Dashboard'));
   }, [dispatch]);
+  
   return <Dashboard />;
 }
 
-// The main App Router component with all routes combined
+// App Router component
 function AppRouter() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   return (
     <Router>
       <Routes>
-        {/* --- NEWLY ADDED: Public home page from the second file --- */}
-        <Route path="/" element={<Home />} />
-        
-        {/* Login Route */}
         <Route 
           path="/login" 
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
         />
-        
-        {/* Your Existing Protected Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfileSimple /></ProtectedRoute>} />
-        <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/create-team" element={<ProtectedRoute><CreateTeam /></ProtectedRoute>} />
-        <Route path="/event-form" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
-
-        {/* --- NEWLY ADDED: Organizer Profile at a new URL to avoid conflict --- */}
-        <Route path="/organizer-profile" element={<ProtectedRoute><OrganizerProfile /></ProtectedRoute>} />
-        
-        {/* Catch-all routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfileSimple />
+          </ProtectedRoute>
+        } />
+        <Route path="/inbox" element={
+          <ProtectedRoute>
+            <Inbox />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        <Route path="/create-team" element={
+          <ProtectedRoute>
+            <CreateTeam />
+          </ProtectedRoute>
+        } />
+        <Route path="/event-form" element={
+          <ProtectedRoute>
+            <EventForm />
+          </ProtectedRoute>
+        } />
+        <Route path="/" element={<NotFound />} />
         <Route path="/preview_page.html" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
