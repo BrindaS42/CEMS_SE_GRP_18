@@ -56,7 +56,7 @@ const HomePage = () => {
                         Campus Event Management System
                     </h1>
                     <p className="text-xl md:text-2xl font-light mb-10 max-w-4xl mx-auto text-gray-600 transition-colors duration-500">
-                        The simple, centralized platform for **Discovery, Registration, Management, and Sponsorship** of all college activities.
+                        The simple, centralized platform for Discovery, Registration, Management, and Sponsorship of all college activities.
                     </p>
                     <Link 
                         to="/events" 
