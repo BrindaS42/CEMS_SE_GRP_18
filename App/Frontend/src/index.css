@@ -1,1 +1,86 @@
-@import "tailwindcss";
+/* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #1e40af;
+    --card: #ffffff;
+    --card-foreground: #1e40af;
+    --popover: #ffffff;
+    --popover-foreground: #1e40af;
+    --primary: #1e40af;
+    --primary-foreground: #ffffff;
+    --secondary: #fbbf24;
+    --secondary-foreground: #1e40af;
+    --muted: #f8fafc;
+    --muted-foreground: #64748b;
+    --accent: #ef4444;
+    --accent-foreground: #ffffff;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --border: rgba(30, 64, 175, 0.1);
+    --input: transparent;
+    --input-background: #f8fafc;
+    --switch-background: #cbd5e1;
+    --ring: #1e40af;
+    --radius: 0.625rem;
+    --sidebar: #f8fafc;
+    --sidebar-foreground: #1e40af;
+    --sidebar-border: rgba(30, 64, 175, 0.1);
+    --sidebar-ring: #1e40af;
+    --college-blue: #1e40af;
+    --college-yellow: #fbbf24;
+    --college-red: #ef4444;
+  }
+
+  .dark {
+    --background: #020617;
+    --foreground: #f8fafc;
+    --card: #0f172a;
+    --card-foreground: #f8fafc;
+    --popover: #0f172a;
+    --popover-foreground: #f8fafc;
+    --primary: #fbbf24;
+    --primary-foreground: #020617;
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --accent: #ef4444;
+    --accent-foreground: #f8fafc;
+    --destructive: #dc2626;
+    --destructive-foreground: #f8fafc;
+    --border: #1e293b;
+    --input: #1e293b;
+    --input-background: #0f172a;
+    --switch-background: #334155;
+    --ring: #fbbf24;
+    --sidebar: #0f172a;
+    --sidebar-foreground: #f8fafc;
+    --sidebar-border: #1e293b;
+    --sidebar-ring: #fbbf24;
+    --college-blue: #3b82f6;
+    --college-yellow: #fbbf24;
+    --college-red: #ef4444;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Custom utility for the collapsible panel */
+.writing-mode-vertical {
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
