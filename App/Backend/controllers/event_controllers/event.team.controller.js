@@ -3,7 +3,7 @@ import Team from "../../models/team.model.js";
 import Invitation from "../../models/invitaion.model.js";
 import Event from "../../models/event.model.js";
 import User from "../../models/user.model.js";
-import Message from "../../utils/message.util.js";
+import Message from "../../models/message.model.js";
 
 
 export const createTeamForEvent = async (req, res) => {
