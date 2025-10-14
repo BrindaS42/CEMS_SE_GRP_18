@@ -1,29 +1,21 @@
 import crypto from "crypto";
 import Team from "../../models/team.model.js";
 import Invitation from "../../models/invitaion.model.js";
-import Event from "../../models/event.model.js";
 import User from "../../models/user.model.js";
 import Message from "../../models/message.model.js";
 
 
 export const createTeamForEvent = async (req, res) => {
   try {
-    const { eventId, name } = req.body;
+    let {name} = req.body;
+    if (!name?.trim()) {
+      return res.status(400).json({ message: "Team name is required" });
+    }
+    name = name.trim();
+
     const leaderId = req.user.id;
 
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    if (event.team) {
-        return res.status(409).json({ message: "This event already has a team." });
-    }
-
-
     const team = await Team.create({ name, leader: leaderId, members: [] });
-    event.team = team._id;
-    await event.save();
 
     res.status(201).json({ message: "Team created successfully", team });
   } catch (err) {
@@ -45,7 +37,7 @@ export const getAllUserDetails = async (req, res) => {
 export const inviteMemberToTeam = async (req, res) => {
   try {
     const { teamId } = req.params;
-    const { username, role, eventId } = req.body;
+    const { username, role} = req.body;
     const invitedBy = req.user.id;
 
     const team = await Team.findById(teamId);
@@ -89,7 +81,6 @@ export const inviteMemberToTeam = async (req, res) => {
     await Message.create({
       sender: invitedBy,
       receiver: userToInvite._id,
-      event: eventId,
       subject: `Invitation to join team: ${team.name}`,
       message: `You have been invited to join the team. Use this token to respond: ${token}`,
       type: "invitation",
