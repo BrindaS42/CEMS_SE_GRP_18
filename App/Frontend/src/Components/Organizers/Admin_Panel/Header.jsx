@@ -3,12 +3,12 @@
 import React, { useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { Menu, LogOut } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../../ui/button";
 import { setSidebarHovered, toggleSidebar } from '../store/slices/uiSlice';
-import { logout } from '../store/slices/authSlice';
-import collegeLogoPng from '../assets/college-logo.png';
+import { logout } from '../../store/slices/authSlice';
+import collegeLogoPng from '../../assets/college-logo.png';
 
 export function Header() {
   const dispatch = useDispatch();

@@ -9,6 +9,7 @@ import {
   changeMemberRole,
   getTeamDetails,
   getUserInvitations,
+  getTeamList,
 } from "../controllers/event_controllers/event.team.controller.js";
 
 const { authentication, authorizeRoles } = auth;
@@ -18,6 +19,7 @@ const router = Router();
 router.use(authentication, authorizeRoles("organizer", "admin"));
 
 router.post("/create", createTeamForEvent);
+router.get("/list", getTeamList);
 
 router.get("/users", getAllUserDetails);
 

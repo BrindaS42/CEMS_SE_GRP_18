@@ -1,9 +1,9 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import { logoutSuccess } from '../Store/auth.slice.js';
-import { fetchDraftEvents, fetchPublishedEvents, fetchEventRegistrations, fetchEventCheckIns } from '../Store/event.slice.js'
-import PublishedList from '../Components/Dashboard/PublishedList.jsx'
-import DraftList from '../Components/Dashboard/DraftList.jsx'
+import { logoutSuccess } from '../../Store/auth.slice.js';
+import { fetchDraftEvents, fetchPublishedEvents, fetchEventRegistrations, fetchEventCheckIns } from '../../Store/event.slice.js'
+import PublishedList from '../../Components/Organizers/Dashboard/PublishedList.jsx'
+import DraftList from '../../Components/Organizers/Dashboard/DraftList.jsx'
 
 export default function Dashboard() {
   const dispatch = useDispatch();
@@ -39,8 +39,8 @@ export default function Dashboard() {
           {isAuthenticated && (
             <button onClick={logout} className="bg-gray-200 rounded px-3 py-1">Logout</button>
           )}
-          <a href="/admin/events/new" className="px-4 py-2 bg-blue-600 text-white rounded">Create Event</a>
-          <a href="/admin" className="px-4 py-2 bg-gray-900 text-white rounded">Admin Panel</a>
+          <a href="/admin?tab=create-event" className="px-4 py-2 bg-blue-600 text-white rounded">Create Event</a>
+          <a href="/admin?tab=create-team" className="px-4 py-2 bg-gray-900 text-white rounded">Create Team</a>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default function Dashboard() {
         </div>
         <div>
           <h2 className="font-semibold mb-2">Drafted Events</h2>
-          <DraftList drafts={drafts} getAdminUrl={(e) => `/admin/events/${e._id || e.id}` } />
+          <DraftList drafts={drafts} getAdminUrl={(e) => `/admin/events/${e._id || e.id}` } /> 
         </div>
       </section>
 

@@ -49,6 +49,33 @@ export const fetchEventCheckIns = createAsyncThunk('events/fetchCheckIns', async
   }
 })
 
+export const fetchEventById = createAsyncThunk('events/fetchById', async (eventId, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`${API_BASE}/event/${eventId}`);
+    return res.data;
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to fetch event');
+  }
+});
+
+export const createEventDraft = createAsyncThunk('events/createDraft', async (payload, { rejectWithValue }) => {
+  try {
+    const res = await axios.post(`${API_BASE}/event/save`, { ...payload, status: 'draft' })
+    return res.data
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to save draft')
+  }
+})
+
+export const publishEvent = createAsyncThunk('events/publish', async (payload, { rejectWithValue }) => {
+  try {
+    const res = await axios.post(`${API_BASE}/event/publish`, { ...payload, status: 'published' })
+    return res.data
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to publish event')
+  }
+})
+
 const initialState = {
   all: [],
   published: [],
@@ -72,6 +99,23 @@ const eventsSlice = createSlice({
       .addCase(fetchDraftEvents.fulfilled, (state, action) => { state.drafts = action.payload })
       .addCase(fetchEventRegistrations.fulfilled, (state, action) => { state.logsByEventId[action.payload.eventId] = action.payload.logs })
       .addCase(fetchEventCheckIns.fulfilled, (state, action) => { state.checkInsByEventId[action.payload.eventId] = action.payload.checkIns })
+      .addCase(createEventDraft.fulfilled, (state, action) => { const updatedEvent = action.payload.event;
+        const index = state.drafts.findIndex(d => d._id === updatedEvent._id);
+        if (index !== -1) {
+          state.drafts[index] = updatedEvent;
+        } else {
+          state.drafts.unshift(updatedEvent);
+        } })
+      .addCase(publishEvent.fulfilled, (state, action) => { 
+        const publishedEvent = action.payload.event;
+        state.drafts = state.drafts.filter(d => d._id !== publishedEvent._id);
+        const index = state.published.findIndex(p => p._id === publishedEvent._id);
+        if (index !== -1) {
+          state.published[index] = publishedEvent;
+        } else {
+          state.published.unshift(publishedEvent);
+        }
+       })
   }
 })
 

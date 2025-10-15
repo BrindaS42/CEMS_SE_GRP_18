@@ -2,10 +2,10 @@
 import * as React from "react";
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent } from './ui/card';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Label } from '../../ui/label';
+import { Card, CardContent } from '../../ui/card';
 import { MapPin, Search, Crosshair, Check } from 'lucide-react';
 
 // Mock map data for demonstration

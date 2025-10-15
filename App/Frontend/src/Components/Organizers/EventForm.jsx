@@ -1,33 +1,47 @@
 // EventForm.jsx
 
 import React, { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux'
 import { useForm, useFieldArray } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Label } from "../components/ui/label";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
-import { Alert, AlertDescription } from "../components/ui/alert";
-import { MapLocationPicker } from "../components/MapLocationPicker";
-import { CustomFormFieldsBuilder } from "../components/CustomFormFieldsBuilder";
-import { CustomFieldsPreview } from "../components/CustomFieldsPreview";
-import { useAutoSave } from "../hooks/useAutoSave";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
+import { Badge } from "../ui/badge";
+import { Alert, AlertDescription } from "../ui/alert";
+import { MapLocationPicker } from "./Admin_Panel/MapLocationPicker";
+import { CustomFormFieldsBuilder } from "./Admin_Panel/CustomFormFieldsBuilder";
+import { CustomFieldsPreview } from "./Admin_Panel/CustomFieldsPreview";
+import { useAutoSave } from "../../hooks/useAutoSave";
 import { toast } from "sonner";
-import { 
-  Upload, 
-  Plus, 
-  X, 
-  Calendar, 
-  MapPin, 
-  User, 
-  Mail, 
-  Phone, 
-  FileText, 
+import { fetchTeamList } from '../../Store/team.slice.js'
+import { createEventDraft, publishEvent, fetchEventById } from '../../Store/event.slice.js'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "../ui/command";
+import {
+  Upload,
+  Plus,
+  X,
+  Calendar,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+  FileText,
   Image as ImageIcon,
   CreditCard,
   Users,
@@ -35,11 +49,14 @@ import {
   Clock,
   Save,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
 
+
 const categoryOptions = [
-  "Technical", "Cultural", "Sports", "Workshop", "Competition", 
+  "Technical", "Cultural", "Sports", "Workshop", "Competition",
   "Seminar", "Exhibition", "Performance", "Conference", "Social"
 ];
 
@@ -51,20 +68,21 @@ const comboOptions = [
     features: ["Basic Registration", "Event Kit", "Certificate"]
   },
   {
-    id: "gold", 
+    id: "gold",
     name: "Gold",
     price: "₹499",
     features: ["Premium Registration", "Event Kit", "Certificate", "Lunch", "Networking Session"]
   },
   {
     id: "platinum",
-    name: "Platinum", 
+    name: "Platinum",
     price: "₹799",
     features: ["VIP Registration", "Premium Event Kit", "Certificate", "All Meals", "Networking Session", "Exclusive Workshop"]
   }
 ];
 
 export default function EventForm() {
+  const dispatch = useDispatch()
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [posterPreview, setPosterPreview] = useState(null);
   const [qrCodePreview, setQrCodePreview] = useState(null);
@@ -73,7 +91,12 @@ export default function EventForm() {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [lastSaveTime, setLastSaveTime] = useState(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
-  
+  const [submitAction, setSubmitAction] = useState('');
+  const [isTeamPopoverOpen, setIsTeamPopoverOpen] = useState(false);
+  const [selectedTeamName, setSelectedTeamName] = useState("");
+  const { teamList } = useSelector((state) => state.team);
+  const { eventId } = useParams();
+  const navigate = useNavigate();   
   const posterInputRef = useRef(null);
   const ruleBookInputRef = useRef(null);
   const qrCodeInputRef = useRef(null);
@@ -86,6 +109,7 @@ export default function EventForm() {
     watch,
     setValue,
     reset,
+    getValues,
     formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
@@ -93,7 +117,9 @@ export default function EventForm() {
       registrationType: "single",
       comboOption: "silver",
       category: [],
-      customFields: []
+      createdBy: '',
+      customFields: [],
+      id: ''
     }
   });
 
@@ -128,7 +154,38 @@ export default function EventForm() {
   const watchRegistrationType = watch("registrationType");
   const watchCustomFields = watch("customFields");
 
-  // Check for saved data on component mount
+  useEffect(() => {
+    dispatch(fetchTeamList()); 
+
+    if (eventId) {
+      // If we are in EDIT mode, fetch the event data
+      dispatch(fetchEventById(eventId))
+        .unwrap()
+        .then((eventData) => {
+          // Transform backend data to flat form data
+          const flatData = {
+            ...eventData,
+            pocName: eventData.poc?.name,
+            pocPhone: eventData.poc?.contact,
+            venue: eventData.venue?.address,
+            venueCoordinates: eventData.venue?.coordinates,
+          };
+          
+          // Format dates correctly for <input type="date">
+          if (flatData.eventDate) flatData.eventDate = new Date(flatData.eventDate).toISOString().split('T')[0];
+          if (flatData.registrationDeadline) flatData.registrationDeadline = new Date(flatData.registrationDeadline).toISOString().split('T')[0];
+
+          reset(flatData); // Populate the form
+
+          // Populate non-form state
+          if (eventData.categoryTags) setSelectedCategories(eventData.categoryTags);
+          if (eventData.createdBy) setSelectedTeamName(eventData.createdBy.name);
+        })
+        .catch(err => toast.error("Could not load event data."));
+    }
+  }, [eventId, dispatch, reset]);
+
+
   useEffect(() => {
     if (hasSavedData()) {
       setShowRestoreDialog(true);
@@ -178,7 +235,7 @@ export default function EventForm() {
     const updatedCategories = selectedCategories.includes(category)
       ? selectedCategories.filter(c => c !== category)
       : [...selectedCategories, category];
-    
+
     setSelectedCategories(updatedCategories);
     setValue("category", updatedCategories);
   };
@@ -210,22 +267,45 @@ export default function EventForm() {
     saveData();
   };
 
-  const onSubmit = async (data) => {
-    console.log("Form submitted:", data);
-    // Handle form submission - save draft or publish
-    setShowPublishDialog(false);
+  const onFormError = (errors) => {
+    console.error("Validation Failed:", errors);
+    toast.error("Please fill all required fields before proceeding.");
   };
 
-  const handleSaveDraft = () => {
-    handleSubmit((data) => {
-      console.log("Saving draft:", data);
-      // Save as draft logic
-    })();
+ 
+  const handleSaveDraftClick = async () => {
+    const payload = getValues(); 
+    
+    try {
+      const resultAction = await dispatch(createEventDraft(payload)).unwrap();
+      const newOrUpdatedEvent = resultAction.event;
+      toast.success(resultAction.message);
+      if (!eventId) {
+        navigate(`/admin/events/${newOrUpdatedEvent._id}`, { replace: true });
+      }
+    } catch (error) {
+      toast.error('Failed to save draft.');
+    }
   };
 
-  const handlePublish = () => {
-    setShowPublishDialog(true);
+  const handlePublishClick = () => {
+    handleSubmit(() => setShowPublishDialog(true), onFormError)();
   };
+  
+  const processSubmit = async () => {
+    const payload = getValues(); 
+    
+    try {
+      const resultAction = await dispatch(publishEvent(payload)).unwrap();
+      toast.success(resultAction.message);
+      setShowPublishDialog(false); 
+      
+    } catch (error) {
+      toast.error('Failed to publish event.');
+    } finally {
+      navigate('/dashboard');     }
+  };
+ 
 
   return (
     <div className="min-h-screen p-6 space-y-6 bg-gradient-to-br from-white to-slate-50">
@@ -237,12 +317,11 @@ export default function EventForm() {
             <h1 className="text-2xl font-semibold text-college-blue">Create Event</h1>
             <p className="text-muted-foreground mt-1">Design and configure your event registration</p>
           </div>
-          
+
           {/* Auto-save Status */}
           <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 text-sm transition-opacity ${
-              autoSaveStatus === 'idle' ? 'opacity-50' : 'opacity-100'
-            }`}>
+            <div className={`flex items-center gap-2 text-sm transition-opacity ${autoSaveStatus === 'idle' ? 'opacity-50' : 'opacity-100'
+              }`}>
               {autoSaveStatus === 'saving' && (
                 <>
                   <div className="w-3 h-3 border-2 border-college-blue border-t-transparent rounded-full animate-spin"></div>
@@ -270,7 +349,7 @@ export default function EventForm() {
                 </>
               )}
             </div>
-            
+
             <Button
               type="button"
               variant="outline"
@@ -285,7 +364,7 @@ export default function EventForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(processSubmit)} className="space-y-6">
         {/* Event Details Section */}
         <Card className="border-college-blue/20">
           <CardHeader className="relative overflow-hidden">
@@ -352,6 +431,54 @@ export default function EventForm() {
               )}
             </div>
 
+            {/* ✨ START: New Organizing Team Combobox */}
+            <div className="space-y-2">
+              <Label htmlFor="createdBy">Organizing Team *</Label>
+              <Popover open={isTeamPopoverOpen} onOpenChange={setIsTeamPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isTeamPopoverOpen}
+                    className={`w-full justify-between font-normal ${errors.createdBy ? "border-destructive" : ""}`}
+                  >
+                    {selectedTeamName || "Select a team..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search for a team..." />
+                    <CommandEmpty>No team found.</CommandEmpty>
+                    <CommandGroup>
+                      {teamList && teamList.map((team) => (
+                        <CommandItem
+                          key={team._id}
+                          value={team.name}
+                          onSelect={(currentValue) => {
+                            const selectedTeam = teamList.find(t => t.name.toLowerCase() === currentValue.toLowerCase());
+                            if (selectedTeam) {
+                              setValue("createdBy", selectedTeam._id, { shouldValidate: true });
+                              setSelectedTeamName(selectedTeam.name);
+                            }
+                            setIsTeamPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${selectedTeamName === team.name ? "opacity-100" : "opacity-0"}`}
+                          />
+                          {team.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors.createdBy && (
+                <p className="text-sm text-destructive">{errors.createdBy.message}</p>
+              )}
+            </div>
+
             {/* Point of Contact */}
             <div className="space-y-4">
               <Label className="text-base">Point of Contact *</Label>
@@ -378,7 +505,7 @@ export default function EventForm() {
                     <Input
                       id="pocEmail"
                       type="email"
-                      {...register("pocEmail", { 
+                      {...register("pocEmail", {
                         required: "POC email is required",
                         pattern: {
                           value: /^\S+@\S+$/i,
@@ -494,11 +621,10 @@ export default function EventForm() {
                   <Badge
                     key={category}
                     variant={selectedCategories.includes(category) ? "default" : "outline"}
-                    className={`cursor-pointer transition-colors ${
-                      selectedCategories.includes(category)
-                        ? "bg-college-blue text-white hover:bg-college-blue/90"
-                        : "hover:bg-college-blue/10"
-                    }`}
+                    className={`cursor-pointer transition-colors ${selectedCategories.includes(category)
+                      ? "bg-college-blue text-white hover:bg-college-blue/90"
+                      : "hover:bg-college-blue/10"
+                      }`}
                     onClick={() => handleCategoryToggle(category)}
                   >
                     {category}
@@ -611,7 +737,7 @@ export default function EventForm() {
             <div className="bg-muted/50 border border-college-blue/10 rounded-lg p-4">
               <Label className="text-base">Registration Form Fields</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                Custom form fields configuration will be implemented in the next phase. 
+                Custom form fields configuration will be implemented in the next phase.
                 Default fields: Name, Email, Phone, College/Organization will be included automatically.
               </p>
             </div>
@@ -619,7 +745,7 @@ export default function EventForm() {
             {/* Payment Options */}
             <div className="space-y-4">
               <Label className="text-base">Payment Options</Label>
-              
+
               {/* QR Code Upload */}
               <div className="space-y-2">
                 <Label className="text-sm">Payment QR Code</Label>
@@ -671,9 +797,8 @@ export default function EventForm() {
                   className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
                   {comboOptions.map((option) => (
-                    <Card key={option.id} className={`cursor-pointer transition-all ${
-                      watch("comboOption") === option.id ? "ring-2 ring-college-blue border-college-blue" : ""
-                    }`}>
+                    <Card key={option.id} className={`cursor-pointer transition-all ${watch("comboOption") === option.id ? "ring-2 ring-college-blue border-college-blue" : ""
+                      }`}>
                       <CardContent className="p-4">
                         <div className="flex items-center space-x-2 mb-3">
                           <RadioGroupItem value={option.id} id={option.id} />
@@ -736,7 +861,7 @@ export default function EventForm() {
                   </CardContent>
                 </Card>
               </RadioGroup>
-              
+
               {watchRegistrationType === "team" && (
                 <div className="mt-3">
                   <Label htmlFor="teamMemberCount" className="text-sm">Maximum Team Members</Label>
@@ -827,18 +952,20 @@ export default function EventForm() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-end">
           <Button
-            type="button"
+            type="button" // Change to "button"
             variant="outline"
-            onClick={handleSaveDraft}
+            onClick={handleSaveDraftClick} // This handler now triggers the submission
             disabled={isSubmitting}
             className="flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
-            Save Draft
+            {isSubmitting && submitAction === 'draft' ? 'Saving...' : 'Save Draft'}
           </Button>
+
+          {/* ✨ 6. Update the Publish Event button */}
           <Button
-            type="button"
-            onClick={handlePublish}
+            type="button" // This button now just opens the dialog
+            onClick={handlePublishClick}
             disabled={isSubmitting}
             className="bg-college-blue hover:bg-college-blue/90 flex items-center gap-2"
           >
@@ -872,11 +999,11 @@ export default function EventForm() {
               Cancel
             </Button>
             <Button
-              onClick={handleSubmit(onSubmit)}
+              onClick={handleSubmit(processSubmit)} // Re-use the handler here
               disabled={isSubmitting}
               className="bg-college-blue hover:bg-college-blue/90"
             >
-              {isSubmitting ? "Publishing..." : "Publish Event"}
+              {isSubmitting && submitAction === 'publish' ? "Publishing..." : "Confirm & Publish"}
             </Button>
           </DialogFooter>
         </DialogContent>
