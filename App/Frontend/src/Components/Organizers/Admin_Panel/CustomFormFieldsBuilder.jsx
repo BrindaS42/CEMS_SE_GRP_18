@@ -3,15 +3,15 @@ import * as React from "react";
 import { useState } from 'react';
 import { useFieldArray } from 'react-hook-form';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Checkbox } from './ui/checkbox';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
+import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { Label } from '../../ui/label';
+import { Textarea } from '../../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Checkbox } from '../../ui/checkbox';
+import { Switch } from '../../ui/switch';
+import { Separator } from '../../ui/separator';
 import { 
   Plus, 
   Trash2, 

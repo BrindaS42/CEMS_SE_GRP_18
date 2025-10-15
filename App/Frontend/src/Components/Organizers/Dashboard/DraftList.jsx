@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 export default function DraftList({ drafts = [], getAdminUrl }) {
   if (!drafts.length) {
@@ -14,7 +15,9 @@ export default function DraftList({ drafts = [], getAdminUrl }) {
           </div>
           <p className="text-sm text-gray-700 mt-2 line-clamp-2">{e.description}</p>
           <div className="mt-3 flex items-center justify-between text-sm">
-            <a href={getAdminUrl?.(e)} className="text-blue-600 hover:underline">View in Admin</a>
+            <Link to={getAdminUrl?.(e)} className="text-blue-600 hover:underline">
+              View in Admin
+            </Link>
           </div>
         </div>
       ))}

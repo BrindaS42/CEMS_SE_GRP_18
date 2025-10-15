@@ -5,10 +5,9 @@ const Sidebar = () => {
   const location = useLocation();
 
   const linkClasses = (path) =>
-    `block px-4 py-2 rounded-lg transition ${
-      location.pathname === path
-        ? 'bg-gray-200 text-gray-900 font-semibold'
-        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+    `block px-4 py-2 rounded-lg transition ${location.pathname === path
+      ? 'bg-gray-200 text-gray-900 font-semibold'
+      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
     }`;
 
   return (
@@ -25,6 +24,9 @@ const Sidebar = () => {
             <Link to="/dashboard" className={linkClasses('/dashboard')}>
               Dashboard
             </Link>
+          </li>
+          <li>
+            <Link to="/admin" className={linkClasses('/admin')}>Admin</Link>
           </li>
         </ul>
       </nav>

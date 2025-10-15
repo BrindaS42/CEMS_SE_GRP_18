@@ -7,17 +7,17 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function setAuthToken(token) {
   if (token) {
-    try { localStorage.setItem('token', token); } catch {}
+    try { sessionStorage.setItem('token', token); } catch {}
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    try { localStorage.removeItem('token'); } catch {}
+    try { sessionStorage.removeItem('token'); } catch {}
     delete axios.defaults.headers.common['Authorization'];
   }
 }
 
 let initialToken = null;
 try {
-  initialToken = localStorage.getItem('token');
+  initialToken = sessionStorage.getItem('token');
   if (initialToken) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
   }

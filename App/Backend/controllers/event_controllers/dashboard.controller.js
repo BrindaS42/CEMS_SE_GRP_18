@@ -14,7 +14,7 @@ async function getUserTeamIds(userId) {
 
 export async function getEventsForUser(req, res) {
   try {
-    const userId = req.user?._id
+    const userId = req.user?.id
     if (!userId) return res.status(401).json({ error: 'Unauthenticated' })
     const teamIds = await getUserTeamIds(userId)
     const events = await Event.find({ createdBy: { $in: teamIds } }).lean()
@@ -26,7 +26,7 @@ export async function getEventsForUser(req, res) {
 
 export async function getPublishedEvents(req, res) {
   try {
-    const userId = req.user?._id
+    const userId = req.user?.id
     const teamIds = await getUserTeamIds(userId)
     const events = await Event.find({ createdBy: { $in: teamIds }, status: 'published' }).lean()
     res.json(events)
@@ -37,7 +37,7 @@ export async function getPublishedEvents(req, res) {
 
 export async function getDraftEvents(req, res) {
   try {
-    const userId = req.user?._id
+    const userId = req.user?.id
     const teamIds = await getUserTeamIds(userId)
     const events = await Event.find({ createdBy: { $in: teamIds }, status: 'draft' }).lean()
     res.json(events)

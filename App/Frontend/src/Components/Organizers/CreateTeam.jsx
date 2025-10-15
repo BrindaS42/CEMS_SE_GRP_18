@@ -4,116 +4,131 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Badge } from '../components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Users, Crown, UserPlus, Trash2, Shield, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
-import { createTeam } from '../store/slices/teamSlice';
+import { createTeam, fetchUsers, fetchTeamList, setDraftTeamMeta, addDraftMember, removeDraftMember, changeDraftMemberRole, inviteMember, clearDraft } from '../../Store/team.slice.js';
 
 export default function CreateTeam() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.team);
+  const { loading, error, users, teamList, draft } = useSelector((state) => state.team);
   
-  const [members, setMembers] = useState([]);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [memberToChangeRole, setMemberToChangeRole] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm();
+
+  React.useEffect(() => {
+    dispatch(fetchUsers())
+    dispatch(fetchTeamList())
+  }, [dispatch])
 
   const addMember = () => {
     if (!newMemberEmail.trim()) {
       toast.error('Please enter an email address');
       return;
     }
+    console.log("newMemberEmail", newMemberEmail)
+    console.log("users", users)
+    const match = users.find(u => u.email === newMemberEmail || u.username === newMemberEmail)
+    if (!match) {
+      toast.error('No matching user found');
+      return;
+    }
 
-    if (members.some(member => member.email === newMemberEmail)) {
+    if (draft.members.some(member => member.username === match.username)) {
       toast.error('Member already exists in the team');
       return;
     }
 
-    const newMember = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: newMemberEmail,
-      username: newMemberEmail.split('@')[0],
-      role: 'Editor',
-      joinedAt: new Date().toISOString()
-    };
-
-    setMembers([...members, newMember]);
+    const newMember = { username: match.username, email: match.email, role: 'editor' }
+    dispatch(addDraftMember(newMember))
     setNewMemberEmail('');
     toast.success('Member added successfully');
   };
 
-  const removeMember = (memberId) => {
-    setMembers(members.filter(member => member.id !== memberId));
+  const removeMember = (username) => {
+    dispatch(removeDraftMember(username))
     setMemberToRemove(null);
     toast.success('Member removed successfully');
   };
 
-  const changeRole = (memberId, newRole) => {
-    setMembers(members.map(member => {
-      if (member.id === memberId) {
-        return { ...member, role: newRole };
-      }
-      // If setting someone as Leader, demote current leader to Editor
-      if (newRole === 'Leader' && member.role === 'Leader') {
-        return { ...member, role: 'Editor' };
-      }
-      return member;
-    }));
+  const changeRole = (username, newRole) => {
+    dispatch(changeDraftMemberRole({ username, role: newRole }))
     setMemberToChangeRole(null);
     toast.success('Role updated successfully');
   };
 
   const onSubmit = async (data) => {
-    if (members.length === 0) {
+    if (draft.members.length === 0) {
       toast.error('Please add at least one team member');
       return;
     }
+    console.log("draft", draft)
 
-    const hasLeader = members.some(member => member.role === 'Leader');
+    const hasLeader = draft.members.some(member => member.role === 'co-organizer');
     if (!hasLeader) {
-      toast.error('Please assign a Leader role to at least one member');
+      toast.error('Please assign a co-organizer role to at least one member');
       return;
     }
-
+    console.log("hasLeader", hasLeader)
     try {
-      const teamData = {
-        name: data.teamName,
-        description: data.description,
-        members: members.map(({ id, joinedAt, ...member }) => member)
-      };
-
-      await dispatch(createTeam(teamData)).unwrap();
-      
+      const name = data.teamName?.trim()
+      const exists = teamList?.some(t => (t.name || '').toLowerCase() === (name || '').toLowerCase())
+      if (exists) {
+        toast.error('Team name already exists')
+        return
+      }
+      console.log("exists", exists)
+      const createRes = await dispatch(createTeam({ name, description: data.description })).unwrap();
+      const teamId = createRes?.team?._id;
+      if (!teamId) {
+        toast.error('Team created but id missing');
+        return;
+      }
+      console.log("teamId", teamId)
+      // Send invitations sequentially
+      for (const m of draft.members) {
+        try {
+          await dispatch(inviteMember({ teamId, username: m.username, role: m.role || 'volunteer' })).unwrap()
+        } catch (e) {
+          // continue sending others
+        }
+      }
+      console.log("invitations sent")
       toast.success('Team created successfully!');
       reset();
-      setMembers([]);
-      
+      dispatch(clearDraft())
+      console.log("draft cleared")
       // Navigate back to dashboard after successful creation
       setTimeout(() => {
         navigate('/dashboard');
+        console.log("navigated to dashboard")
       }, 1500);
     } catch (error) {
+      console.log("error", error)
       toast.error('Failed to create team. Please try again.');
     }
   };
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case 'Leader':
+      case 'co-organizer':
         return <Crown className="h-4 w-4" />;
-      case 'Editor':
+      case 'editor':
         return <Edit className="h-4 w-4" />;
-      case 'Viewer':
+      case 'volunteer':
         return <Eye className="h-4 w-4" />;
       default:
         return <Shield className="h-4 w-4" />;
@@ -122,16 +137,24 @@ export default function CreateTeam() {
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'Leader':
+      case 'co-organizer':
         return 'bg-college-yellow text-college-blue';
-      case 'Editor':
+      case 'editor':
         return 'bg-college-blue text-white';
-      case 'Viewer':
+      case 'volunteer':
         return 'bg-gray-100 text-gray-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
   };
+
+  const suggestions = React.useMemo(() => {
+    const q = newMemberEmail.trim().toLowerCase();
+    if (!q) return [];
+    const filtered = users.filter(u => (u.email?.toLowerCase().startsWith(q)) || (u.username?.toLowerCase().startsWith(q)));
+    const existing = new Set(draft.members.map(m => m.username));
+    return filtered.filter(u => !existing.has(u.username)).slice(0, 8);
+  }, [newMemberEmail, users, draft.members]);
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -157,7 +180,7 @@ export default function CreateTeam() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name *</Label>
+                <Label htmlFor="teamName">Team Name *</Label>
               <Input
                 id="teamName"
                 {...register('teamName', { required: 'Team name is required' })}
@@ -194,14 +217,49 @@ export default function CreateTeam() {
             <div className="space-y-2">
               <Label>Add Member</Label>
               <div className="flex gap-2">
-                <Input
-                  type="email"
-                  value={newMemberEmail}
-                  onChange={(e) => setNewMemberEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  className="flex-1"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMember())}
-                />
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    value={newMemberEmail}
+                    onChange={(e) => { setNewMemberEmail(e.target.value); setShowSuggestions(true); setHighlightIndex(-1); }}
+                    placeholder="Type username or email"
+                    className="w-full"
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={(e) => {
+                      if (showSuggestions && suggestions.length > 0) {
+                        if (e.key === 'ArrowDown') { e.preventDefault(); setHighlightIndex(i => Math.min(i + 1, suggestions.length - 1)); }
+                        if (e.key === 'ArrowUp') { e.preventDefault(); setHighlightIndex(i => Math.max(i - 1, 0)); }
+                        if (e.key === 'Enter') {
+                          if (highlightIndex >= 0) {
+                            const s = suggestions[highlightIndex];
+                            setNewMemberEmail(s.email || s.username);
+                            setShowSuggestions(false);
+                            e.preventDefault();
+                            return;
+                          }
+                        }
+                        if (e.key === 'Escape') { setShowSuggestions(false); }
+                      }
+                      if (e.key === 'Enter') { e.preventDefault(); addMember(); }
+                    }}
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-auto rounded-md border bg-white shadow">
+                      {suggestions.map((u, idx) => (
+                        <button
+                          type="button"
+                          key={u.username}
+                          className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${idx === highlightIndex ? 'bg-gray-100' : ''}`}
+                          onMouseEnter={() => setHighlightIndex(idx)}
+                          onMouseDown={(e) => { e.preventDefault(); setNewMemberEmail(u.email || u.username); setShowSuggestions(false); }}
+                        >
+                          <div className="text-sm font-medium">{u.email || ''}</div>
+                          <div className="text-xs text-gray-500">{u.username}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button type="button" onClick={addMember} className="bg-college-blue hover:bg-college-blue/90">
                   Add
                 </Button>
@@ -209,12 +267,12 @@ export default function CreateTeam() {
             </div>
 
             {/* Members List */}
-            {members.length > 0 && (
+            {draft.members.length > 0 && (
               <div className="space-y-3">
-                <Label>Team Members ({members.length})</Label>
+                <Label>Team Members ({draft.members.length})</Label>
                 <div className="space-y-2">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                  {draft.members.map((member) => (
+                    <div key={member.username} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{member.username}</span>
@@ -229,15 +287,15 @@ export default function CreateTeam() {
                       <div className="flex items-center gap-2">
                         <Select 
                           value={member.role} 
-                          onValueChange={(value) => changeRole(member.id, value)}
+                          onValueChange={(value) => changeRole(member.username, value)}
                         >
                           <SelectTrigger className="w-[120px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Leader">Leader</SelectItem>
-                            <SelectItem value="Editor">Editor</SelectItem>
-                            <SelectItem value="Viewer">Viewer</SelectItem>
+                            <SelectItem value="co-organizer">co-organizer</SelectItem>
+                            <SelectItem value="editor">editor</SelectItem>
+                            <SelectItem value="volunteer">volunteer</SelectItem>
                           </SelectContent>
                         </Select>
 
@@ -257,7 +315,7 @@ export default function CreateTeam() {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction 
-                                onClick={() => removeMember(member.id)}
+                                onClick={() => removeMember(member.username)}
                                 className="bg-destructive hover:bg-destructive/90"
                               >
                                 Remove
@@ -272,7 +330,7 @@ export default function CreateTeam() {
               </div>
             )}
 
-            {members.length === 0 && (
+            {draft.members.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No team members added yet</p>

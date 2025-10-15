@@ -15,6 +15,12 @@ export const createTeamForEvent = async (req, res) => {
 
     const leaderId = req.user.id;
 
+    // Enforce unique team name (case-insensitive)
+    const existing = await Team.findOne({ name: { $regex: `^${name}$`, $options: 'i' } });
+    if (existing) {
+      return res.status(409).json({ message: "Team name already exists" });
+    }
+
     const team = await Team.create({ name, leader: leaderId, members: [] });
 
     res.status(201).json({ message: "Team created successfully", team });
@@ -24,10 +30,20 @@ export const createTeamForEvent = async (req, res) => {
   }
 };
 
+export const getTeamList = async (req, res) => {
+  try {
+    const teams = await Team.find({}, 'name leader createdAt');
+    res.status(200).json(teams);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to retrieve team list", error: err.message });
+  }
+};
+
 export const getAllUserDetails = async (req, res) => {
   try {
-    const users = await User.find({ role: { $ne: "organizer" } }, 'profile username email'); // Fetch only necessary fields
-    res.status(200).json(users);
+    const users = await User.find({ role: { $eq: "organizer" } }, 'profile username email'); // Fetch only necessary fields
+    return res.status(200).json(users);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to retrieve users", error: err.message });
