@@ -8,6 +8,7 @@ import Sidebar from "./Components/general/sidebar.jsx";
 import Dashboard from './Pages/Organizer/Dashboard.page.jsx';
 import AdminPage from './Pages/Organizer/Admin.page.jsx';
 import EventForm from './Components/Organizers/EventForm.jsx';
+import MapWindow from './Components/EventComponents/Map/mapWindow.jsx';
 
 function App() {
   const { isAuthenticated } = useSelector((s) => s.auth);
@@ -27,12 +28,17 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={isAuthenticated ? <AppLayout><OrganizerProfile /></AppLayout> : <Navigate to="/login" replace />} />
-        <Route path="/dashboard" element={isAuthenticated ?  <AppLayout><Dashboard/></AppLayout> : <Navigate to="/login" replace />} />
-        <Route path="/admin" element={isAuthenticated ? <AppLayout><AdminPage/></AppLayout> : <Navigate to="/login" replace />} />
-        <Route 
-          path="/admin/events/:eventId" 
-          element={isAuthenticated ? <AppLayout><EventForm /></AppLayout> : <Navigate to="/login" replace />} 
+        <Route path="/dashboard" element={isAuthenticated ? <AppLayout><Dashboard /></AppLayout> : <Navigate to="/login" replace />} />
+        <Route path="/admin" element={isAuthenticated ? <AppLayout><AdminPage /></AppLayout> : <Navigate to="/login" replace />} />
+        <Route
+          path="/admin/events/:eventId"
+          element={isAuthenticated ? <AppLayout><EventForm /></AppLayout> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/admin/add-location/:eventId"
+          element={isAuthenticated ? <AppLayout><MapWindow /></AppLayout> : <Navigate to="/login" replace />}
+        />
+
       </Routes>
     </div>
   );

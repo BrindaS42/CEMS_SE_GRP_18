@@ -6,7 +6,8 @@ const EventSchema = new mongoose.Schema({
     categoryTags: [String],
     ruleBook: { type: String }, // URL
     poc: { name: String, contact: String },
-    venue: {
+    venue: { type: String },
+    location: {
         address: { type: String }, // textual address
         coordinates: {
             lat: { type: Number }, // latitude
@@ -14,14 +15,14 @@ const EventSchema = new mongoose.Schema({
         },
         mapAnnotations: [
             {
-                label: { type: String, required: true },   // e.g., "Main Gate", "Auditorium Entrance"
-                description: { type: String },             // details about this point
+                label: { type: String, required: true },   
+                description: { type: String },             
                 coordinates: {
                     lat: { type: Number, required: true },
                     lng: { type: Number, required: true }
                 },
-                icon: { type: String },                    // custom icon for marker (optional)
-                color: { type: String }                    // to style the marker
+                icon: { type: String },                    
+                color: { type: String }                  
             }
         ]
     },

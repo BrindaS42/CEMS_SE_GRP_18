@@ -10,7 +10,6 @@ const getEventPayload = (body) => {
     pocName,
     pocPhone, // We'll use pocPhone for the 'contact' field
     venue,      // This is the address string
-    venueCoordinates,
     subEvents,
     gallery,
     createdBy   // Don't forget createdBy!
@@ -29,10 +28,7 @@ const getEventPayload = (body) => {
       name: pocName,
       contact: pocPhone, // Map the flat fields to the nested 'poc' object
     },
-    venue: {
-      address: venue,
-      coordinates: venueCoordinates, // Map the flat fields to the nested 'venue' object
-    },
+    venue,
   };
 
   return newEventData;
