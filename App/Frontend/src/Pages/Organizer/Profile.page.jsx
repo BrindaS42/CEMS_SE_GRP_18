@@ -8,8 +8,7 @@ import PublishedEvents from '../../components/profile/publishedevents.jsx';
 import { FaEdit } from 'react-icons/fa'; 
 import EditProfileModal from '../../components/profile/editprofilemodal.jsx'; 
 
-
-const OrganizerProfile = () => {
+const OrganizerProfile = ()  => {
   const dispatch = useDispatch();
   // Destructure profile, loading, and error from the store
   const { profile, loading, error } = useSelector((state) => state.organizer); 
