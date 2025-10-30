@@ -1,54 +1,56 @@
-
 import mongoose from "mongoose";
 
-const RegistrationSchema = new mongoose.Schema({
-    eventId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Event", 
-        required: true 
+const registrationSchema = new mongoose.Schema({
+  eventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Event",
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  teamName: { type: String },
+  members: [{ type: String }],
+
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "verified", "rejected", "not_required"],
+    default: "not_required",
+  },
+  paymentProof: { type: String },
+
+  status: {
+    type: String,
+    enum: ["pending", "confirmed", "cancelled"],
+    default: "pending",
+  },
+
+  checkInCode: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+
+  checkIns: [
+    {
+      timelineId: { type: mongoose.Schema.Types.ObjectId },
+      checkInTime: { type: Date },
+      status: { type: String, enum: ["absent", "present"], default: "absent" },
     },
-    studentId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "User", 
-        required: true 
-    },
-    studentTeamId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Team"
-    },
-    registrationType: { 
-        type: String, 
-        enum: ["Individual", "Team"], 
-        required: true 
-    },
-    paymentStatus: { 
-        type: String, 
-        enum: ["Unpaid", "Paid", "Pending Approval"], 
-        default: "Unpaid" 
-    },
-    paymentScreenshotUrl: String,
-    registrationData: [
-        
-        {
-            title: String,
-            answer: String
-        }
-    ],
-    checkIns: [
-        {
-            timelineId: { type: String}, 
-            checkInTime: { type: Date, default: Date.now },
-            status: { type: String, enum: ["absent", "present"], default: "absent" }
-        }
-    ],
-    status: { 
-        type: String, 
-        enum: ["Pending", "Approved", "Rejected"], 
-        default: "Pending" 
-    },
-}, { 
-    timestamps: true 
+  ],
+
+  checkIn: {
+    type: Boolean,
+    default: false,
+  },
+
+  registeredAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-const Registration = mongoose.model("Registration", RegistrationSchema);
+const Registration = mongoose.model("Registration", registrationSchema);
 export default Registration;
