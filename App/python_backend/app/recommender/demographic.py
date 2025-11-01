@@ -9,10 +9,10 @@ mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["recm_test"]
 
 def recommend_demographic(profile_id: str, top_k=5):
-    users = list( db.profile.find({}, {"_id": 1, "gender": 1, "college": 1, "areasOfInterest": 1}))
+    users = list( db.user.find({}, {"_id": 1, "gender": 1, "college": 1, "areasOfInterest": 1}))
     events = list(db.event.find({"status": "Published"}))
 
-    profile =  db.profile.find_one({"_id": ObjectId(profile_id)})
+    profile =  db.user.find_one({"_id": ObjectId(profile_id)})
     if not profile:
         return []
 

@@ -1,9 +1,10 @@
 from fastapi import FastAPI
-from app.router import recommender_router
+from app.router import recommender_router, bot_router
 from app.recommender.utils import start_periodic_rebuild
 
 app = FastAPI(title="Backend that handles AI/ML part")
 
+app.include_router(bot_router.router)
 app.include_router(recommender_router.router)
 
 @app.get("/")

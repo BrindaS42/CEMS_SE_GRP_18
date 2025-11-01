@@ -10,7 +10,7 @@ db = mongo_client["recm_test"]
 
 def get_user_event_matrix():
     """Builds a binary user-event interaction matrix."""
-    users = list(db.profile.find({}, {"_id": 1}))
+    users = list(db.user.find({}, {"_id": 1}))
     events = list(db.event.find({"status": "Published"}, {"_id": 1}))
 
     user_index = {str(u["_id"]): i for i, u in enumerate(users)}

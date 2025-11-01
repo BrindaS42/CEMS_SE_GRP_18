@@ -115,7 +115,7 @@ def convert_object_ids(obj):
 
 # content based recommendation
 def recommend_events_for_user(profile_id: str, top_k=5):
-    profile =  db.profile.find_one({"_id": ObjectId(profile_id)})
+    profile =  db.user.find_one({"_id": ObjectId(profile_id)})
     if not profile:
         return []
 
