@@ -10,6 +10,7 @@ import {
   getTeamDetails,
   getUserInvitations,
   getTeamList,
+  removeTeam,
 } from "../controllers/event_controllers/event.team.controller.js";
 
 const { authentication, authorizeRoles } = auth;
@@ -34,5 +35,7 @@ router.patch("/change-role", changeMemberRole);
 router.get("/:teamId", getTeamDetails);
 
 router.post("/:teamId/invite", inviteMemberToTeam);
+
+router.delete("/:teamId", removeTeam);
 
 export default router;

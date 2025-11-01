@@ -1,9 +1,6 @@
-import crypto from "crypto";
-import Team from "../../models/team.model.js";
-import Invitation from "../../models/invitaion.model.js";
+import Team from "../../models/organizerTeam.model.js";
 import User from "../../models/user.model.js";
-import Message from "../../models/message.model.js";
-
+import InboxEntity from "../../models/message.model.js";
 
 export const createTeamForEvent = async (req, res) => {
   try {
@@ -79,27 +76,27 @@ export const inviteMemberToTeam = async (req, res) => {
       return res.status(400).json({ message: "User is already a member of this team" });
     }
 
-    const existingInvitation = await Invitation.findOne({ teamId, invitedUser: userToInvite._id, status: "pending" });
+    const existingInvitation = await InboxEntity.findOne({
+      relatedTeam: teamId,
+      to: userToInvite._id,
+      status: "Pending",
+      type: "team_invite"
+    });
+    
     if (existingInvitation) {
       return res.status(400).json({ message: "An invitation has already been sent to this user" });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const invitation = await Invitation.create({
-      teamId,
-      invitedBy,
-      invitedUser: userToInvite._id,
-      status: "pending",
-      token,
-      role
-    });
-
-    await Message.create({
-      sender: invitedBy,
-      receiver: userToInvite._id,
-      subject: `Invitation to join team: ${team.name}`,
-      message: `You have been invited to join the team. Use this token to respond: ${token}`,
-      type: "invitation",
+    const invitation = await InboxEntity.create({
+      type: "team_invite",
+      title: `Invitation to join team: ${team.name}`,
+      description: `You have been invited to join ${team.name} as a ${role}.`,
+      from: invitedBy,
+      to: userToInvite._id,
+      status: "Pending",
+      relatedTeam: teamId,
+      relatedTeamModel: "OrganizerTeam", 
+      role: role || "volunteer",
     });
 
     res.status(201).json({ message: "Invitation sent successfully", invitation });
@@ -111,30 +108,38 @@ export const inviteMemberToTeam = async (req, res) => {
 
 export const respondToInvitation = async (req, res) => {
   try {
-    const { token, decision } = req.body;
+    const { invitationId, decision } = req.body;
     const userId = req.user.id;
 
-    if (!token || !decision || !["accepted", "declined"].includes(decision)) {
-      return res.status(400).json({ message: "A valid token and decision ('accepted' or 'declined') are required" });
+    if (!invitationId || !decision || !["Approved", "Rejected"].includes(decision)) {
+      return res.status(400).json({ message: "A valid invitationId and decision ('Approved' or 'Rejected') are required" });
     }
 
-    const invitation = await Invitation.findOne({ token, status: "pending" });
+    const invitation = await InboxEntity.findOne({
+      _id: invitationId,
+      status: "Pending",
+      type: "team_invite"
+    });
+
     if (!invitation) {
       return res.status(404).json({ message: "Invitation not found or has already been addressed" });
     }
 
-    if (invitation.invitedUser.toString() !== userId.toString()) {
+    if (invitation.to.toString() !== userId.toString()) {
       return res.status(403).json({ message: "You are not authorized to respond to this invitation" });
     }
 
     invitation.status = decision;
     await invitation.save();
 
-    if (decision === "accepted") {
-      const team = await Team.findById(invitation.teamId);
+    if (decision === "Approved") {
+      const team = await Team.findById(invitation.relatedTeam);
       if (team) {
         team.members.push({ user: userId, role: invitation.role || "volunteer" });
         await team.save();
+      } else {
+        console.error(`Team with id ${invitation.relatedTeam} not found after accepting invitation.`);
+        return res.status(500).json({ message: `Invitation ${decision}, but failed to find associated team.` });
       }
     }
 
@@ -218,13 +223,42 @@ export const getTeamDetails = async (req, res) => {
 
 export const getUserInvitations = async (req, res) => {
   try {
-    const invitations = await Invitation.find({ invitedUser: req.user.id, status: "pending" })
-      .populate("teamId", "name")
-      .populate("invitedBy", "name");
+    const invitations = await InboxEntity.find({ 
+      to: req.user.id, 
+      status: "Pending",
+      type: "team_invite"
+    })
+      .populate("relatedTeam", "name")
+      .populate("from", "name username");
 
     res.status(200).json(invitations);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to retrieve invitations", error: err.message });
+  }
+};
+
+export const removeTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const leaderId = req.user.id;
+    
+    
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+    
+    if (team.leader.toString() !== leaderId.toString()) {
+      return res.status(403).json({ message: "Only the team leader can delete the team" });
+    }
+    
+
+    await Team.findByIdAndDelete(teamId);
+
+    res.status(200).json({ message: "Team deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete team", error: err.message });
   }
 };
