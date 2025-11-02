@@ -1,5 +1,6 @@
 import React from "react";
-import { useSelector } from 'react-redux';
+import { useEffect } from "react";
+import { useSelector, useDispatch } from 'react-redux';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Pages/Login.page.jsx';
 import Home from './Pages/Home.page.jsx';
@@ -9,9 +10,46 @@ import Dashboard from './Pages/Organizer/Dashboard.page.jsx';
 import AdminPage from './Pages/Organizer/Admin.page.jsx';
 import EventForm from './Components/Organizers/EventForm.jsx';
 import MapWindow from './Components/EventComponents/Map/mapWindow.jsx';
+import { socket } from './socket.js'; 
+import { setSocketConnected, setSocketDisconnected } from './Store/socket.slice.js';
+import { addMessage } from './Store/event.interaction.slice.js';
 
 function App() {
   const { isAuthenticated } = useSelector((s) => s.auth);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    
+    if (isAuthenticated) {
+      socket.connect();
+
+      function onConnect() {
+        dispatch(setSocketConnected());
+      }
+
+      function onDisconnect() {
+        dispatch(setSocketDisconnected());
+      }
+
+      function onReceiveMessage(newMessage) {
+        console.log('Received message:', newMessage);
+        dispatch(addMessage(newMessage));
+      }
+
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+      socket.on('receive_message', onReceiveMessage);
+
+      return () => {
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
+        socket.off('receive_message', onReceiveMessage);
+        socket.disconnect();
+      };
+    } else {
+      socket.disconnect();
+    }
+  }, [isAuthenticated, dispatch]);
 
   const AppLayout = ({ children }) => {
     return (
