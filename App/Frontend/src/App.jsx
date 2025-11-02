@@ -10,7 +10,7 @@ import Dashboard from './Pages/Organizer/Dashboard.page.jsx';
 import AdminPage from './Pages/Organizer/Admin.page.jsx';
 import EventForm from './Components/Organizers/EventForm.jsx';
 import MapWindow from './Components/EventComponents/Map/mapWindow.jsx';
-import { socket } from './socket.js'; 
+import { socket } from './service/socket.js'
 import { setSocketConnected, setSocketDisconnected } from './Store/socket.slice.js';
 import { addMessage } from './Store/event.interaction.slice.js';
 
