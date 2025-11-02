@@ -7,6 +7,7 @@ const StudentTeamSchema = new mongoose.Schema(
     members: [
       {
         member: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        status: { type: String, enum: ["Approved", "Pending", "Rejected"], default: "Pending" },
       },
     ],
   },
