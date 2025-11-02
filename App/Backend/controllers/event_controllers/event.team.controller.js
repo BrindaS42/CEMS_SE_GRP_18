@@ -4,7 +4,7 @@ import InboxEntity from "../../models/message.model.js";
 
 export const createTeamForEvent = async (req, res) => {
   try {
-    let {name} = req.body;
+    let {name, description} = req.body;
     if (!name?.trim()) {
       return res.status(400).json({ message: "Team name is required" });
     }
@@ -18,7 +18,7 @@ export const createTeamForEvent = async (req, res) => {
       return res.status(409).json({ message: "Team name already exists" });
     }
 
-    const team = await Team.create({ name, leader: leaderId, members: [] });
+    const team = await Team.create({ name, description, leader: leaderId, members: [] });
 
     res.status(201).json({ message: "Team created successfully", team });
   } catch (err) {
@@ -235,6 +235,30 @@ export const getUserInvitations = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to retrieve invitations", error: err.message });
+  }
+};
+
+export const changeDescriptionOfTeam = async (req, res) => {
+  try {
+    const { teamId, newDescription } = req.body;
+    const leaderId = req.user.id;
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+
+    if (team.leader.toString() !== leaderId.toString()) {
+      return res.status(403).json({ message: "Only the team leader can change the description" });
+    }
+
+    team.description = newDescription;
+    await team.save();
+
+    res.status(200).json({ message: "Team description updated successfully", team });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update team description", error: err.message });
   }
 };
 

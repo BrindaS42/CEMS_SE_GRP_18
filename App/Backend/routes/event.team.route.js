@@ -11,6 +11,7 @@ import {
   getUserInvitations,
   getTeamList,
   removeTeam,
+  changeDescriptionOfTeam
 } from "../controllers/event_controllers/event.team.controller.js";
 
 const { authentication, authorizeRoles } = auth;
@@ -37,5 +38,7 @@ router.get("/:teamId", getTeamDetails);
 router.post("/:teamId/invite", inviteMemberToTeam);
 
 router.delete("/:teamId", removeTeam);
+
+router.patch("/change-description", changeDescriptionOfTeam);
 
 export default router;
