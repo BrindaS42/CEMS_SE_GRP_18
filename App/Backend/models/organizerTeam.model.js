@@ -8,6 +8,7 @@ const teamSchema = new mongoose.Schema({
     {
       user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       role: { type: String, enum: ["co-organizer", "volunteer"] , default: "volunteer" },
+      status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" }
     },
   ],
 }, { timestamps: true });
