@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema(
     passwordResetTokenExpires: {
       type: Date,
     },
+    passwordForgotToken: {
+      type: String,
+    },
+    passwordForgotTokenExpires: {
+      type: Date,
+    },
     
     username: {
       type: String,

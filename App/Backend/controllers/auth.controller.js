@@ -221,3 +221,224 @@ export const verifyOtpAndResetPassword = async (req , res) =>{
     res.json({success:false ,message : err.message});
   }
 };
+
+export const generateOtpForAcc = async (req, res) => {
+  try {
+    const userid = req.user.id;
+    const user = await User.findById(userid);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User does not exist" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: "Account is already verified" });
+    }
+
+    const now = Date.now();
+
+    if (user.verificationToken && user.verificationTokenExpires && user.verificationTokenExpires.getTime() > now) {
+      return res.status(400).json({ success: false, message: "An OTP has already been sent. Please check your email." });
+    }
+
+    const otp = randomInt(100000, 1000000).toString();
+    const otpExpires = new Date(now + 10 * 60 * 1000);
+
+    user.verificationToken = otp;
+    user.verificationTokenExpires = otpExpires;
+    await user.save();
+
+    const mailOptions = {
+      from: `"Campus Event Manager" <${process.env.GMAIL_USER}>`,
+      to: user.email,
+      subject: "Verify Your Account - Campus Event Manager",
+      html: `
+        <div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; color: #333; background-color: #f4f4f4; padding: 20px; margin: 0;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <tr>
+              <td style="padding: 40px 30px;">
+                <h1 style="font-size: 24px; color: #222; margin-top: 0;">Welcome to Campus Event Manager!</h1>
+                <p style="margin-bottom: 25px; line-height: 1.5;">
+                  Thank you for registering. Please use the following One-Time Password (OTP) to verify your account and complete your registration.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <span style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #007bff; padding: 15px 25px; border: 2px dashed #007bff; border-radius: 8px;">
+                    ${otp}
+                  </span>
+                </div>
+                <p style="margin-top: 25px; margin-bottom: 25px; line-height: 1.5;">
+                  This OTP is valid for <strong>10 minutes</strong>.
+                </p>
+                <p style="font-size: 14px; color: #777; line-height: 1.5;">
+                  If you did not create this account, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+            © ${new Date().getFullYear()} Campus Event Manager. All rights reserved.
+          </div>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ success: true, message: "Email sent successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const verifyOtpForAcc = async (req, res) => {
+  try {
+    const userid = req.user.id;
+    const { otp } = req.body;
+
+    const user = await User.findById(userid);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User does not exist" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: "Account is already verified" });
+    }
+
+    const now = Date.now();
+
+    if (!user.verificationToken || (user.verificationTokenExpires && user.verificationTokenExpires.getTime() < now)) {
+      user.verificationToken = undefined;
+      user.verificationTokenExpires = undefined;
+      await user.save();
+
+      return res.status(400).json({ success: false, message: "OTP has expired. Please generate a new one." });
+    }
+    
+    if (otp !== user.verificationToken) {
+      return res.status(400).json({ success: false, message: "OTP is invalid." });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+
+    await user.save();
+    res.status(200).json({ success: true, message: "Account verified successfully." });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+export const requestForgotPassword = async (req, res) => {
+  try {
+    const { email, role } = req.body;
+    if (!email || !role) {
+      return res.status(400).json({ success: false, message: "Email and role are required." });
+    }
+
+    const user = await User.findOne({ email, role });
+
+    if (!user) {
+      return res.status(200).json({ success: true, message: "If an account with that email and role exists, a reset link has been sent." });
+    }
+
+    const now = Date.now();
+    if (user.passwordForgotToken && user.passwordForgotTokenExpires && now < user.passwordForgotTokenExpires.getTime()) {
+      return res.status(400).json({ success: false, message: "An OTP has already been sent. Please check your email." });
+    }
+
+    const otp = randomInt(100000, 1000000).toString();
+    const otpExpires = new Date(now + 10 * 60 * 1000);
+
+    user.passwordForgotToken = otp;
+    user.passwordForgotTokenExpires = otpExpires;
+    await user.save();
+
+    const mailOptions = {
+      from: `"Campus Event Manager" <${process.env.GMAIL_USER}>`,
+      to: user.email,
+      subject: `Password Reset for ${user.role} Account - Campus Event Manager`,
+      html: `
+        <div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; color: #333; background-color: #f4f4f4; padding: 20px; margin: 0;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <tr>
+              <td style="padding: 40px 30px;">
+                <h1 style="font-size: 24px; color: #222; margin-top: 0;">Password Reset Request</h1>
+                <p style="margin-bottom: 25px; line-height: 1.5;">
+                  You (or someone else) requested a password reset for your <strong>${user.role}</strong> account. Please use the following One-Time Password (OTP) to proceed.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <span style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #007bff; padding: 15px 25px; border: 2px dashed #007bff; border-radius: 8px;">
+                    ${otp}
+                  </span>
+                </div>
+                <p style="margin-top: 25px; margin-bottom: 25px; line-height: 1.5;">
+                  This OTP is valid for <strong>10 minutes</strong>.
+                </p>
+                <p style="font-size: 14px; color: #777; line-height: 1.5;">
+                  If you did not request this, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+            © ${new Date().getFullYear()} Campus Event Manager. All rights reserved.
+          </div>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ success: true, message: "If an account with that email and role exists, a reset link has been sent." });
+
+  } catch (err) {
+    console.error("Error in requestForgotPassword:", err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+export const verifyForgotPassword = async (req, res) => {
+  try {
+    const { email, role, otp, newPassword } = req.body;
+
+    if (!email || !role || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "Email, role, OTP, and new password are required." });
+    }
+
+    const user = await User.findOne({ email, role });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid OTP, email, or role." });
+    }
+
+    const now = Date.now();
+
+    if (!user.passwordForgotToken || !user.passwordForgotTokenExpires || user.passwordForgotTokenExpires.getTime() < now) {
+      user.passwordForgotToken = undefined;
+      user.passwordForgotTokenExpires = undefined;
+      await user.save();
+      return res.status(400).json({ success: false, message: "OTP is invalid or has expired. Please request another." });
+    }
+
+    if (otp !== user.passwordForgotToken) {
+      return res.status(400).json({ success: false, message: "Invalid OTP." });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, Number(process.env.HASHROUND));
+
+    user.passwordHash = passwordHash;
+    user.passwordForgotToken = undefined;
+    user.passwordForgotTokenExpires = undefined;
+    
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Password reset successfully. You can now log in." });
+
+  } catch (err) {
+    console.error("Error in verifyForgotPassword:", err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
