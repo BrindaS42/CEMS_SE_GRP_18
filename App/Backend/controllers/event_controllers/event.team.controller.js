@@ -47,6 +47,108 @@ export const getAllUserDetails = async (req, res) => {
   }
 };
 
+export const respondToInvitation = async (req, res) => {
+  try {
+    const { invitationId, decision } = req.body;
+    const userId = req.user.id;
+    
+    if (!invitationId || !decision || !["Approved", "Rejected"].includes(decision)) {
+      return res.status(400).json({ message: "A valid invitationId and decision ('Approved' or 'Rejected') are required" });
+    }
+    
+    const invitation = await InboxEntity.findOne({
+      _id: invitationId,
+      status: "Pending",
+      type: "team_invite"
+    });
+    
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found or has already been addressed" });
+    }
+    
+    if (invitation.to.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "You are not authorized to respond to this invitation" });
+    }
+    
+    invitation.status = decision;
+    await invitation.save();
+    
+    if (decision === "Approved") {
+      const team = await Team.findById(invitation.relatedTeam);
+      if (team) {
+        team.members.push({ user: userId, role: invitation.role || "volunteer" });
+        await team.save();
+      } else {
+        console.error(`Team with id ${invitation.relatedTeam} not found after accepting invitation.`);
+        return res.status(500).json({ message: `Invitation ${decision}, but failed to find associated team.` });
+      }
+    }
+    
+    res.status(200).json({ message: `Invitation ${decision} successfully`, invitation });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to respond to invitation", error: err.message });
+  }
+};
+
+export const getTeamDetails = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const team = await Team.findById(teamId).populate("leader", "name username").populate("members.user", "name username");
+
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+    res.status(200).json(team);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to retrieve team details", error: err.message });
+  }
+};
+
+export const getUserInvitations = async (req, res) => {
+  try {
+    const invitations = await InboxEntity.find({ 
+      to: req.user.id, 
+      status: "Pending",
+      type: "team_invite"
+    })
+      .populate("relatedTeam", "name")
+      .populate("from", "name username");
+
+    res.status(200).json(invitations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to retrieve invitations", error: err.message });
+  }
+};
+
+export const removeTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const leaderId = req.user.id;
+    
+    
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
+    }
+    
+    if (team.leader.toString() !== leaderId.toString()) {
+      return res.status(403).json({ message: "Only the team leader can delete the team" });
+    }
+    
+
+    await Team.findByIdAndDelete(teamId);
+
+    res.status(200).json({ message: "Team deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete team", error: err.message });
+  }
+};
+
+
 export const inviteMemberToTeam = async (req, res) => {
   try {
     const { teamId } = req.params;
@@ -106,183 +208,108 @@ export const inviteMemberToTeam = async (req, res) => {
   }
 };
 
-export const respondToInvitation = async (req, res) => {
+export const updateTeam = async (req, res) => {
   try {
-    const { invitationId, decision } = req.body;
-    const userId = req.user.id;
+    // Get the ID from the URL parameters (better REST practice)
+    const { teamId } = req.params; 
+    const { name, description, membersToRemove, membersToUpdate } = req.body;
+    const leaderId = req.user.id;
 
-    if (!invitationId || !decision || !["Approved", "Rejected"].includes(decision)) {
-      return res.status(400).json({ message: "A valid invitationId and decision ('Approved' or 'Rejected') are required" });
+    // 1. Get and Authorize Team
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ message: "Team not found" });
     }
 
-    const invitation = await InboxEntity.findOne({
-      _id: invitationId,
-      status: "Pending",
-      type: "team_invite"
-    });
-
-    if (!invitation) {
-      return res.status(404).json({ message: "Invitation not found or has already been addressed" });
+    if (team.leader.toString() !== leaderId.toString()) {
+      return res.status(403).json({ message: "Only the team leader can edit the team" });
     }
 
-    if (invitation.to.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "You are not authorized to respond to this invitation" });
-    }
+    let hasChanges = false;
+    const validRoles = ["co-organizer", "volunteer", "editor"];
 
-    invitation.status = decision;
-    await invitation.save();
+    // 2. Handle Name Change (if provided)
+    if (name !== undefined) {
+      const trimmedNewName = name.trim();
+      if (trimmedNewName === "") {
+        return res.status(400).json({ message: "Team name, if provided, cannot be empty" });
+      }
 
-    if (decision === "Approved") {
-      const team = await Team.findById(invitation.relatedTeam);
-      if (team) {
-        team.members.push({ user: userId, role: invitation.role || "volunteer" });
-        await team.save();
-      } else {
-        console.error(`Team with id ${invitation.relatedTeam} not found after accepting invitation.`);
-        return res.status(500).json({ message: `Invitation ${decision}, but failed to find associated team.` });
+      if (team.name.toLowerCase() !== trimmedNewName.toLowerCase()) {
+        const existing = await Team.findOne({ name: trimmedNewName })
+                                .collation({ locale: 'en', strength: 2 });
+        if (existing) {
+          return res.status(409).json({ message: "Team name already exists" });
+        }
+        team.name = trimmedNewName;
+        hasChanges = true;
       }
     }
 
-    res.status(200).json({ message: `Invitation ${decision} successfully`, invitation });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to respond to invitation", error: err.message });
-  }
-};
-
-export const removeMemberFromTeam = async (req, res) => {
-  try {
-    const { teamId, memberId } = req.body;
-    const leaderId = req.user.id;
-
-    const team = await Team.findById(teamId);
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
+    // 3. Handle Description Change (if provided)
+    if (description !== undefined) {
+      if (team.description !== description) {
+        team.description = description;
+        hasChanges = true;
+      }
     }
 
-    if (team.leader.toString() !== leaderId.toString()) {
-      return res.status(403).json({ message: "Only the team leader can remove members" });
+    // 4. Handle Members to Remove (if provided)
+    if (membersToRemove && Array.isArray(membersToRemove)) {
+      if (membersToRemove.includes(leaderId.toString())) {
+        return res.status(400).json({ message: "The team leader cannot be removed" });
+      }
+      
+      const originalCount = team.members.length;
+      // Filter out members whose 'user' ID is in the membersToRemove array
+      team.members = team.members.filter(member => !membersToRemove.includes(member.user.toString()));
+      
+      if (team.members.length < originalCount) {
+        hasChanges = true;
+      }
     }
 
-    team.members = team.members.filter(member => member.user.toString() !== memberId);
+    // 5. Handle Member Roles to Change (if provided)
+    if (membersToUpdate && Array.isArray(membersToUpdate)) {
+      for (const update of membersToUpdate) {
+        const { memberId, newRole } = update;
+
+        if (!memberId || !newRole) {
+          return res.status(400).json({ message: "Invalid payload for membersToUpdate" });
+        }
+        if (!validRoles.includes(newRole)) {
+          return res.status(400).json({ message: `Invalid role: ${newRole}` });
+        }
+        if (memberId === leaderId.toString()) {
+          return res.status(400).json({ message: "Cannot change the leader's role" });
+        }
+
+        const member = team.members.find(m => m.user.toString() === memberId);
+        if (!member) {
+          return res.status(404).json({ message: `Member with ID ${memberId} not found in this team` });
+        }
+
+        if (member.role !== newRole) {
+          member.role = newRole;
+          hasChanges = true;
+        }
+      }
+    }
+
+    // 6. Save and Respond
+    if (!hasChanges) {
+      return res.status(200).json({ message: "No changes provided", team });
+    }
+
     await team.save();
+    res.status(200).json({ message: "Team details updated successfully", team });
 
-    res.status(200).json({ message: "Member removed successfully", team });
   } catch (err) {
+    // Handle database uniqueness error
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "Team name already exists" });
+    }
     console.error(err);
-    res.status(500).json({ message: "Failed to remove member", error: err.message });
-  }
-};
-
-export const changeMemberRole = async (req, res) => {
-  try {
-    const { teamId, memberId, newRole } = req.body;
-    const leaderId = req.user.id;
-
-    const team = await Team.findById(teamId);
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
-    }
-
-    if (team.leader.toString() !== leaderId.toString()) {
-      return res.status(403).json({ message: "Only the team leader can change roles" });
-    }
-
-    const member = team.members.find(member => member.user.toString() === memberId);
-    if (!member) {
-      return res.status(404).json({ message: "Member not found in this team" });
-    }
-
-    if(["co-organizer", "volunteer", "editor"].includes(newRole)) {
-        member.role = newRole;
-        await team.save();
-        res.status(200).json({ message: "Member role updated successfully", team });
-    } else {
-        res.status(400).json({ message: "Invalid role" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to update member role", error: err.message });
-  }
-};
-
-export const getTeamDetails = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const team = await Team.findById(teamId).populate("leader", "name username").populate("members.user", "name username");
-
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
-    }
-    res.status(200).json(team);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to retrieve team details", error: err.message });
-  }
-};
-
-export const getUserInvitations = async (req, res) => {
-  try {
-    const invitations = await InboxEntity.find({ 
-      to: req.user.id, 
-      status: "Pending",
-      type: "team_invite"
-    })
-      .populate("relatedTeam", "name")
-      .populate("from", "name username");
-
-    res.status(200).json(invitations);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to retrieve invitations", error: err.message });
-  }
-};
-
-export const changeDescriptionOfTeam = async (req, res) => {
-  try {
-    const { teamId, newDescription } = req.body;
-    const leaderId = req.user.id;
-
-    const team = await Team.findById(teamId);
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
-    }
-
-    if (team.leader.toString() !== leaderId.toString()) {
-      return res.status(403).json({ message: "Only the team leader can change the description" });
-    }
-
-    team.description = newDescription;
-    await team.save();
-
-    res.status(200).json({ message: "Team description updated successfully", team });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to update team description", error: err.message });
-  }
-};
-
-export const removeTeam = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const leaderId = req.user.id;
-    
-    
-    const team = await Team.findById(teamId);
-    if (!team) {
-      return res.status(404).json({ message: "Team not found" });
-    }
-    
-    if (team.leader.toString() !== leaderId.toString()) {
-      return res.status(403).json({ message: "Only the team leader can delete the team" });
-    }
-    
-
-    await Team.findByIdAndDelete(teamId);
-
-    res.status(200).json({ message: "Team deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to delete team", error: err.message });
+    res.status(500).json({ message: "Failed to update team details", error: err.message });
   }
 };
