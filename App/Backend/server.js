@@ -28,14 +28,14 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev")); 
-
+app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/dashboard', eventRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/event', eventManageRouter);
 app.use('/api/ai', aiRouter); 
-
+app.use('/api/event-manage', eventManageRouter);
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
 });

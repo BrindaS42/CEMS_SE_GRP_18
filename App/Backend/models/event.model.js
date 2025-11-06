@@ -50,7 +50,7 @@ const EventSchema = new mongoose.Schema({
     scoreboard: [
         { participant: String, score: Number }
     ],
-    status: { type: String, enum: ["draft", "published"], default: "draft" },
+    status: { type: String, enum: ["draft", "published", "completed"], default: "draft" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
 },{
     timestamps: true
