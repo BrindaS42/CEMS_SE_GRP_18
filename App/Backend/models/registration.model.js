@@ -14,6 +14,14 @@ const registrationSchema = new mongoose.Schema({
   teamName: { type: String },
   members: [{ type: String }],
 
+  // Stores dynamic registration form answers (from organizer questions)
+  registrationData: [
+    {
+      question: { type: String, required: true },
+      answer: { type: String, required: true },
+    },
+  ],
+
   paymentStatus: {
     type: String,
     enum: ["pending", "verified", "rejected", "not_required"],
