@@ -17,7 +17,8 @@ const app = express();
 dotenv.config();
 
 connectDB();
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({
   origin: CLIENT_URL,
@@ -25,17 +26,19 @@ app.use(cors({
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
 }));
-app.use(express.json());
+
 app.use(cookieParser());
 app.use(morgan("dev")); 
-app.use(express.urlencoded({ extended: true }));
+
 app.use('/api/auth', authRouter);
+app.use(express.text({ type: 'application/json' }));
 app.use('/api/dashboard', eventRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/team', teamRouter);
 app.use('/api/event', eventManageRouter);
 app.use('/api/ai', aiRouter); 
 app.use('/api/event-manage', eventManageRouter);
+
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
 });

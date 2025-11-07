@@ -28,7 +28,7 @@ router.route('/events/completed').get(authentication, authorizeRoles('organizer'
 router.route('/events/:eventId/registrations').get(authentication, authorizeRoles('organizer'), getRegisteredStudentsByEID);
 router.route('/events/:eventId/attendees').get(authentication, authorizeRoles('organizer'), getAttendeesByEID);
 router.route('/events/:eventId/ratings').get(authentication, authorizeRoles('organizer'), getReviewRatingsByEID);
-router.route('/teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams);
+router.route('/teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams);         
 router.route('/events/:eventId/announcements')
     .post(authentication, authorizeRoles('organizer'), addAnnouncement);  
 router.route('/events/:eventId/announcements/:announcementId')
