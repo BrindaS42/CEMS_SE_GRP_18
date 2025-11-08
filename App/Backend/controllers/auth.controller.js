@@ -1,10 +1,18 @@
 import bcrypt from 'bcrypt';
 import 'dotenv/config';
+<<<<<<< HEAD
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 
 const generateTokenAndSetCookie = (res, user) => {
   const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWTKEY, {
+=======
+import User from './user.js';
+import jwt from 'jsonwebtoken';
+
+const generateTokenAndSetCookie = (res, user) => {
+  const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWTKEY, {
+>>>>>>> authentication
     expiresIn: '7d',
   });
 
@@ -14,8 +22,11 @@ const generateTokenAndSetCookie = (res, user) => {
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+<<<<<<< HEAD
 
   return token;
+=======
+>>>>>>> authentication
 };
 
 const register = async (req, res) => {
@@ -26,15 +37,22 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+<<<<<<< HEAD
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(409).json({ error: 'Username already in use' });
+=======
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already in use' });
+>>>>>>> authentication
     }
 
     const passwordHash = await bcrypt.hash(password, Number(process.env.HASHROUND));
 
     const user = await User.create({ username, email, passwordHash, role });
 
+<<<<<<< HEAD
     const token = generateTokenAndSetCookie(res, user);
 
     res.status(201).json({
@@ -47,6 +65,11 @@ const register = async (req, res) => {
         email: user.email,
       },
     });
+=======
+    generateTokenAndSetCookie(res, user);
+
+    res.status(201).json({ message: 'User registered successfully' });
+>>>>>>> authentication
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
@@ -68,6 +91,7 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+<<<<<<< HEAD
     const token = generateTokenAndSetCookie(res, user);
 
     res.status(200).json({
@@ -80,6 +104,11 @@ const login = async (req, res) => {
         email: user.email,
       },
     });
+=======
+    generateTokenAndSetCookie(res, user);
+
+    res.status(200).json({ message: 'Login successful' });
+>>>>>>> authentication
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Something went wrong' });
