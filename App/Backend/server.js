@@ -14,6 +14,7 @@ import eventManageRouter from './routes/event.manage.route.js';
 import aiRouter from './routes/ai.route.js';
 import studentDashboardRouter from './routes/student.dashboard.route.js'
 import sponsorRoutes from "./routes/sponsor.route.js";
+import studentTeamRoutes from "./routes/student.team.route.js"; 
 
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/student-dashboard', studentDashboardRouter);
 app.use("/api/sponsors", sponsorRoutes);
 app.use('/api/event-manage', eventManageRouter);
+app.use("/api/student/teams", studentTeamRoutes);
 
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
