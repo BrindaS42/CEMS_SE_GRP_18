@@ -4,21 +4,24 @@ import {
   submitRegistration,
   getRegistrationStatusByEIDPID,
   markCheckIn,
-  updateRegistrationStatus,
-} from "../../controllers/registration_controllers/registrationController.js";
-import { verifyUser, verifyOrganizer } from "../../middlewares/authMiddleware.js";
+  getRegistrationConfig,
+  updateRegistrationConfig,
+} from "../controllers/student/registration.controller.js";
+
+import { protect } from "../middleware/auth.middleware.js"; 
 
 const router = express.Router();
 
+router.get("/:eventId/form", protect, getRegistrationForm);
 
-router.get("/form/:eventId", getRegistrationForm);
+router.post("/submit", protect, submitRegistration);
 
+router.get("/:eventId/:participantId/status", protect, getRegistrationStatusByEIDPID);
 
-router.post("/submit", verifyUser, submitRegistration);
-router.get("/status/:eventId/:participantId", verifyUser, getRegistrationStatusByEIDPID);
+router.post("/checkin", protect, markCheckIn);
 
+router.get("/:eventId/config", protect, getRegistrationConfig);
 
-router.post("/checkin", verifyOrganizer, markCheckIn);
-router.patch("/:id/status", verifyOrganizer, updateRegistrationStatus);
+router.put("/:eventId/config", protect, updateRegistrationConfig);
 
 export default router;

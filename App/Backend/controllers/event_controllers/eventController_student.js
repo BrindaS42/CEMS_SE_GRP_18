@@ -1,12 +1,11 @@
 import Event from "../../models/event.model.js";
 import Registration from "../../models/registration.model.js";
-import Rating from "../../models/rating.model.js"; // create rating model if not made yet
 
 
 export const getListOfAllEvents = async (req, res) => {
   try {
     const events = await Event.find({ status: "published" })
-      .select("title categoryTags venue startDate endDate bannerImage");
+      .select("title categoryTags venue posterUrl createdAt");
 
     res.status(200).json({ success: true, events });
   } catch (error) {
@@ -19,7 +18,6 @@ export const getEventDetailsByID = async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ success: false, message: "Event not found" });
-
     res.status(200).json({ success: true, event });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch event details", error: error.message });
@@ -38,9 +36,9 @@ export const addCheckInByTimeline = async (req, res) => {
     const checkIn = registration.checkIns.find(c => c.timelineTitle === timelineTitle);
     if (checkIn) {
       checkIn.status = status;
-      checkIn.checkInTime = new Date();
+      checkIn.checkedInAt = new Date();
     } else {
-      registration.checkIns.push({ timelineTitle, status, checkInTime: new Date() });
+      registration.checkIns.push({ timelineTitle, status, checkedInAt: new Date() });
     }
 
     await registration.save();
@@ -62,7 +60,7 @@ export const getAnnouncementsByEID = async (req, res) => {
   }
 };
 
-
+// ✅ Get sponsors
 export const getListOfEventSponsorsWithListOf = async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId).select("sponsors");
@@ -80,17 +78,23 @@ export const addRatingReviewByEID = async (req, res) => {
     const { rating, review } = req.body;
     const { eventId } = req.params;
 
-    const existing = await Rating.findOne({ eventId, userId: req.user._id });
-    if (existing) return res.status(400).json({ success: false, message: "You already submitted a review" });
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
-    const newRating = await Rating.create({
-      eventId,
-      userId: req.user._id,
+    const alreadyRated = event.ratings.some(r => r.by.toString() === req.user.id);
+    if (alreadyRated)
+      return res.status(400).json({ success: false, message: "You already submitted a review" });
+
+    event.ratings.push({
+      by: req.user.id,
       rating,
       review,
+      createdAt: new Date(),
     });
 
-    res.status(201).json({ success: true, message: "Review added successfully", rating: newRating });
+    await event.save();
+
+    res.status(201).json({ success: true, message: "Review added successfully", ratings: event.ratings });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to add review", error: error.message });
   }
@@ -99,10 +103,10 @@ export const addRatingReviewByEID = async (req, res) => {
 
 export const getListOfRatingReviewByEID = async (req, res) => {
   try {
-    const reviews = await Rating.find({ eventId: req.params.eventId })
-      .populate("userId", "name");
+    const event = await Event.findById(req.params.eventId).populate("ratings.by", "name");
+    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
-    res.status(200).json({ success: true, reviews });
+    res.status(200).json({ success: true, reviews: event.ratings });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch reviews", error: error.message });
   }
