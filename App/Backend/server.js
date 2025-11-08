@@ -5,16 +5,16 @@ import dotenv from "dotenv";
 import cookieParser from 'cookie-parser';
 import connectDB from './config/database.js';
 import authRouter from './routes/auth.route.js';
-import eventRouter from './routes/event.route.js';
+import eventRouter from './routes/event_routes/event.route.js';
 import auth from './middleware/auth.middleware.js';
 import profileRouter from './routes/profile.route.js';
 const { authentication, authorizeRoles } = auth;
-import teamRouter from './routes/event.team.route.js';
-import eventManageRouter from './routes/event.manage.route.js';
+import teamRouter from './routes/event_routes/event.team.route.js';
+import eventManageRouter from './routes/event_routes/event.manage.route.js';
 import aiRouter from './routes/ai.route.js';
-import studentDashboardRouter from './routes/student.dashboard.route.js'
-import sponsorRoutes from "./routes/sponsor.route.js";
-import studentTeamRoutes from "./routes/student.team.route.js"; 
+import studentDashboardRouter from './routes/student_routes/student.dashboard.route.js'
+import sponsorRoutes from "./routes/sponsor_routes/sponsor.route.js";
+import studentTeamRoutes from "./routes/student_routes/student.team.route.js"; 
 
 
 const app = express();

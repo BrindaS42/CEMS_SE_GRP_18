@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import auth from '../middleware/auth.middleware.js'
+import auth from '../../middleware/auth.middleware.js'
 import {
   createStudentTeam,
   deleteStudentTeam,
@@ -7,7 +7,7 @@ import {
   sendInvitationToJoinTeam,
   showAllStudentTeam,
   updateStudentTeam
-} from '../controllers/student.team.controller.js'
+} from '../../controllers/student_controller/student.team.controller.js'
 
 const { authentication, authorizeRoles } = auth;
 const router = Router()

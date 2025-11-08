@@ -1,12 +1,12 @@
 import { Router } from "express";
-import auth from "../middleware/auth.middleware.js";
+import auth from "../../middleware/auth.middleware.js";
 import {
   FetchTheListOfRegisteredEventsByPID,
   FetchTheListOfCompletedEventsByPID,
   GetTheTimeLineReminders,
   GetClashDetectionWarnings,
   getStudentTeams,
-} from "../controllers/student.dashboard.controller.js";
+} from "../../controllers/student_controller/student.dashboard.controller.js";
 
 const { authentication, authorizeRoles } = auth;
 

@@ -2,7 +2,7 @@ import express from "express";
 import {
   GetAllSponsorNameDescpNoOfEsponsred,
     GetAllAdsBySpID,
-} from "../controllers/sponser-featch.controller.js";
+} from "../controllers/sponsor_controllers/sponser-featch.controller.js";
 import auth from "../middleware/auth.middleware.js";
 const { authentication, authorizeRoles } = auth;
 

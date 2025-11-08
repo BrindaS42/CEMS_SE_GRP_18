@@ -1,5 +1,5 @@
-import StudentTeam from "../models/studentTeam.model.js";
-import InboxEntity from "../models/message.model.js";
+import StudentTeam from "../../models/studentTeam.model.js";
+import InboxEntity from "../../models/message.model.js";
 
 export const createStudentTeam = async (req, res) => {
     try {
