@@ -14,7 +14,7 @@ const registrationSchema = new mongoose.Schema({
   teamName: { type: String },
   members: [{ type: String }],
 
-  // Stores dynamic registration form answers (from organizer questions)
+  
   registrationData: [
     {
       question: { type: String, required: true },
@@ -41,13 +41,14 @@ const registrationSchema = new mongoose.Schema({
     unique: true,
   },
 
-  checkIns: [
-    {
-      timelineTitle: { type: String },
-      checkInTime: { type: Date },
-      status: { type: String, enum: ["absent", "present"], default: "absent" },
-    },
-  ],
+ checkIns: [
+  {
+    timelineTitle: { type: String, required: true },
+    checkedInAt: { type: Date },
+    status: { type: String, enum: ["absent", "present"], default: "absent" },
+  },
+],
+
 
   checkIn: {
     type: Boolean,
