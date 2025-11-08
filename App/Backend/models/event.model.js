@@ -4,7 +4,8 @@ const EventSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String },
     categoryTags: [String],
-    ruleBook: { type: String }, // URL
+    ruleBook: { type: String }, 
+    posterUrl: { type: String },
     poc: { name: String, contact: String },
     venue: { type: String },
     location: {
@@ -28,33 +29,73 @@ const EventSchema = new mongoose.Schema({
     },
     timeline: [
         {
-            date: Date,
-            time: String,
-            message: String,
-            addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-        }
+            title: { type: String, required: true },
+            description: { type: String, required: true },
+            date: { type: Date, required: true },
+            duration: { from: { type: String, required: true }, to: { type: String, required: true } },
+            venue: { type: String, required: true },
+            checkInRequired: { type: Boolean, default: false },
+          },
+      
     ],
-    subEvents: [{ title: String, description: String }],
+    subEvents:
+ [{ subevent:{type : mongoose.Schema.Types.ObjectId, ref: "Event"} ,
+status : { type: String, enum: ["Pending", "Approved", "Reject"], default: "Pending" }}],
     gallery: [{ type: String }], // image URLs
+    config: {
+        fees: { type: Number, default: 0 },
+        qrCodeUrl: String,
+        registrationType: { type: String, enum: ["Individual", "Team"], required: true },
+        teamSizeRange: { min: Number, max: Number },
+        registrationFields: [
+          {
+            title: String,
+            description: String,
+            inputType: { type: String, enum: ["text", "number", "date", "time", "checklist", "options"] },
+            required: { type: Boolean, default: false },
+            options: [String],
+          },
+        ],
+      },
+    
     registrations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Registration" }],
     sponsors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     announcements: [
         {
-            title: String,
-            message: String,
-            date: Date,
-            postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-        }
-    ],
+          date: Date,
+          time: String,
+          author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          message: String,
+        },
+      ],
+    
+    ratings: [
+        {
+          by: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          rating: Number,
+          review: String,
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+    
+    chatRoom: [
+        {
+          sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          message: String,
+          createdAt: { type: Date, default: Date.now },
+        },
+      ],
+    
     winners: [{ name: String, team: [String], proof: String }],
     scoreboard: [
         { participant: String, score: Number }
     ],
-    status: { type: String, enum: ["draft", "published"], default: "draft" },
+    status: { type: String, enum: ["draft", "published", "completed"], default: "draft" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
 },{
     timestamps: true
 });
 
 const Event = mongoose.model("Event", EventSchema);
+
 export default Event;
