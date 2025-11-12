@@ -47,50 +47,6 @@ export const getAllUserDetails = async (req, res) => {
   }
 };
 
-export const respondToInvitation = async (req, res) => {
-  try {
-    const { invitationId, decision } = req.body;
-    const userId = req.user.id;
-    
-    if (!invitationId || !decision || !["Approved", "Rejected"].includes(decision)) {
-      return res.status(400).json({ message: "A valid invitationId and decision ('Approved' or 'Rejected') are required" });
-    }
-    
-    const invitation = await InboxEntity.findOne({
-      _id: invitationId,
-      status: "Pending",
-      type: "team_invite"
-    });
-    
-    if (!invitation) {
-      return res.status(404).json({ message: "Invitation not found or has already been addressed" });
-    }
-    
-    if (invitation.to.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "You are not authorized to respond to this invitation" });
-    }
-    
-    invitation.status = decision;
-    await invitation.save();
-    
-    if (decision === "Approved") {
-      const team = await Team.findById(invitation.relatedTeam);
-      if (team) {
-        team.members.push({ user: userId, role: invitation.role || "volunteer" });
-        await team.save();
-      } else {
-        console.error(`Team with id ${invitation.relatedTeam} not found after accepting invitation.`);
-        return res.status(500).json({ message: `Invitation ${decision}, but failed to find associated team.` });
-      }
-    }
-    
-    res.status(200).json({ message: `Invitation ${decision} successfully`, invitation });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to respond to invitation", error: err.message });
-  }
-};
-
 export const getTeamDetails = async (req, res) => {
   try {
     const { teamId } = req.params;

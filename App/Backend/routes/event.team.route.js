@@ -4,7 +4,6 @@ import {
   createTeamForEvent,
   getAllUserDetails,
   inviteMemberToTeam,
-  respondToInvitation,
   getTeamDetails,
   getUserInvitations,
   getTeamList,
@@ -25,8 +24,6 @@ router.get("/list", getTeamList);
 router.get("/users", getAllUserDetails);
 
 router.get("/invitations", getUserInvitations);
-
-router.post("/invitations/respond", respondToInvitation);
 
 router.get("/:teamId", getTeamDetails);
 
