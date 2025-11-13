@@ -25,4 +25,5 @@ const InboxEntitySchema = new mongoose.Schema({
   role: { type: String },
 }, { timestamps: true });
 
-module.exports = mongoose.model("InboxEntity", InboxEntitySchema);
+const InboxEntity = mongoose.model("InboxEntity", InboxEntitySchema);
+export default InboxEntity;

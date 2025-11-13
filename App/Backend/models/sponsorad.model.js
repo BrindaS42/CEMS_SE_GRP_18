@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const SponsorAdSchema = new mongoose.Schema({
     sponsorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     title: { type: String, required: true },
@@ -13,4 +15,5 @@ const SponsorAdSchema = new mongoose.Schema({
     likes: { type: Number, default: 0 },
 }, { timestamps: true });
 
-module.exports = mongoose.model("SponsorAd", SponsorAdSchema);
+const SponsorAd = mongoose.model("SponsorAd", SponsorAdSchema);
+export default SponsorAd;

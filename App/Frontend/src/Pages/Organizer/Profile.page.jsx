@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchOrganizerProfile } from '../../Store/profile/organizer.slice.js'; 
+import { fetchOrganizerProfile } from '../../Store/profile.slice.js'; 
 import ProfileHeader from '../../components/profile/profileheader.jsx';
 import Interests from '../../components/profile/interests.jsx';
 import Achievements from '../../components/profile/achievements.jsx';

@@ -14,4 +14,5 @@ const StudentTeamSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("StudentTeam", StudentTeamSchema);
+const StudentTeam = mongoose.model("StudentTeam", StudentTeamSchema);
+export default StudentTeam;
