@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import auth from '../middleware/auth.middleware.js'
+import auth from '../../middleware/auth.middleware.js'
 import {
   getEventsForUser,
   getPublishedEvents,
   getDraftEvents,
   getRegistrationLogs,
   getCheckIns,
-} from '../controllers/event_controllers/dashboard.controller.js'
+} from '../../controllers/organizer_controllers/organizer.dashboard.controller.js'
 
 const { authentication, authorizeRoles } = auth
 const router = Router()

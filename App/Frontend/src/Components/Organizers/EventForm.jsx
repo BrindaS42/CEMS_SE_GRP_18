@@ -4,37 +4,37 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux'
 import { useForm, useFieldArray } from "react-hook-form";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Label } from "../ui/label";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
-import { Badge } from "../ui/badge";
-import { Alert, AlertDescription } from "../ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card.jsx";
+import { Button } from "../ui/button.jsx";
+import { Input } from "../ui/input.jsx";
+import { Textarea } from "../ui/textarea.jsx";
+import { Label } from "../ui/label.jsx";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group.jsx";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog.jsx";
+import { Badge } from "../ui/badge.jsx";
+import { Alert, AlertDescription } from "../ui/alert.jsx";
 <<<<<<< HEAD
 =======
 import { MapLocationPicker } from "./Admin_Panel/MapLocationPicker";
 >>>>>>> authentication
-import { CustomFormFieldsBuilder } from "./Admin_Panel/CustomFormFieldsBuilder";
-import { CustomFieldsPreview } from "./Admin_Panel/CustomFieldsPreview";
-import { useAutoSave } from "../../hooks/useAutoSave";
+import { CustomFormFieldsBuilder } from "./Admin_Panel/CustomFormFieldsBuilder.jsx";
+import { CustomFieldsPreview } from "./Admin_Panel/CustomFieldsPreview.jsx";
+import { useAutoSave } from "../../hooks/useAutoSave.js";
 import { toast } from "sonner";
-import { fetchTeamList } from '../../Store/team.slice.js'
-import { createEventDraft, publishEvent, fetchEventById } from '../../Store/event.slice.js'
+import { fetchTeamList } from '../../store/team.slice.js'
+import { createEventDraft, publishEvent, fetchEventById } from '../../store/event.slice.js'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "../ui/popover";
+} from "../ui/popover.jsx";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "../ui/command";
+} from "../ui/command.jsx";
 import {
   Upload,
   Plus,

@@ -20,8 +20,8 @@ authRouter.post('/login', login);
 
 authRouter.post('/logout',authentication, logout);
 
-authRouter.post('/password/request-reset', authentication, requestPasswordReset);
-authRouter.post('/password/confirm-reset', authentication, verifyOtpAndResetPassword);
+authRouter.post('/password/request-reset', requestPasswordReset);
+authRouter.post('/password/confirm-reset', verifyOtpAndResetPassword);
 
 authRouter.post('/password/forgot/request', requestForgotPassword);
 authRouter.post('/password/forgot/verify', verifyForgotPassword);

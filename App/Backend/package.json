@@ -19,10 +19,7 @@
   "author": "Team Project Group",
   "license": "ISC",
   "dependencies": {
-<<<<<<< HEAD
     "axios": "^1.13.1",
-=======
->>>>>>> authentication
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
@@ -33,10 +30,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.2",
-<<<<<<< HEAD
-=======
     "nodemailer": "^7.0.10",
->>>>>>> authentication
     "validator": "^13.15.15"
   },
   "devDependencies": {

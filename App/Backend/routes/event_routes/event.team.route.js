@@ -1,5 +1,5 @@
 import { Router } from "express";
-import auth from "../middleware/auth.middleware.js";
+import auth from "../../middleware/auth.middleware.js";
 import {
   createTeamForEvent,
   getAllUserDetails,
@@ -10,7 +10,7 @@ import {
   getTeamList,
   removeTeam,
   updateTeam 
-} from "../controllers/event_controllers/event.team.controller.js";
+} from "../../controllers/organizer_controllers/event.team.controller.js";
 
 const { authentication, authorizeRoles } = auth;
 

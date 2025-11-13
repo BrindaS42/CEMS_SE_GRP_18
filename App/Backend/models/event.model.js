@@ -4,6 +4,7 @@ const EventSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String },
     categoryTags: [String],
+    college : { type: mongoose.Schema.Types.ObjectId, ref: "College", required: true },
     ruleBook: { type: String }, 
     posterUrl: { type: String },
     poc: { name: String, contact: String },

@@ -27,8 +27,15 @@ const userSchema = new mongoose.Schema(
     
     username: {
       type: String,
-      required: true,
-      unique: true,
+    },
+    passwordResetTokenExpires: {
+      type: Date,
+    },
+    passwordForgotToken: {
+      type: String,
+    },
+    passwordForgotTokenExpires: {
+      type: Date,
     },
     role: {
       type: String,
@@ -40,12 +47,20 @@ const userSchema = new mongoose.Schema(
       enum: ["jwt", "google", "github"],
       default: "jwt",
     },
-    
-    email: { type: String, required: true, unique: false },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: false 
+    },
+    college : { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "College", 
+      required: true 
+    },
     passwordHash: { type: String },
 
     profile: {
-      name: { type: String, required: false },
+      name: { type: String, required: true },
       profilePic: { type: String },
       contactNo: { type: String },
       linkedin: { type: String },
@@ -62,7 +77,6 @@ const userSchema = new mongoose.Schema(
       ],
       resume: { type: String },
     },
-
     linkedRoles: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     roleTag: { type: String },
@@ -87,6 +101,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.index({ email: 1, role: 1 }, { unique: true });
 
 const User = mongoose.model("User", userSchema);
 export default User;

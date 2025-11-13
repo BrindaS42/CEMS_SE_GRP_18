@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 
-export const getOrganizerProfile = async (req, res) => {
-  try {
+export const getUserProfile = async (req, res) => {
+   try {
     const userId = req.user?.id;
     const user = await User.findById(userId).select("profile");
     if (!user) {
@@ -9,12 +9,12 @@ export const getOrganizerProfile = async (req, res) => {
     }
     return res.status(200).json(user.profile || {});
   } catch (error) {
-    console.error("getOrganizerProfile error", error);
+    console.error("getUserProfile error", error);
     return res.status(500).json({ error: "Failed to fetch profile" });
   }
 };
 
-export const updateOrganizerProfile = async (req, res) => {
+export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
     const incomingProfile = req.body || {};
@@ -32,9 +32,7 @@ export const updateOrganizerProfile = async (req, res) => {
 
     return res.status(200).json(updatedUser.profile || {});
   } catch (error) {
-    console.error("updateOrganizerProfile error", error);
+    console.error("updateUserProfile error", error);
     return res.status(500).json({ error: "Failed to update profile" });
   }
 };
-
-

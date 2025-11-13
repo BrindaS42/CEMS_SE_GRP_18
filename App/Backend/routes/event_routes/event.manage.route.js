@@ -5,9 +5,9 @@ import {
   editEvent,
   deleteEvent,
   getEventById
-} from "../controllers/event_controllers/event.manage.controller.js";
-import { saveEventLocation, getEventLocation } from "../controllers/event_controllers/map_annotator.controller.js"
-import authMiddleware from '../middleware/auth.middleware.js'; 
+} from "../../controllers/organizer_controllers/event.manage.controller.js";
+import { saveEventLocation, getEventLocation } from "../../controllers/event_controllers/map_annotator.controller.js"
+import authMiddleware from '../../middleware/auth.middleware.js'; 
 const { authentication, authorizeRoles } = authMiddleware;
 
 import { 
@@ -19,7 +19,7 @@ import {
     addAnnouncement, 
     editAnnouncement, 
     deleteAnnouncement
-} from '../controllers/event_controllers/dashboard.controller.js';
+} from '../../controllers/organizer_controllers/organizer.dashboard.controller.js';
 const router = express.Router();
 router.post("/:eventId/location", saveEventLocation);
 router.get("/:eventId/location", getEventLocation);

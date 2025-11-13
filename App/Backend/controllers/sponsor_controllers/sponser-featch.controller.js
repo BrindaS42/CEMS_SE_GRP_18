@@ -2,7 +2,8 @@ import SponsorAd from "../../models/sponsorAd.model.js";
 
 export const GetAllSponsorNameDescpNoOfEsponsred = async (req, res) => {
     try {
-
+        const { role } = req.user;
+        
         const sponsors = await SponsorAd.aggregate([
             {
                 $group: {

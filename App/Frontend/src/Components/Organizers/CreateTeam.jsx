@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Badge } from '../ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components new/ui/card.js';
+import { Button } from '../../../components new/ui/button.js';
+import { Input } from '../../../components new/ui/input.js';
+import { Textarea } from '../../../components new/ui/textarea.js';
+import { Label } from '../../../components new/ui/label.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components new/ui/select.js';
+import { Badge } from '../../../components new/ui/badge.js';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../../components new/ui/alert-dialog.js';
 import { Users, Crown, UserPlus, Trash2, Shield, Eye, Edit } from 'lucide-react';
 import { toast } from 'sonner';
-import { createTeam, fetchUsers, fetchTeamList, setDraftTeamMeta, addDraftMember, removeDraftMember, changeDraftMemberRole, inviteMember, clearDraft } from '../../Store/team.slice.js';
+import { createTeam, fetchUsers, fetchTeamList, setDraftTeamMeta, addDraftMember, removeDraftMember, changeDraftMemberRole, inviteMember, clearDraft } from '../../store/team.slice.js';
 
 export default function CreateTeam() {
   const dispatch = useDispatch();

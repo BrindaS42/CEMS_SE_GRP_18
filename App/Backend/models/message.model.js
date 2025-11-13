@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-<<<<<<< HEAD
 const InboxEntitySchema = new mongoose.Schema({
   type: {
     type: String,
@@ -26,25 +25,5 @@ const InboxEntitySchema = new mongoose.Schema({
   role: { type: String },
 }, { timestamps: true });
 
-module.exports = mongoose.model("InboxEntity", InboxEntitySchema);
-=======
-const MessageSchema = new mongoose.Schema({
-  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  receiver: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // direct msg
-  event: { type: mongoose.Schema.Types.ObjectId, ref: "Event" }, // linked event if any
-  subject: { type: String },
-  message: { type: String, required: true },
-  attachments: [String],
-  type: {
-    type: String,
-    enum: ["general", "announcement", "invitation"],
-    default: "general",
-  },
-  createdAt: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false },
-});
-
-const Message = mongoose.model("Message", MessageSchema);
-
-export default Message;
->>>>>>> authentication
+const InboxEntity = mongoose.model("InboxEntity", InboxEntitySchema);
+export default InboxEntity;

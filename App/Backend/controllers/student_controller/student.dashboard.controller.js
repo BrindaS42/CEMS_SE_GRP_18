@@ -1,6 +1,6 @@
-import Registration from "../../models/registration.model";
-import Event from "../../models/event.model"
-import StudentTeam from "../models/studentTeam.model";
+import Registration from "../../models/registration.model.js";
+import Event from "../../models/event.model.js"
+import StudentTeam from "../../models/studentTeam.model.js";
 
 export const FetchTheListOfRegisteredEventsByPID = async ( req , res ) => {
     try {

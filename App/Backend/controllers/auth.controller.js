@@ -4,9 +4,10 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import transporter from '../config/nodemailer.js';
 import { randomInt } from 'crypto';
+import mongoose from 'mongoose';
 
 const generateTokenAndSetCookie = (res, user) => {
-  const token = jwt.sign({ id: user._id, username: user.username, role: user.role }, process.env.JWTKEY, {
+  const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, process.env.JWTKEY, {
     expiresIn: '7d',
   });
 
@@ -22,20 +23,34 @@ const generateTokenAndSetCookie = (res, user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    const { username, email, password, college, role } = req.body;
 
-    if (!username || !email || !password || !role) {
+    if (!username || !email || !password || !college || !role) {
       return res.status(400).json({ success: false , message: 'All fields are required' });
     }
 
-    const existingUser = await User.findOne({ username });
+    // Validate college ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(college)) {
+      return res.status(400).json({ success: false, message: 'Invalid college selection' });
+    }
+
+    // Check if user already exists with same email and role
+    const existingUser = await User.findOne({ email, role });
     if (existingUser) {
-      return res.status(409).json({ success: false ,message: 'Username already in use' });
+      return res.status(409).json({ success: false, message: 'User with this email and role already exists' });
     }
 
     const passwordHash = await bcrypt.hash(password, Number(process.env.HASHROUND));
 
-    const user = await User.create({ username, email, passwordHash, role });
+    const user = await User.create({ 
+      email, 
+      passwordHash, 
+      role, 
+      college,
+      profile: {
+        name: username
+      }
+    });
 
     const token = generateTokenAndSetCookie(res, user);
 
@@ -45,26 +60,26 @@ export const register = async (req, res) => {
       token,
       user: {
         id: user._id,
-        username: user.username,
-        role: user.role,
         email: user.email,
+        role: user.role,
+        college: user.college,
+        profile: user.profile,
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error('Registration error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 export const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required' });
+    const { email, password, role } = req.body;
+    if (!email || !password || !role) {
+      return res.status(400).json({ success: false, message: 'Email, password, and role are required' });
     }
 
-    const user = await User.findOne({ username });
-
+    const user = await User.findOne({ email, role });
     const isMatch = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
     if (!user || !isMatch) {
@@ -79,9 +94,10 @@ export const login = async (req, res) => {
       token,
       user: {
         id: user._id,
-        username: user.username,
-        role: user.role,
         email: user.email,
+        role: user.role,
+        college: user.college,
+        profile: user.profile,
       },
     });
   } catch (err) {
@@ -108,11 +124,25 @@ export const logout = async (req, res) => {
 
 export const requestPasswordReset = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    const { email, role } = req.body;
+    
+    // If user is authenticated, get from token, otherwise require email/role
+    let user;
+    if (req.user && req.user.id) {
+      // Authenticated user
+      user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+    } else {
+      if (!email || !role) {
+        return res.status(400).json({ success: false, message: "Email and role are required" });
+      }
+      
+      user = await User.findOne({ email, role });
+      if (!user) {
+        return res.status(200).json({ success: true, message: "If an account with that email and role exists, an OTP has been sent." });
+      }
     }
 
     const toEmail = user.email;
@@ -125,44 +155,42 @@ export const requestPasswordReset = async (req, res) => {
       return res.status(400).json({ success: false, message: "An OTP has already been sent. Please check your email." });
     }
 
-    const otp = randomInt(100000, 1000000).toString();
-    const otpExpires = new Date(now + 10 * 60 * 1000); // 10 minutes from now
+    const otp = randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     user.passwordResetToken = otp;
-    user.passwordResetTokenExpires = otpExpires;
+    user.passwordResetTokenExpires = expiresAt;
     await user.save();
 
     const mailOptions = {
-      from: `"Campus Event Manager" <${process.env.GMAIL_USER}>`,
+      from: process.env.EMAIL_USER,
       to: toEmail,
-      subject: "Password Reset OTP - Campus Event Manager",
+      subject: 'Password Reset OTP - Campus Event Manager',
       html: `
-        <div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; color: #333; background-color: #f4f4f4; padding: 20px; margin: 0;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <tr>
-              <td style="padding: 40px 30px;">
-                <h1 style="font-size: 24px; color: #222; margin-top: 0;">Password Reset Request</h1>
-                <p style="margin-bottom: 25px; line-height: 1.5;">
-                  You requested a password reset. Please use the following One-Time Password (OTP) to proceed.
-                </p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <span style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #007bff; padding: 15px 25px; border: 2px dashed #007bff; border-radius: 8px;">
-                    ${otp}
-                  </span>
-                </div>
-                
-                <p style="margin-top: 25px; margin-bottom: 25px; line-height: 1.5;">
-                  This OTP is valid for <strong>10 minutes</strong>.
-                </p>
-                <p style="font-size: 14px; color: #777; line-height: 1.5;">
-                  If you did not request this, you can safely ignore this email.
-                </p>
-              </td>
-            </tr>
-          </table>
-          <div style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
-            © ${new Date().getFullYear()} Campus Event Manager. All rights reserved.
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Request</h1>
+          </div>
+          
+          <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Hello ${user.profile.name},</p>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+              You have requested to reset your password. Please use the following OTP to proceed:
+            </p>
+            
+            <div style="background: #f8f9fa; border: 2px dashed #667eea; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+              <h2 style="color: #667eea; font-size: 32px; margin: 0; letter-spacing: 5px;">${otp}</h2>
+              <p style="color: #666; margin: 10px 0 0 0; font-size: 14px;">This OTP will expire in 10 minutes</p>
+            </div>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">
+              If you didn't request this password reset, please ignore this email or contact support if you have concerns.
+            </p>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #999; font-size: 12px;">
+              © ${new Date().getFullYear()} Campus Event Manager. All rights reserved.
+            </div>
           </div>
         </div>
       `,
@@ -170,7 +198,7 @@ export const requestPasswordReset = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ success: true, message: "OTP sent to your email successfully." });
+    res.status(200).json({ success: true, message: "OTP sent to your email successfully" });
 
   } catch (err) {
     console.error("Error in requestPasswordReset:", err);
@@ -178,32 +206,41 @@ export const requestPasswordReset = async (req, res) => {
   }
 };
 
-export const verifyOtpAndResetPassword = async (req , res) =>{
-  try{
-    const {otp , newPassword} = req.body;
-    const userid = req.user.id;
+export const verifyOtpAndResetPassword = async (req, res) => {
+  try {
+    const { otp, newPassword, email, role } = req.body;
 
-    if(!otp || !newPassword){
-      return res.json({success:false , message : "fill details"});
+    if (!otp || !newPassword) {
+      return res.status(400).json({ success: false, message: "OTP and new password are required" });
     }
     
-    const user = await User.findById(userid);
+    let user;
+    if (req.user && req.user.id) {
+      // Authenticated user
+      user = await User.findById(req.user.id);
+    } else {
+      // Non-authenticated user - require email and role
+      if (!email || !role) {
+        return res.status(400).json({ success: false, message: "Email and role are required" });
+      }
+      user = await User.findOne({ email, role });
+    }
     
-    if(!user){
-      return res.json({success:false , message : "user does not exist"});
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User not found" });
     }
     
     const now = Date.now();
 
-    if(!user.passwordResetToken || !user.passwordResetTokenExpires || user.passwordResetTokenExpires.getTime() < now){
+    if (!user.passwordResetToken || !user.passwordResetTokenExpires || user.passwordResetTokenExpires.getTime() < now) {
       user.passwordResetToken = undefined;
       user.passwordResetTokenExpires = undefined;
       await user.save();
-      return res.json({success:false , message : "OTP is invalid or has expired. Please request another."});
+      return res.status(400).json({ success: false, message: "OTP is invalid or has expired. Please request another." });
     }
 
-    if(otp !== user.passwordResetToken){
-      return res.json({success:false , message : "otp is wrong"});
+    if (otp !== user.passwordResetToken) {
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, Number(process.env.HASHROUND));
@@ -214,11 +251,11 @@ export const verifyOtpAndResetPassword = async (req , res) =>{
     
     await user.save();
 
-    res.json({success:true, message: "Password reset successfully"});
+    res.status(200).json({ success: true, message: "Password reset successfully" });
 
-  }
-  catch (err) {
-    res.json({success:false ,message : err.message});
+  } catch (err) {
+    console.error("Error in verifyOtpAndResetPassword:", err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
 

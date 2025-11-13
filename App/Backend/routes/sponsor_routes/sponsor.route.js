@@ -2,8 +2,8 @@ import express from "express";
 import {
   GetAllSponsorNameDescpNoOfEsponsred,
     GetAllAdsBySpID,
-} from "../controllers/sponsor_controllers/sponser-featch.controller.js";
-import auth from "../middleware/auth.middleware.js";
+} from "../../controllers/sponsor_controllers/sponser-featch.controller.js";
+import auth from "../../middleware/auth.middleware.js";
 const { authentication, authorizeRoles } = auth;
 
 const router = express.Router();
