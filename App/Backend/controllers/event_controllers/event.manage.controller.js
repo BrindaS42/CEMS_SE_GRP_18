@@ -6,6 +6,7 @@ const getEventPayload = (body) => {
     description,
     categoryTags,
     ruleBook,
+<<<<<<< HEAD
     pocName,
     pocPhone, 
     venue,  
@@ -14,6 +15,19 @@ const getEventPayload = (body) => {
     createdBy  
   } = body;
 
+=======
+    // Destructure the flat fields sent from the React form
+    pocName,
+    pocPhone, // We'll use pocPhone for the 'contact' field
+    venue,      // This is the address string
+    venueCoordinates,
+    subEvents,
+    gallery,
+    createdBy   // Don't forget createdBy!
+  } = body;
+
+  // Now, build the nested object that matches your Mongoose schema
+>>>>>>> authentication
   const newEventData = {
     title,
     description,
@@ -24,9 +38,18 @@ const getEventPayload = (body) => {
     createdBy,
     poc: {
       name: pocName,
+<<<<<<< HEAD
       contact: pocPhone, 
     },
     venue,
+=======
+      contact: pocPhone, // Map the flat fields to the nested 'poc' object
+    },
+    venue: {
+      address: venue,
+      coordinates: venueCoordinates, // Map the flat fields to the nested 'venue' object
+    },
+>>>>>>> authentication
   };
 
   return newEventData;

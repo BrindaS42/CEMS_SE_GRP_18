@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 import { useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+=======
+import { useEffect, useRef, useMemo } from "react";
+>>>>>>> authentication
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -25,7 +29,10 @@ L.Icon.Default.mergeOptions({
  function MapControls({ eventId }) {
   const map = useMap();
   const dispatch = useDispatch();
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> authentication
   const { saving, error } = useSelector((s) => s.mapAnnotator);
   const drawnItemsRef = useRef(null);
   const baseMarkerRef = useRef(null);
@@ -90,6 +97,10 @@ L.Icon.Default.mergeOptions({
             const title = titleInput ? titleInput.value : "";
             const description = descInput ? descInput.value : "";
             marker._annotation = { title, description };
+<<<<<<< HEAD
+=======
+            // Re-render the popup content to ensure values reflect saved state
+>>>>>>> authentication
             marker.setPopupContent(getPopupHtml());
             marker.openPopup();
           };
@@ -98,6 +109,10 @@ L.Icon.Default.mergeOptions({
         if (deleteBtn) {
           deleteBtn.onclick = (e) => {
             e.preventDefault();
+<<<<<<< HEAD
+=======
+            // If deleting the selected base, clear it
+>>>>>>> authentication
             if (baseMarkerRef.current === marker) {
               baseMarkerRef.current = null;
               baseLatLngRef.current = null;
@@ -121,7 +136,11 @@ L.Icon.Default.mergeOptions({
       return marker;
     };
 
+<<<<<<< HEAD
     // Draw control: only Marker add and deletion enabled via Edit toolbar
+=======
+    // Draw control: only Marker add, and deletion enabled via Edit toolbar
+>>>>>>> authentication
     const drawControl = new L.Control.Draw({
       draw: {
         marker: true,
@@ -138,7 +157,11 @@ L.Icon.Default.mergeOptions({
     });
     map.addControl(drawControl);
 
+<<<<<<< HEAD
     // When a new layer is created add it to the group
+=======
+    // When a new layer is created (e.g., Marker), add it to the group
+>>>>>>> authentication
     const onCreated = (e) => {
       const layer = e.layer;
       drawnItems.addLayer(layer);
@@ -196,12 +219,17 @@ L.Icon.Default.mergeOptions({
         }
       });
       const base = baseLatLngRef.current || map.getCenter();
+<<<<<<< HEAD
       let address = "";
       if (baseMarkerRef.current && baseMarkerRef.current._annotation) {
         address = baseMarkerRef.current._annotation.title || "";
       }
       const location = {
         address: address,
+=======
+      const location = {
+        address: "",
+>>>>>>> authentication
         coordinates: { lat: base.lat, lng: base.lng },
         mapAnnotations,
       };
@@ -209,13 +237,18 @@ L.Icon.Default.mergeOptions({
     };
   }, [map]);
 
+<<<<<<< HEAD
   const onSave = useCallback(async () => {
+=======
+  const onSave = () => {
+>>>>>>> authentication
     if (!eventId) {
       alert("Missing eventId for saving location");
       return;
     }
     const location = savePayload();
     if (!location) return;
+<<<<<<< HEAD
 
     try {
       await dispatch(saveEventLocation({ eventId, location })).unwrap();
@@ -225,6 +258,10 @@ L.Icon.Default.mergeOptions({
       alert(`Failed to save location: ${rejectedValue}`);
     }
   }, [eventId, dispatch, navigate, savePayload]);
+=======
+    dispatch(saveEventLocation({ eventId, location }));
+  };
+>>>>>>> authentication
 
   // Save button overlay
   useEffect(() => {
@@ -260,13 +297,21 @@ L.Icon.Default.mergeOptions({
       btn.removeEventListener('click', onClick);
       map.removeControl(saveControl);
     };
+<<<<<<< HEAD
   }, [map, saving, onSave]);
+=======
+  }, [map, saving]);
+>>>>>>> authentication
 
   return null;
 }
 
+<<<<<<< HEAD
 export default function MapWindow() {
   const { eventId } = useParams();
+=======
+export default function MapWindow({ eventId }) {
+>>>>>>> authentication
   return (
     <div className="h-screen w-full">
       <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>

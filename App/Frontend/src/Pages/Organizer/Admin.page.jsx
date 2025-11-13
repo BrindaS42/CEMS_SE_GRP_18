@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import CreateTeam from '../../Components/Organizers/CreateTeam.jsx'
 import EventForm from '../../Components/Organizers/EventForm.jsx'
+<<<<<<< HEAD
 import EventLocationList from '../../Components/Organizers/EventLocationList.jsx'
+=======
+>>>>>>> authentication
 
 export default function AdminPage() {
   const location = useLocation()
@@ -32,19 +35,25 @@ export default function AdminPage() {
           >
             Create Team
           </Link>
+<<<<<<< HEAD
           <Link
             to="/admin?tab=add-location"
             className={`px-4 py-2 rounded border ${currentTab === 'add-location' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-800'}`}
           >
             Add Location
           </Link>
+=======
+>>>>>>> authentication
         </div>
       </div>
 
       <div>
         {currentTab === 'create-event' && <EventForm />}
         {currentTab === 'create-team' && <CreateTeam />}
+<<<<<<< HEAD
         {currentTab === 'add-location' && <EventLocationList />}
+=======
+>>>>>>> authentication
       </div>
     </div>
   )

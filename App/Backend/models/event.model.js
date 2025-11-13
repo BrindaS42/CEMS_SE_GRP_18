@@ -97,5 +97,4 @@ status : { type: String, enum: ["Pending", "Approved", "Reject"], default: "Pend
 });
 
 const Event = mongoose.model("Event", EventSchema);
-
 export default Event;

@@ -7,7 +7,11 @@ export const fetchEventLocation = createAsyncThunk(
   "mapAnnotator/fetchEventLocation",
   async (eventId, { rejectWithValue }) => {
     try {
+<<<<<<< HEAD
       const url = `${API_BASE}/event/${encodeURIComponent(eventId)}/location`;
+=======
+      const url = `${API_BASE}/events/${encodeURIComponent(eventId)}/location`;
+>>>>>>> authentication
       const { data } = await axios.get(url);
       return data?.location || null;
     } catch (err) {
@@ -21,7 +25,11 @@ export const saveEventLocation = createAsyncThunk(
   "mapAnnotator/saveEventLocation",
   async ({ eventId, location }, { rejectWithValue }) => {
     try {
+<<<<<<< HEAD
       const url = `${API_BASE}/event/${encodeURIComponent(eventId)}/location`;
+=======
+      const url = `${API_BASE}/events/${encodeURIComponent(eventId)}/location`;
+>>>>>>> authentication
       const { data } = await axios.post(url, { location });
       return data;
     } catch (err) {

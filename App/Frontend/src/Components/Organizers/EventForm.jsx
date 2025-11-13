@@ -13,6 +13,10 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Badge } from "../ui/badge";
 import { Alert, AlertDescription } from "../ui/alert";
+<<<<<<< HEAD
+=======
+import { MapLocationPicker } from "./Admin_Panel/MapLocationPicker";
+>>>>>>> authentication
 import { CustomFormFieldsBuilder } from "./Admin_Panel/CustomFormFieldsBuilder";
 import { CustomFieldsPreview } from "./Admin_Panel/CustomFieldsPreview";
 import { useAutoSave } from "../../hooks/useAutoSave";
@@ -95,7 +99,11 @@ export default function EventForm() {
   const [selectedTeamName, setSelectedTeamName] = useState("");
   const { teamList } = useSelector((state) => state.team);
   const { eventId } = useParams();
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+  const navigate = useNavigate();   
+>>>>>>> authentication
   const posterInputRef = useRef(null);
   const ruleBookInputRef = useRef(null);
   const qrCodeInputRef = useRef(null);
@@ -118,8 +126,12 @@ export default function EventForm() {
       category: [],
       createdBy: '',
       customFields: [],
+<<<<<<< HEAD
       id: '',
       venue: '',
+=======
+      id: ''
+>>>>>>> authentication
     }
   });
 
@@ -155,7 +167,11 @@ export default function EventForm() {
   const watchCustomFields = watch("customFields");
 
   useEffect(() => {
+<<<<<<< HEAD
     dispatch(fetchTeamList());
+=======
+    dispatch(fetchTeamList()); 
+>>>>>>> authentication
 
     if (eventId) {
       // If we are in EDIT mode, fetch the event data
@@ -167,8 +183,15 @@ export default function EventForm() {
             ...eventData,
             pocName: eventData.poc?.name,
             pocPhone: eventData.poc?.contact,
+<<<<<<< HEAD
           };
 
+=======
+            venue: eventData.venue?.address,
+            venueCoordinates: eventData.venue?.coordinates,
+          };
+          
+>>>>>>> authentication
           // Format dates correctly for <input type="date">
           if (flatData.eventDate) flatData.eventDate = new Date(flatData.eventDate).toISOString().split('T')[0];
           if (flatData.registrationDeadline) flatData.registrationDeadline = new Date(flatData.registrationDeadline).toISOString().split('T')[0];
@@ -242,6 +265,14 @@ export default function EventForm() {
     setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+<<<<<<< HEAD
+=======
+  const handleLocationSelect = (location) => {
+    setValue("venue", location.address);
+    setValue("venueCoordinates", location.coordinates);
+  };
+
+>>>>>>> authentication
   const handleRestoreData = () => {
     const result = restoreData();
     if (result.restored) {
@@ -265,10 +296,17 @@ export default function EventForm() {
     toast.error("Please fill all required fields before proceeding.");
   };
 
+<<<<<<< HEAD
 
   const handleSaveDraftClick = async () => {
     const payload = getValues();
 
+=======
+ 
+  const handleSaveDraftClick = async () => {
+    const payload = getValues(); 
+    
+>>>>>>> authentication
     try {
       const resultAction = await dispatch(createEventDraft(payload)).unwrap();
       const newOrUpdatedEvent = resultAction.event;
@@ -284,6 +322,7 @@ export default function EventForm() {
   const handlePublishClick = () => {
     handleSubmit(() => setShowPublishDialog(true), onFormError)();
   };
+<<<<<<< HEAD
 
   const processSubmit = async () => {
     const payload = getValues();
@@ -300,6 +339,23 @@ export default function EventForm() {
     }
   };
 
+=======
+  
+  const processSubmit = async () => {
+    const payload = getValues(); 
+    
+    try {
+      const resultAction = await dispatch(publishEvent(payload)).unwrap();
+      toast.success(resultAction.message);
+      setShowPublishDialog(false); 
+      
+    } catch (error) {
+      toast.error('Failed to publish event.');
+    } finally {
+      navigate('/dashboard');     }
+  };
+ 
+>>>>>>> authentication
 
   return (
     <div className="min-h-screen p-6 space-y-6 bg-gradient-to-br from-white to-slate-50">
@@ -873,6 +929,7 @@ export default function EventForm() {
             </div>
 
             {/* Address/Venue */}
+<<<<<<< HEAD
             <div className="space-y-2">
               <Label htmlFor="venue">Event Venue *</Label>
               <div className="relative">
@@ -884,6 +941,19 @@ export default function EventForm() {
                   className={`pl-10 ${errors.venue ? "border-destructive" : ""}`}
                 />
               </div>
+=======
+            <div className="space-y-3">
+              <Label className="text-base">Event Venue</Label>
+              <MapLocationPicker
+                onLocationSelect={handleLocationSelect}
+                initialAddress={watch("venue")}
+                initialCoordinates={watch("venueCoordinates")}
+              />
+              <input
+                type="hidden"
+                {...register("venue", { required: "Venue address is required" })}
+              />
+>>>>>>> authentication
               {errors.venue && (
                 <p className="text-sm text-destructive">{errors.venue.message}</p>
               )}

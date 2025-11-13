@@ -4,12 +4,21 @@ export const saveEventLocation = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { location } = req.body;
+<<<<<<< HEAD
+=======
+
+>>>>>>> authentication
     if (!eventId) {
       return res.status(400).json({ message: "Missing eventId" });
     }
     if (!location || typeof location !== 'object') {
       return res.status(400).json({ message: "Invalid location payload" });
     }
+<<<<<<< HEAD
+=======
+
+    // Normalize mapAnnotations to schema shape
+>>>>>>> authentication
     const mapAnnotations = Array.isArray(location.mapAnnotations) ? location.mapAnnotations.map((a) => ({
       label: a.label || "",
       description: a.description || "",
@@ -32,10 +41,18 @@ export const saveEventLocation = async (req, res) => {
       },
       updatedAt: new Date(),
     };
+<<<<<<< HEAD
+=======
+
+>>>>>>> authentication
     const event = await Event.findByIdAndUpdate(eventId, update, { new: true });
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> authentication
     return res.json({ message: "Location saved", event });
   } catch (err) {
     console.error("saveEventLocation error:", err);
