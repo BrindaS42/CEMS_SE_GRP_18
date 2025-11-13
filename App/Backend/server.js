@@ -13,7 +13,7 @@ import teamRouter from './routes/event.team.route.js';
 import eventManageRouter from './routes/event.manage.route.js';
 import aiRouter from './routes/ai.route.js';
 import sponsorRoutes from "./routes/sponsor.route.js";
-
+import inboxRoute from "./routes/inbox.route.js";
 
 const app = express();
 dotenv.config();
@@ -38,6 +38,7 @@ app.use('/api/team', teamRouter);
 app.use('/api/event', eventManageRouter);
 app.use('/api/ai', aiRouter); 
 app.use("/api/sponsors", sponsorRoutes);
+app.use("/api/inbox", inboxRoute);
 
 
 app.get("/", authentication, authorizeRoles("student","organizer"), (req, res) => {
