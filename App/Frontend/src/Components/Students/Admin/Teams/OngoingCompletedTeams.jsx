@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import { Users, Calendar, CheckCircle, Clock, Eye } from 'lucide-react';
-import { Button } from '../../../../components/ui/button';
-import { Badge } from '../../../../components/ui/badge';
-import { cn } from '../../../../components/ui/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/components/ui/utils';
 import { useState } from 'react';
 
 // Mock data - replace with actual API data

@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Eye, Edit, Calendar, Clock } from 'lucide-react';
 import { RegistrationConfigModal } from './RegistrationConfigModal';
 import { RegistrationPreviewModal } from './RegistrationPreviewModal';

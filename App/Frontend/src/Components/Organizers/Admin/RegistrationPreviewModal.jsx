@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CreditCard, Users, User, FileText } from 'lucide-react';
 
 // Mock data - in real app, fetch this from backend

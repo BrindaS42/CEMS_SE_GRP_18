@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TimelineReminders } from './ActivityCenter/TimelineReminders';
 import { ClashDetection } from './ActivityCenter/ClashDetection';
-import { SegmentedControl } from '../../components/ui/segmented-control';
+import { SegmentedControl } from '../ui/segmented-control';
 
 export function ActivityCenterTab() {
   const [activeSubTab, setActiveSubTab] = useState('timeline');

@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../../components/ui/dialog';
-import { Button } from '../../../../components/ui/button';
-import { Label } from '../../../../components/ui/label';
-import { Textarea } from '../../../../components/ui/textarea';
-import { Calendar } from '../../../../components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../../components/ui/popover';
-import { Input } from '../../../../components/ui/input';
-import { Card, CardContent } from '../../../../components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calender';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarIcon, Clock, User, Edit2, X } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export function EditAnnouncementModal({
   open,

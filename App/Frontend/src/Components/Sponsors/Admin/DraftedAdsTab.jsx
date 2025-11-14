@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Button } from '../../../components/ui/button';
-import { Card } from '../../../components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Edit, Trash2, Send, Calendar } from 'lucide-react';
 import { CreateAdModal } from './CreateAdModal';
 import {
@@ -13,8 +13,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
-import { toast } from 'sonner@2.0.3';
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 // Proptype shape for SponsorAd
 const sponsorAdShape = PropTypes.shape({

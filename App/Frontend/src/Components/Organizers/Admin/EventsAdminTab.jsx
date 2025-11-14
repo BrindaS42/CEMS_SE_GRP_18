@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DraftedEventsTab } from './DraftedEventsTab';
 import { PublishedEventsTab } from './PublishedEventsTab';
@@ -8,10 +8,9 @@ import { OngoingEventsTab } from './OngoingEventsTab';
 import { CompletedEventsTab } from './CompletedEventsTab';
 import { CreateEventModal } from './CreateEventModal';
 // Assuming CURRENT_USER_EMAIL is imported from App, but adding a fallback
-import { CURRENT_USER_EMAIL as AppUserEmail } from '../../../App';
-import { SegmentedControl } from '../../../components/ui/segmented-control';
+import { CURRENT_USER_EMAIL as AppUserEmail } from '@/App';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
-const CURRENT_USER_EMAIL = AppUserEmail || "default@example.com";
 
 export function EventsAdminTab({ 
   onCreateEvent, 

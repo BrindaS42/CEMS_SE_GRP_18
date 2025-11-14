@@ -15,7 +15,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { sponsorService } from '../../services/sponsorService';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const SponsorsPage = () => {
   const navigate = useNavigate();

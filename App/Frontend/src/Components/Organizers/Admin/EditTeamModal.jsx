@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Plus, X, CheckCircle, XCircle, Trash2, Crown } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
@@ -17,10 +17,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
-import { Badge } from '../../../components/ui/badge';
+} from '@/components/ui/alert-dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 
 // Mock user database for name search
 const USER_DATABASE = [

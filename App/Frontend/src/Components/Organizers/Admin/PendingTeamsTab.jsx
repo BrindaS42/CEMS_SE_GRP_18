@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { ScrollArea } from '../../../components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, CheckCircle, XCircle, Edit, AlertCircle, Trash2, Eye } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 import { ViewTeamModal } from './ViewTeamModal';
 
 export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTeam }) {

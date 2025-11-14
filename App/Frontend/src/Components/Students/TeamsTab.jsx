@@ -1,8 +1,8 @@
 import { Users, Calendar, Crown, User, CheckCircle, Clock } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { cn } from '../../components/ui/utils';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { cn } from '../ui/utils';
 
 // Mock data - replace with actual API data
 const teams = [

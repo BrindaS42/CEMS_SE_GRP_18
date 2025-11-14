@@ -7,35 +7,44 @@ import { HomePage } from './Pages/HomePage.jsx';
 import { LoginPage } from './Pages/Authentication/LoginPage.jsx';
 import { RegisterPage } from './Pages/Authentication/RegisterPage.jsx';
 import { ForgotPasswordPage } from './Pages/Authentication/ForgotPasswordPage';
-import ChangePasswordPage  from './Pages/Authentication/ChangePasswordPage.jsx';
+import ChangePasswordPage from './Pages/Authentication/ChangePasswordPage.jsx';
 import { CollegeRegistrationPage } from './Pages/Authentication/CollegeRegistrationPage.jsx';
-// import { EventListingPage } from './Pages/EventListingPage.jsx';
-// import { EventDetailsPage } from './Pages/EventDetailsPage.jsx';
-// import { InboxPage } from './Pages/InboxPage.jsx';
-// import { ProfilePage } from './Pages/ProfilePage.jsx';
-// import { SponsorListingPage } from './Pages/SponsorListingPage.jsx';
-// import OrganizerProfile from "./Pages/Organizer/Profile.page.jsx";
-// import Sidebar from "./Components/general/sidebar.jsx";
-// import Dashboard from './Pages/Organizer/Dashboard.page.jsx';
-// import AdminPage from './Pages/Organizer/Admin.page.jsx';
-// import EventForm from './Components/Organizers/EventForm.jsx';
-// import MapWindow from './Components/EventComponents/Map/mapWindow.jsx';
-import { fetchUserProfile } from './store/profile.slice.js';
+import { InboxPage } from './Pages/InboxPage.jsx';
+import { ProfilePage } from './Pages/ProfilePage.jsx';
+import { SettingsPage } from './Pages/SettingsPage.jsx';
+import { fetchAuthProfile } from './store/auth.slice.js';
+import StudentDashboard from './Pages/Student/Dashboard.page.jsx';
+import StudentAdminPanel from './Pages/Student/AdminPanel.page.jsx';
+import SponsorDashboard from './Pages/Sponsor/Dashboard.page.jsx';
+import SponsorAdminPanel from './Pages/Sponsor/AdminPanel.page.jsx';
+import OrganizerDashboard from './Pages/Organizer/Dashboard.page.jsx';
+import OrganizerAdminPanel from './Pages/Organizer/AdminPanel.page.jsx';
+import AdminControlPanel from './Pages/Admin/ControlPanel.page.jsx';
 
 // Protected Route Component
-// const ProtectedRoute = ({ children }) => {
-//   const { isAuthenticated, isLoading } = useSelector((state) => state.auth);
+const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-//   if (isLoading) {
-//     return (
-//       <div className="min-h-screen flex items-center justify-center">
-//         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600"></div>
-//       </div>
-//     );
-//   }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-//   return <>{children}</>;
-// };
+  // If allowedRoles is specified, check if user has the required role
+  if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on user role
+    const roleRedirects = {
+      student: '/student/dashboard',
+      organizer: '/organizer/dashboard',
+      sponsor: '/sponsor/dashboard',
+      admin: '/admin/control-panel',
+    };
+    return <Navigate to={roleRedirects[user.role] || '/'} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+
 
 // App Layout for new UI
 const AppLayout = ({ children }) => {
@@ -48,24 +57,16 @@ const AppLayout = ({ children }) => {
   );
 };
 
-// Organizer Layout (existing)
-// const OrganizerLayout = ({ children }) => {
-//   return (
-//     <div className="flex min-h-screen">
-//       <Sidebar />
-//       <div className="flex-1 bg-gray-100 p-8 overflow-y-auto">{children}</div>
-//     </div>
-//   );
-// };
+
 
 // App Routes Component
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = sessionStorage.getItem('token');
     if (token) {
-      dispatch(fetchUserProfile());
+      dispatch(fetchAuthProfile());
     }
   }, [dispatch]);
 
@@ -77,7 +78,7 @@ const AppRoutes = () => {
       <Route path="/events/:id" element={<EventDetailsPage />} />
       <Route path="/sponsors" element={<SponsorListingPage />} /> */}
       <Route path="/register-college" element={<CollegeRegistrationPage />} />
-      
+
       {/* Auth Routes */}
       <Route
         path="/login"
@@ -89,8 +90,9 @@ const AppRoutes = () => {
       />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/change-password" element={<ChangePasswordPage />} />
-      
-      {/* <Route
+
+      {/* Common Protected Routes */}
+      <Route
         path="/inbox"
         element={
           <ProtectedRoute>
@@ -107,60 +109,80 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/profile/:id"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/settings"
         element={
           <ProtectedRoute>
-            <div className="min-h-screen pt-20 pb-12">
-              <p className="text-center text-gray-600">Settings page loaded successfully!</p>
-            </div>
+            <SettingsPage />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
-      {/* Organizer Routes - Existing UI with Sidebar */}
-      {/* <Route path="/organizer/profile" element={isAuthenticated ? <OrganizerLayout><OrganizerProfile /></OrganizerLayout> : <Navigate to="/login" replace />} />
-      <Route path="/organizer/dashboard" element={isAuthenticated ? <OrganizerLayout><Dashboard /></OrganizerLayout> : <Navigate to="/login" replace />} />
-      <Route path="/admin" element={isAuthenticated ? <OrganizerLayout><AdminPage /></OrganizerLayout> : <Navigate to="/login" replace />} />
+      {/* Student Routes */}
       <Route
-        path="/admin/events/:eventId"
-        element={isAuthenticated ? <OrganizerLayout><EventForm /></OrganizerLayout> : <Navigate to="/login" replace />}
+        path="/student/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        }
       />
       <Route
-        path="/admin/add-location/:eventId"
-        element={isAuthenticated ? <OrganizerLayout><MapWindow /></OrganizerLayout> : <Navigate to="/login" replace />}
-      /> */}
-
-      {/* Dashboard Route */}
-      {/* <Route
-        path="/dashboard"
+        path="/student/admin"
         element={
-          <ProtectedRoute>
-            <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center py-20">
-                  <h1 className="text-5xl font-black mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Dashboard
-                  </h1>
-                  <p className="text-xl text-gray-600">
-                    Dashboard page coming soon! 🚀
-                  </p>
-                </div>
-              </div>
-            </div>
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentAdminPanel />
           </ProtectedRoute>
         }
-      /> */}
+      />
+
+      {/* Organizer Routes */}
+      <Route
+        path="/organizer/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['organizer']}>
+            <OrganizerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/organizer/admin"
+        element={
+          <ProtectedRoute allowedRoles={['organizer']}>
+            <OrganizerAdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Sponsor Routes */}
+      <Route
+        path="/sponsor/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['sponsor']}>
+            <SponsorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sponsor/admin"
+        element={
+          <ProtectedRoute allowedRoles={['sponsor']}>
+            <SponsorAdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Routes */}
+      <Route
+        path="/admin/control-panel"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminControlPanel />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
-      {/* <Route
+      <Route
         path="*"
         element={
           <div className="min-h-screen flex items-center justify-center">
@@ -173,7 +195,7 @@ const AppRoutes = () => {
             </div>
           </div>
         }
-      /> */}
+      />
     </Routes>
   );
 };
@@ -181,8 +203,10 @@ const AppRoutes = () => {
 // Main App Component
 export default function App() {
   return (
-        <AppLayout>
-          <AppRoutes />
-        </AppLayout>
+    <AppLayout>
+      <AppRoutes />
+    </AppLayout>
   );
 }
+
+export const CURRENT_USER_EMAIL = "admin@example.com";

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Badge } from '../../../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { X, Ban, Check, Mail, Phone, Building, Calendar, Users, Trophy } from 'lucide-react';
 
 export function ViewUserModal({

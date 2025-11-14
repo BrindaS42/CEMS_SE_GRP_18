@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import { Users, CheckCircle, Clock, XCircle, Edit2 } from 'lucide-react';
-import { Button } from '../../../../components/ui/button';
-import { Badge } from '../../../../components/ui/badge';
-import { cn } from '../../../../components/ui/utils';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/components/ui/utils';
 import { useState } from 'react';
 import {
   AlertDialog,
@@ -13,7 +13,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../../components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 
 // Mock data - replace with actual API data
 const mockPendingTeams = [

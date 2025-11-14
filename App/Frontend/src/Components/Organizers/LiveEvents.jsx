@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import { Calendar, Users, CheckCircle, Download, Eye, FileText } from 'lucide-react';
 
 export function LiveEvents({ events, onViewEvent }) {

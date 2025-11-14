@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { X, Plus, Search, CheckCircle, AlertCircle, User } from 'lucide-react';
-import { cn } from '../../../components/ui/utils';
+import { cn } from '@/components/ui/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 // Mock current user - replace with actual auth context

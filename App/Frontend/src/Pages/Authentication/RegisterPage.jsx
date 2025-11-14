@@ -81,6 +81,10 @@ export const RegisterPage = () => {
   useEffect(() => {
     // clear any previous errors when role changes
     dispatch(clearError?.() ?? (() => {}));
+    // Clear college if not required for the role
+    if (selectedRole !== 'student' && selectedRole !== 'organizer') {
+      setFormData((prev) => ({ ...prev, college: '' }));
+    }
   }, [selectedRole, dispatch]);
 
   const fetchColleges = async () => {
@@ -139,8 +143,12 @@ export const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.password || !formData.college) {
-      toast.error('Please fill in all fields');
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if ((selectedRole === 'student' || selectedRole === 'organizer') && !formData.college) {
+      toast.error('Please select your college');
       return;
     }
     
@@ -284,24 +292,26 @@ export const RegisterPage = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="college">College</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
-                    <Select value={formData.college} onValueChange={handleCollegeChange}>
-                      <SelectTrigger className="pl-10">
-                        <SelectValue placeholder={loadingColleges ? "Loading colleges..." : "Select your college"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colleges.map((college) => (
-                          <SelectItem key={college._id} value={college._id}>
-                            {college.name} ({college.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {(selectedRole === 'student' || selectedRole === 'organizer') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="college">College</Label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
+                      <Select value={formData.college} onValueChange={handleCollegeChange}>
+                        <SelectTrigger className="pl-10">
+                          <SelectValue placeholder={loadingColleges ? "Loading colleges..." : "Select your college"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {colleges.map((college) => (
+                            <SelectItem key={college._id} value={college._id}>
+                              {college.name} ({college.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>

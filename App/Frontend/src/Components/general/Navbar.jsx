@@ -16,7 +16,6 @@ import {
   Briefcase,  
 } from 'lucide-react';
 import { logoutSuccess } from '../../store/auth.slice.js';
-import { messageService } from '../../services/messageService.js';
 import { Button } from '../ui/button.jsx';
 import { Input } from '../ui/input.jsx'; 
 import {

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { AdminSidebar } from '../../Components/Admin/Sidebar';
-import { CollegesTab } from '../../Components/Admin/ControlPanel/CollegesTab';
-import { EventsTab } from '../../Components/Admin/ControlPanel/EventsTab';
-import { UsersTab } from '../../Components/Admin/ControlPanel/UsersTab';
-import { AdsTab } from '../../Components/Admin/ControlPanel/AdsTab';
+import { Sidebar } from '../../components/general/Sidebar';
+import { CollegesTab } from '../../components/Admin/ControlPanel/CollegesTab';
+import { EventsTab } from '../../components/Admin/ControlPanel/EventsTab';
+import { UsersTab } from '../../components/Admin/ControlPanel/UsersTab';
+import { AdsTab } from '../../components/Admin/ControlPanel/AdsTab';
 import { cn } from '../../components/ui/utils';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -224,7 +224,7 @@ export default function ControlPanelPage({
 
   return (
     <div className="flex h-screen bg-background pt-16">
-      <AdminSidebar 
+      <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={onToggleSidebar}
         activePage={activePage}

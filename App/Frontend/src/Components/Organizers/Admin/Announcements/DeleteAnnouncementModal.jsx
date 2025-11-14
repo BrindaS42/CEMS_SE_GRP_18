@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../../components/ui/dialog';
-import { Button } from '../../../../components/ui/button';
-import { Card, CardContent } from '../../../../components/ui/card';
-import { Checkbox } from '../../../../components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Clock, User } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../../../components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog';
 
 export function DeleteAnnouncementModal({
   open,

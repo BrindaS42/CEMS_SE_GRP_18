@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Separator } from '../../../components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   Calendar, 
   Clock, 
@@ -17,7 +17,7 @@ import {
   XCircle,
   Clock3,
 } from 'lucide-react';
-import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
+import { ImageWithFallback } from '../../figma/ImageWithFallback';
 
 export function ViewEventModal({ 
   open, 

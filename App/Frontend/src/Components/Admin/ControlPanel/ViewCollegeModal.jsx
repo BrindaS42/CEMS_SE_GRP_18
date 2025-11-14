@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Badge } from '../../../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { X, Check, Ban } from 'lucide-react';
 
 export function ViewCollegeModal({

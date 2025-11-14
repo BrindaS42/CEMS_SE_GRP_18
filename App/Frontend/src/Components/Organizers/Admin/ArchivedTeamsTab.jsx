@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Archive, Users, Crown, Eye } from 'lucide-react';
 import { ViewTeamModal } from './ViewTeamModal';
 

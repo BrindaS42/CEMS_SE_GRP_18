@@ -25,9 +25,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
     },
     
-    username: {
-      type: String,
-    },
     passwordResetTokenExpires: {
       type: Date,
     },
@@ -55,7 +52,9 @@ const userSchema = new mongoose.Schema(
     college : { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: "College", 
-      required: true 
+      required: function() {
+        return this.role === 'student' || this.role === 'organizer';
+      }
     },
     passwordHash: { type: String },
 

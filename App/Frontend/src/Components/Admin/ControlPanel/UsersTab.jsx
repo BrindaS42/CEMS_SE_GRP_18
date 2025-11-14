@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Search, Eye, Ban, Check, User2, Building } from 'lucide-react';
-import { cn } from '../../../components/ui/utils';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
+import { cn } from '@/components/ui/utils';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ViewUserModal } from './ViewUserModal';
 import { SuspendUserModal } from './SuspendUserModal';
 import { UnsuspendUserModal } from './UnsuspendUserModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { SegmentedControl } from '../../../components/ui/segmented-control';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
 export function UsersTab({ users, onSuspendUser, onUnsuspendUser }) {
   const [activeSubTab, setActiveSubTab] = useState('Registered');

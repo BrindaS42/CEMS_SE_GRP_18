@@ -25,16 +25,18 @@ export const register = async (req, res) => {
   try {
     const { username, email, password, college, role } = req.body;
 
-    if (!username || !email || !password || !college || !role) {
-      return res.status(400).json({ success: false , message: 'All fields are required' });
+    if (!username || !email || !password || !role) {
+      return res.status(400).json({ success: false, message: 'Username, email, password, and role are required' });
     }
 
-    // Validate college ObjectId format
-    if (!mongoose.Types.ObjectId.isValid(college)) {
+    if ((role === 'student' || role === 'organizer') && !college) {
+      return res.status(400).json({ success: false, message: 'College is required for student and organizer roles' });
+    }
+
+    if (college && !mongoose.Types.ObjectId.isValid(college)) {
       return res.status(400).json({ success: false, message: 'Invalid college selection' });
     }
 
-    // Check if user already exists with same email and role
     const existingUser = await User.findOne({ email, role });
     if (existingUser) {
       return res.status(409).json({ success: false, message: 'User with this email and role already exists' });
@@ -42,29 +44,33 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, Number(process.env.HASHROUND));
 
-    const user = await User.create({ 
-      email, 
-      passwordHash, 
-      role, 
-      college,
+    const userData = {
+      email,
+      passwordHash,
+      role,
       profile: {
         name: username
       }
-    });
+    };
 
+    if (role === 'student' || role === 'organizer') {
+      userData.college = college;
+    }
+
+    const user = await User.create(userData);
     const token = generateTokenAndSetCookie(res, user);
+
+    const userObject = user.toObject();
+    userObject.id = userObject._id;
+    delete userObject._id;
+    delete userObject.passwordHash;
+    delete userObject.__v;
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        college: user.college,
-        profile: user.profile,
-      },
+      user: userObject,
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -86,19 +92,19 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    const userObject = user.toObject();
+    userObject.id = userObject._id;
+    delete userObject._id;
+    delete userObject.passwordHash;
+    delete userObject.__v;
+
     const token = generateTokenAndSetCookie(res, user);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        college: user.college,
-        profile: user.profile,
-      },
+      user: userObject,
     });
   } catch (err) {
     console.error(err);
@@ -108,24 +114,24 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie('token',{
-       httpOnly: true,
+    res.clearCookie('token', {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
     });
 
-    res.json({success:true,message:"logout succsefully"});
+    res.json({ success: true, message: "logout succsefully" });
   }
   catch (err) {
-    res.status(500).json({success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 }
 
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email, role } = req.body;
-    
+
     // If user is authenticated, get from token, otherwise require email/role
     let user;
     if (req.user && req.user.id) {
@@ -138,7 +144,7 @@ export const requestPasswordReset = async (req, res) => {
       if (!email || !role) {
         return res.status(400).json({ success: false, message: "Email and role are required" });
       }
-      
+
       user = await User.findOne({ email, role });
       if (!user) {
         return res.status(200).json({ success: true, message: "If an account with that email and role exists, an OTP has been sent." });
@@ -149,7 +155,7 @@ export const requestPasswordReset = async (req, res) => {
     if (!toEmail) {
       return res.status(400).json({ success: false, message: "User email does not exist" });
     }
-    
+
     const now = Date.now();
     if (user.passwordResetToken && user.passwordResetTokenExpires && now < user.passwordResetTokenExpires.getTime()) {
       return res.status(400).json({ success: false, message: "An OTP has already been sent. Please check your email." });
@@ -213,7 +219,7 @@ export const verifyOtpAndResetPassword = async (req, res) => {
     if (!otp || !newPassword) {
       return res.status(400).json({ success: false, message: "OTP and new password are required" });
     }
-    
+
     let user;
     if (req.user && req.user.id) {
       // Authenticated user
@@ -225,11 +231,11 @@ export const verifyOtpAndResetPassword = async (req, res) => {
       }
       user = await User.findOne({ email, role });
     }
-    
+
     if (!user) {
       return res.status(400).json({ success: false, message: "User not found" });
     }
-    
+
     const now = Date.now();
 
     if (!user.passwordResetToken || !user.passwordResetTokenExpires || user.passwordResetTokenExpires.getTime() < now) {
@@ -248,7 +254,7 @@ export const verifyOtpAndResetPassword = async (req, res) => {
     user.passwordHash = passwordHash;
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpires = undefined;
-    
+
     await user.save();
 
     res.status(200).json({ success: true, message: "Password reset successfully" });
@@ -351,7 +357,7 @@ export const verifyOtpForAcc = async (req, res) => {
 
       return res.status(400).json({ success: false, message: "OTP has expired. Please generate a new one." });
     }
-    
+
     if (otp !== user.verificationToken) {
       return res.status(400).json({ success: false, message: "OTP is invalid." });
     }
@@ -469,7 +475,7 @@ export const verifyForgotPassword = async (req, res) => {
     user.passwordHash = passwordHash;
     user.passwordForgotToken = undefined;
     user.passwordForgotTokenExpires = undefined;
-    
+
     await user.save();
 
     res.status(200).json({ success: true, message: "Password reset successfully. You can now log in." });

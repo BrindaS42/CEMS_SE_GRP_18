@@ -1,18 +1,18 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Textarea } from '../../../components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, Upload, Image as ImageIcon, FileText, Calendar as CalendarIcon, MapPin, Clock, Users, Save } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../components/ui/popover';
-import { Badge } from '../../../components/ui/badge';
-import { Switch } from '../../../components/ui/switch';
-import { Calendar } from '../../../components/ui/calendar';
-import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
+import { toast } from 'sonner';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Calendar } from '@/components/ui/calender';
+import { ImageWithFallback } from '../../figma/ImageWithFallback';
 
 // Mock data for teams where user is leader
 const MOCK_LEADER_TEAMS = [

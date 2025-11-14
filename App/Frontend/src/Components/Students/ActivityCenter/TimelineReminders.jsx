@@ -1,6 +1,6 @@
 import { Calendar, Clock, MapPin, Bell } from 'lucide-react';
-import { Badge } from '../../../components/ui/badge';
-import { cn } from '../../../components/ui/utils';
+import { Badge } from '../../ui/badge';
+import { cn } from '../../ui/utils';
 
 // Helper function to calculate days until event
 const getDaysUntil = (dateString) => {

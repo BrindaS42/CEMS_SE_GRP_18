@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../../components/ui/dialog';
-import { Button } from '../../../components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { PaymentConfigStep } from './Registration/PaymentConfigStep';
 import { RegistrationTypeStep } from './Registration/RegistrationTypeStep';
 import { RegistrationFieldsStep } from './Registration/RegistrationFieldsStep';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const STEPS = [
   { id: 1, title: 'Payment', description: 'Configure fees & combos' },

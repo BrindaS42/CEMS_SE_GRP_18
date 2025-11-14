@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Button } from '../../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { PendingTeamsTab } from './PendingTeamsTab';
 import { CreatedTeamsTab } from './CreatedTeamsTab';
 import { InUseTeamsTab } from './InUseTeamsTab';
 import { ArchivedTeamsTab } from './ArchivedTeamsTab';
 import { EditTeamModal } from './EditTeamModal';
-import { SegmentedControl } from '../../../components/ui/segmented-control';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
 // Mock current logged-in organiser email
 const CURRENT_USER_EMAIL = 'john@college.edu';

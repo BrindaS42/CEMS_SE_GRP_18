@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Button } from '../../components/ui/button';
+import { Button } from '../ui/button';
 import { PublishedEvents } from './PublishedEvents';
 import { LiveEvents } from './LiveEvents';
-import { SegmentedControl } from '../../components/ui/segmented-control';
+import { SegmentedControl } from '../ui/segmented-control';
 
 export function EventsTab({ events, onViewEvent }) {
   const [activeSubTab, setActiveSubTab] = useState('published');

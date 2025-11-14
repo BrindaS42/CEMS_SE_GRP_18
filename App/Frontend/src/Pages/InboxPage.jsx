@@ -1,7 +1,6 @@
-// InboxPage_NEW.jsx
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { motion } from 'motion/react';
+import {motion} from 'motion/react';
 import {
   Inbox,
   Mail,
@@ -20,18 +19,18 @@ import {
   Edit3,
   Archive,
 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from '../components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +40,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../../components/ui/alert-dialog';
+} from '../components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -49,18 +48,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '../../components/ui/dialog';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Separator } from '../../components/ui/separator';
-import { ScrollArea } from '../../components/ui/scroll-area';
+} from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Skeleton } from '../components/ui/skeleton';
+import { Separator } from '../components/ui/separator';
+import { ScrollArea } from '../components/ui/scroll-area';
 import { messageService } from '../services/messageService';
 import { registrationService } from '../services/registrationService';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import {Sidebar} from '../components/general/Sidebar';
+
 
 const InboxPage = () => {
   const { user } = useSelector((state) => state.auth);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [activePage, setActivePage] = useState('inbox');
+
+  const handleNavigation = (page) => setActivePage(page);
   const [inboxMessages, setInboxMessages] = useState([]);
   const [sentMessages, setSentMessages] = useState([]);
   const [draftMessages, setDraftMessages] = useState([]);
@@ -180,7 +185,7 @@ const InboxPage = () => {
       };
 
       await messageService.createMessage(newMessage);
-      
+
       toast.success(saveAs === 'draft' ? 'Saved as draft' : 'Message sent successfully');
       setComposeDialogOpen(false);
       setComposeForm({
@@ -256,7 +261,7 @@ const InboxPage = () => {
         searchQuery === '' ||
         (msg.title && msg.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (msg.message && msg.message.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+
       const matchesType =
         filterType === 'all' || msg.type === filterType;
 
@@ -298,11 +303,10 @@ const InboxPage = () => {
             transition={{ duration: 0.2 }}
           >
             <Card
-              className={`p-4 cursor-pointer transition-all border-l-4 ${
-                selectedMessage?._id === message._id
+              className={`p-4 cursor-pointer transition-all border-l-4 ${selectedMessage?._id === message._id
                   ? 'border-l-purple-600 bg-purple-50'
                   : 'border-l-transparent hover:border-l-purple-300'
-              }`}
+                }`}
               onClick={() => setSelectedMessage(message)}
             >
               <div className="flex items-start justify-between gap-4">
@@ -437,222 +441,234 @@ const InboxPage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Inbox
-          </h1>
-          <p className="text-gray-600">Manage your messages and notifications</p>
+    <div className="flex h-screen bg-background pt-16">
+
+      <Sidebar
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activePage={activePage}
+        onNavigate={handleNavigation}
+        role={user?.role}
+      />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto smooth-scroll p-6 page-transition">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl font-black mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Inbox
+            </h1>
+            <p className="text-gray-600">Manage your messages and notifications</p>
+          </div>
+
+          <Card className="p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search messages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full md:w-64">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="message">Messages</SelectItem>
+                  <SelectItem value="announcement">Announcements</SelectItem>
+                  <SelectItem value="team_invite">Team Invites</SelectItem>
+                  <SelectItem value="sponsorship_request">Sponsorship Requests</SelectItem>
+                  <SelectItem value="mou_approval">MoU Approvals</SelectItem>
+                  <SelectItem value="registration_approval">Registration Approvals</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => setComposeDialogOpen(true)}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                Compose
+              </Button>
+            </div>
+          </Card>
+
+          <div className="grid lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-2">
+              <Tabs defaultValue="inbox" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="inbox" className="flex items-center gap-2">
+                    <Inbox className="w-4 h-4" />
+                    Inbox
+                    {inboxMessages.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {inboxMessages.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="sent" className="flex items-center gap-2">
+                    <Send className="w-4 h-4" />
+                    Sent
+                    {sentMessages.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {sentMessages.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="draft" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Draft
+                    {draftMessages.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {draftMessages.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="inbox">
+                  {renderMessageList(inboxMessages, 'No messages in inbox')}
+                </TabsContent>
+
+                <TabsContent value="sent">
+                  {renderMessageList(sentMessages, 'No sent messages')}
+                </TabsContent>
+
+                <TabsContent value="draft">
+                  {renderMessageList(draftMessages, 'No draft messages')}
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="lg:col-span-3">
+              {renderMessageDetail()}
+            </div>
+          </div>
         </div>
 
-        <Card className="p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Compose New Message</DialogTitle>
+              <DialogDescription>Create a new message or save as draft</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="type">Message Type</Label>
+                <Select
+                  value={composeForm.type}
+                  onValueChange={(value) => setComposeForm({ ...composeForm, type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="message">Message</SelectItem>
+                    <SelectItem value="announcement">Announcement</SelectItem>
+                    <SelectItem value="team_invite">Team Invite</SelectItem>
+                    <SelectItem value="sponsorship_request">Sponsorship Request</SelectItem>
+                    <SelectItem value="mou_approval">MoU Approval Request</SelectItem>
+                    <SelectItem value="registration_approval">Registration Approval Request</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="to">To (Email or Username)</Label>
                 <Input
-                  placeholder="Search messages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  id="to"
+                  placeholder="recipient@example.com"
+                  value={composeForm.to}
+                  onChange={(e) => setComposeForm({ ...composeForm, to: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  placeholder="Enter message title"
+                  value={composeForm.title}
+                  onChange={(e) => setComposeForm({ ...composeForm, title: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  placeholder="Brief description"
+                  value={composeForm.description}
+                  onChange={(e) => setComposeForm({ ...composeForm, description: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="message">Message *</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here..."
+                  value={composeForm.message}
+                  onChange={(e) => setComposeForm({ ...composeForm, message: e.target.value })}
+                  className="min-h-32"
                 />
               </div>
             </div>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full md:w-64">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="message">Messages</SelectItem>
-                <SelectItem value="announcement">Announcements</SelectItem>
-                <SelectItem value="team_invite">Team Invites</SelectItem>
-                <SelectItem value="sponsorship_request">Sponsorship Requests</SelectItem>
-                <SelectItem value="mou_approval">MoU Approvals</SelectItem>
-                <SelectItem value="registration_approval">Registration Approvals</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={() => setComposeDialogOpen(true)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Edit3 className="w-4 h-4 mr-2" />
-              Compose
-            </Button>
-          </div>
-        </Card>
-
-        <div className="grid lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="inbox" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="inbox" className="flex items-center gap-2">
-                  <Inbox className="w-4 h-4" />
-                  Inbox
-                  {inboxMessages.length > 0 && (
-                    <Badge variant="secondary" className="ml-1">
-                      {inboxMessages.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="sent" className="flex items-center gap-2">
-                  <Send className="w-4 h-4" />
-                  Sent
-                  {sentMessages.length > 0 && (
-                    <Badge variant="secondary" className="ml-1">
-                      {sentMessages.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="draft" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Draft
-                  {draftMessages.length > 0 && (
-                    <Badge variant="secondary" className="ml-1">
-                      {draftMessages.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="inbox">
-                {renderMessageList(inboxMessages, 'No messages in inbox')}
-              </TabsContent>
-
-              <TabsContent value="sent">
-                {renderMessageList(sentMessages, 'No sent messages')}
-              </TabsContent>
-
-              <TabsContent value="draft">
-                {renderMessageList(draftMessages, 'No draft messages')}
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          <div className="lg:col-span-3">
-            {renderMessageDetail()}
-          </div>
-        </div>
-      </div>
-
-      <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Compose New Message</DialogTitle>
-            <DialogDescription>Create a new message or save as draft</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="type">Message Type</Label>
-              <Select
-                value={composeForm.type}
-                onValueChange={(value) => setComposeForm({ ...composeForm, type: value })}
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleComposeMessage('draft')}
+                disabled={!composeForm.title.trim()}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="message">Message</SelectItem>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="team_invite">Team Invite</SelectItem>
-                  <SelectItem value="sponsorship_request">Sponsorship Request</SelectItem>
-                  <SelectItem value="mou_approval">MoU Approval Request</SelectItem>
-                  <SelectItem value="registration_approval">Registration Approval Request</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <FileText className="w-4 h-4 mr-2" />
+                Save as Draft
+              </Button>
+              <Button
+                onClick={() => handleComposeMessage('sent')}
+                disabled={!composeForm.title.trim() || !composeForm.to.trim()}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            <div>
-              <Label htmlFor="to">To (Email or Username)</Label>
-              <Input
-                id="to"
-                placeholder="recipient@example.com"
-                value={composeForm.to}
-                onChange={(e) => setComposeForm({ ...composeForm, to: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                placeholder="Enter message title"
-                value={composeForm.title}
-                onChange={(e) => setComposeForm({ ...composeForm, title: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                placeholder="Brief description"
-                value={composeForm.description}
-                onChange={(e) => setComposeForm({ ...composeForm, description: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="message">Message *</Label>
-              <Textarea
-                id="message"
-                placeholder="Type your message here..."
-                value={composeForm.message}
-                onChange={(e) => setComposeForm({ ...composeForm, message: e.target.value })}
-                className="min-h-32"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handleComposeMessage('draft')}
-              disabled={!composeForm.title.trim()}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Save as Draft
-            </Button>
-            <Button
-              onClick={() => handleComposeMessage('sent')}
-              disabled={!composeForm.title.trim() || !composeForm.to.trim()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Send
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
-        open={actionDialog.open}
-        onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {actionDialog.type === 'accept' ? 'Accept Request' : 'Reject Request'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to {actionDialog.type} this request? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => handleApprovalAction(actionDialog.type)}
-              className={
-                actionDialog.type === 'accept'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }
-            >
-              {actionDialog.type === 'accept' ? 'Accept' : 'Reject'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog
+          open={actionDialog.open}
+          onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {actionDialog.type === 'accept' ? 'Accept Request' : 'Reject Request'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to {actionDialog.type} this request? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleApprovalAction(actionDialog.type)}
+                className={
+                  actionDialog.type === 'accept'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }
+              >
+                {actionDialog.type === 'accept' ? 'Accept' : 'Reject'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+          </main>
+      </div>
     </div>
   );
 };

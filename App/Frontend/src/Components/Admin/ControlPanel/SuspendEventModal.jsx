@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Textarea } from '../../../components/ui/textarea';
-import { toast } from 'sonner@2.0.3';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 export function SuspendEventModal({
   open,

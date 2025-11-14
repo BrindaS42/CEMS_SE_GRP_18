@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import { Card } from '../ui/card';
+import { Button } from '../ui/button';
 import { Calendar, Eye, Edit2, Plus } from 'lucide-react';
 import { ViewAdModal } from './Admin/ViewAdModal';
 import { CreateAdModal } from './Admin/CreateAdModal';

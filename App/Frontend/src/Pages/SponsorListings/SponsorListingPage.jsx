@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { sponsorService } from '../services/sponsorService';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export const SponsorListingPage = () => {
   const navigate = useNavigate();

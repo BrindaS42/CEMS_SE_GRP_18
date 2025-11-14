@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../Components/Organizers/Sidebar';
+import { Sidebar } from '../../components/general/Sidebar';
 import { Button } from '../../components/ui/button';
 import { Plus } from 'lucide-react';
 import { SegmentedControl } from '../../components/ui/segmented-control';
-import { CreateAdModal } from '../../Components/Sponsors/Admin/CreateAdModal';
-import { DraftedAdsTab } from '../../Components/Sponsors/Admin/DraftedAdsTab';
-import { PublishedAdsTab } from '../../Components/Sponsors/Admin/PublishedAdsTab';
+import { CreateAdModal } from '../../components/Sponsors/Admin/CreateAdModal';
+import { DraftedAdsTab } from '../../components/Sponsors/Admin/DraftedAdsTab';
+import { PublishedAdsTab } from '../../components/Sponsors/Admin/PublishedAdsTab';
 
 // Re-using SponsorAd shape for prop validation
 const sponsorAdPropType = PropTypes.shape({

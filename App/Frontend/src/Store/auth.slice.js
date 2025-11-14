@@ -28,7 +28,20 @@ export const registerUser = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_BASE}/auth/register`, payload);
-      return response.data;
+      const authData = response.data;
+      
+      // If registration successful and we have a token, fetch the profile
+      if (authData?.token) {
+        try {
+          const profileResponse = await axios.get(`${API_BASE}/profile`);
+          authData.profile = profileResponse.data?.profile || profileResponse.data;
+        } catch (profileError) {
+          // If profile fetch fails, continue with registration data
+          console.warn('Profile fetch failed during registration:', profileError);
+        }
+      }
+      
+      return authData;
     } catch (error) {
       const message = error?.response?.data?.error || 'Registration failed';
       return rejectWithValue(message);
@@ -41,7 +54,20 @@ export const loginUser = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_BASE}/auth/login`, payload);
-      return response.data;
+      const authData = response.data;
+      
+      // If login successful and we have a token, fetch the profile
+      if (authData?.token) {
+        try {
+          const profileResponse = await axios.get(`${API_BASE}/profile`);
+          authData.profile = profileResponse.data?.profile || profileResponse.data;
+        } catch (profileError) {
+          // If profile fetch fails, continue with login data
+          console.warn('Profile fetch failed during login:', profileError);
+        }
+      }
+      
+      return authData;
     } catch (error) {
       const message = error?.response?.data?.message || 'Login failed';
       return rejectWithValue(message);
@@ -162,8 +188,36 @@ export const verifyOtpForAccount = createAsyncThunk(
   }
 );
 
+export const fetchAuthProfile = createAsyncThunk(
+  'auth/fetchProfile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE}/profile`);
+      console.log("Fetched auth profile:", response.data);
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to fetch profile';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const updateAuthProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`${API_BASE}/profile`, profileData);
+      return response.data?.profile || response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to update profile';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   user: null,
+  profile: null,
   token: initialToken,
   status: 'idle',
   error: null,
@@ -179,6 +233,7 @@ const authSlice = createSlice({
   reducers: {
     logoutSuccess(state) {
       state.user = null;
+      state.profile = null;
       state.token = null;
       state.isAuthenticated = false;
       state.status = 'idle';
@@ -206,12 +261,15 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
         const token = action.payload?.token;
-        const user = action.payload?.user ?? null;
+        // Backend returns user object at root level, not nested under 'user'
+        const user = action.payload?.user ?? action.payload ?? null;
+        const profile = action.payload?.profile ?? null;
         if (token) {
           setAuthToken(token);
         }
         state.token = token ?? state.token ?? null;
         state.user = user;
+        state.profile = profile;
         state.isAuthenticated = Boolean(token) || Boolean(user) || true;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -227,12 +285,14 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = 'succeeded';
         const token = action.payload?.token;
-        const user = action.payload?.user ?? null;
+        const user = action.payload?.user ?? action.payload ?? null;
+        const profile = action.payload?.profile ?? null;
         if (token) {
           setAuthToken(token);
         }
         state.token = token ?? state.token ?? null;
         state.user = user;
+        state.profile = profile;
         state.isAuthenticated = Boolean(token) || Boolean(user) || true;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -246,6 +306,7 @@ const authSlice = createSlice({
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.profile = null;
         state.token = null;
         state.isAuthenticated = false;
         state.status = 'idle';
@@ -255,6 +316,7 @@ const authSlice = createSlice({
       .addCase(logoutUser.rejected, (state, action) => {
         // Even if logout fails on server, clear local state
         state.user = null;
+        state.profile = null;
         state.token = null;
         state.isAuthenticated = false;
         state.status = 'idle';
@@ -337,6 +399,36 @@ const authSlice = createSlice({
       })
       .addCase(verifyOtpForAccount.rejected, (state, action) => {
         state.accountVerificationStatus = 'failed';
+        state.error = action.payload;
+      })
+      
+      // Fetch Profile
+      .addCase(fetchAuthProfile.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAuthProfile.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = action.payload;
+        state.profile = action.payload?.profile || action.payload;
+      })
+      .addCase(fetchAuthProfile.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Update Profile
+      .addCase(updateAuthProfile.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(updateAuthProfile.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = action.payload;
+        state.profile = action.payload?.profile || action.payload;
+      })
+      .addCase(updateAuthProfile.rejected, (state, action) => {
+        state.status = 'failed';
         state.error = action.payload;
       });
   },

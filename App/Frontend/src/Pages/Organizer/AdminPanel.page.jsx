@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import { Sidebar } from '../../Components/Organizers/Sidebar';
-import { TeamsAdminTab } from '../../Components/Organizers/Admin/TeamsAdminTab';
-import { CreateTeamModal } from '../../Components/Organizers/Admin/CreateTeamModal';
-import { EventsAdminTab } from '../../Components/Organizers/Admin/EventsAdminTab';
-import { RegistrationsAdminTab } from '../../Components/Organizers/Admin/RegistrationsAdminTab';
-import { AnnouncementsAdminTab } from '../../Components/Organizers/Admin/AnnouncementsAdminTab';
+import { Sidebar } from '../../components/general/Sidebar';
+import { TeamsAdminTab } from '../../components/Organizers/Admin/TeamsAdminTab';
+import { CreateTeamModal } from '../../components/Organizers/Admin/CreateTeamModal';
+import { EventsAdminTab } from '../../components/Organizers/Admin/EventsAdminTab';
+import { RegistrationsAdminTab } from '../../components/Organizers/Admin/RegistrationsAdminTab';
+import { AnnouncementsAdminTab } from '../../components/Organizers/Admin/AnnouncementsAdminTab';
 import { SegmentedControl } from '../../components/ui/segmented-control';
 import { CURRENT_USER_EMAIL } from '../../App';
 

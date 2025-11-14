@@ -3,11 +3,16 @@ import { LayoutDashboard, Settings, Inbox, User, Wrench, Users, ChevronLeft, Che
 import { cn } from '../ui/utils';
 import { motion } from 'motion/react';
 import { useRef, useLayoutEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate, role }) {
+export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate }) {
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  const currentRole = user?.role || 'organizer';
   // Get role-specific color
   const getRoleColor = () => {
-    switch (role) {
+    switch (currentRole) {
       case 'student':
         return 'var(--student-primary)';
       case 'sponsor':
@@ -46,7 +51,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate,
 
   // Define menu items based on role
   const getMenuItems = () => {
-    if (role === 'admin') {
+    if (currentRole === 'admin') {
       return [
         { icon: LayoutDashboard, label: 'Control Panel', href: '/admin/control-panel', id: 'control-panel', iconType: 'dashboard' },
         { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
@@ -54,8 +59,8 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate,
         { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
-    
-    if (role === 'student') {
+
+    if (currentRole === 'student') {
       return [
         { icon: LayoutDashboard, label: 'Dashboard', href: '/student/dashboard', id: 'dashboard', iconType: 'dashboard' },
         { icon: Users, label: 'Admin Panel', href: '/student/admin', id: 'admin', iconType: 'admin' },
@@ -64,8 +69,8 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate,
         { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
-    
-    if (role === 'sponsor') {
+
+    if (currentRole === 'sponsor') {
       return [
         { icon: LayoutDashboard, label: 'Dashboard', href: '/sponsor/dashboard', id: 'dashboard', iconType: 'dashboard' },
         { icon: Wrench, label: 'Admin Panel', href: '/sponsor/admin', id: 'admin', iconType: 'admin' },
@@ -74,7 +79,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate,
         { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
-    
+
     // Default to organizer menu items
     return [
       { icon: LayoutDashboard, label: 'Dashboard', href: '/organizer/dashboard', id: 'dashboard', iconType: 'dashboard' },
@@ -112,11 +117,26 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate,
   }, [activeIndex, activePage, isCollapsed]);
 
   const handleNavigation = (e, pageId) => {
-    e.stopPropagation(); // Prevent any event bubbling
+    // Prevent any event bubbling
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+    // Find the menu item to know the target href
+    const menuItem = menuItems.find(item => item.id === pageId);
+
+    // Call the optional onNavigate callback (do not short-circuit navigation)
     if (onNavigate) {
-      onNavigate(pageId);
-    } else {
-      console.log(`Navigate to ${pageId}`);
+      try {
+        onNavigate(pageId);
+      } catch (err) {
+        // swallow callback errors to avoid breaking navigation
+        // eslint-disable-next-line no-console
+        console.error('onNavigate callback error:', err);
+      }
+    }
+
+    // Always perform router navigation when an href is available
+    if (menuItem && menuItem.href) {
+      navigate(menuItem.href);
     }
   };
 
@@ -247,11 +267,9 @@ Sidebar.propTypes = {
   onToggleCollapse: PropTypes.func.isRequired,
   activePage: PropTypes.string,
   onNavigate: PropTypes.func,
-  role: PropTypes.oneOf(['organizer', 'student', 'sponsor', 'admin']),
 };
 
 Sidebar.defaultProps = {
   activePage: 'dashboard',
   onNavigate: () => {},
-  role: 'organizer',
 };

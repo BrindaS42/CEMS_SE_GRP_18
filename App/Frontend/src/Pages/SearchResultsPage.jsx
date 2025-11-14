@@ -22,7 +22,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Separator } from '../../components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export const SearchResultsPage = () => {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Sidebar } from '../../Components/Organizers/Sidebar';
-import { EventsTab } from '../../Components/Students/EventsTab';
-import { TeamsTab } from '../../Components/Students/TeamsTab';
-import { ActivityCenterTab } from '../../Components/Students/ActivityCenterTab';
+import { Sidebar } from '../../components/general/Sidebar';
+import { EventsTab } from '../../components/Students/EventsTab';
+import { TeamsTab } from '../../components/Students/TeamsTab';
+import { ActivityCenterTab } from '../../components/Students/ActivityCenterTab';
 import { SegmentedControl } from '../../components/ui/segmented-control';
 
 export default function StudentDashboard({ onNavigate }) {
@@ -20,12 +20,11 @@ export default function StudentDashboard({ onNavigate }) {
 
   return (
     <div className="flex h-screen bg-background pt-16">
-      <Sidebar 
+      <Sidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         activePage={activePage}
         onNavigate={handleNavigation}
-        role="student"
       />
       
       <div className="flex-1 flex flex-col overflow-hidden">

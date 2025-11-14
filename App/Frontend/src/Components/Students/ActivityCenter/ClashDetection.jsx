@@ -1,7 +1,7 @@
 import { AlertTriangle, Calendar, Clock, ArrowLeftRight } from 'lucide-react';
-import { Badge } from '../../../components/ui/badge';
-import { Button } from '../../../components/ui/button';
-import { cn } from '../../../components/ui/utils';
+import { Badge } from '../../ui/badge';
+import { Button } from '../../ui/button';
+import { cn } from '../../ui/utils';
 
 // Helper function to check if two date ranges overlap
 const checkOverlap = (

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../Components/Organizers/Sidebar';
-import { ViewsTab } from '../../Components/Sponsors/ViewsTab';
-import { AdsTab } from '../../Components/Sponsors/AdsTab';
+import { Sidebar } from '../../components/general/Sidebar';
+import { ViewsTab } from '../../components/Sponsors/ViewsTab';
+import { AdsTab } from '../../components/Sponsors/AdsTab';
 import { SegmentedControl } from '../../components/ui/segmented-control';
 
 // Re-using SponsorAd shape for prop validation
@@ -41,12 +41,11 @@ export default function SponsorDashboard({
   return (
     <div className="flex h-screen bg-background pt-16">
       {/* Sidebar */}
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
+      <Sidebar
+        isCollapsed={isSidebarCollapsed}
         onToggleCollapse={onToggleSidebar}
         activePage="dashboard"
         onNavigate={onNavigate}
-        role="sponsor"
       />
 
       {/* Main Content Area */}

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Ban, Check, Image as ImageIcon } from 'lucide-react';
-import { cn } from '../../../components/ui/utils';
-import { Badge } from '../../../components/ui/badge';
-import { Input } from '../../../components/ui/input';
+import { cn } from '@/components/ui/utils';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { ViewAdModal } from './ViewAdModal';
 import { SuspendAdModal } from './SuspendAdModal';
 import { UnsuspendAdModal } from './UnsuspendAdModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { SegmentedControl } from '../../../components/ui/segmented-control';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 
 // Helper function to refactor nested ternary
 const getAdBadgeVariant = (status) => {

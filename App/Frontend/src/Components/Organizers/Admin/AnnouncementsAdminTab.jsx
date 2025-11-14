@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../../../components/ui/card';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Eye, Users, Plus, Edit, Trash2, MessageSquare } from 'lucide-react';
-import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
+import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { AddAnnouncementModal } from './Announcements/AddAnnouncementModal';
 import { ViewAnnouncementsModal } from './Announcements/ViewAnnouncementsModal';
 import { EditAnnouncementModal } from './Announcements/EditAnnouncementModal';

@@ -3,11 +3,11 @@ import User from "../models/user.model.js";
 export const getUserProfile = async (req, res) => {
    try {
     const userId = req.user?.id;
-    const user = await User.findById(userId).select("profile");
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    return res.status(200).json(user.profile || {});
+    return res.status(200).json(user || {});
   } catch (error) {
     console.error("getUserProfile error", error);
     return res.status(500).json({ error: "Failed to fetch profile" });
@@ -30,7 +30,7 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    return res.status(200).json(updatedUser.profile || {});
+    return res.status(200).json(updatedUser || {});
   } catch (error) {
     console.error("updateUserProfile error", error);
     return res.status(500).json({ error: "Failed to update profile" });
