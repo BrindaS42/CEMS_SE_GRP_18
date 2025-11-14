@@ -38,7 +38,6 @@ export default function AdminPanel({
   const [activeTab, setActiveTab] = useState('drafted');
   const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(openCreateAdModal);
 
-  // Open modal when openCreateAdModal prop changes
   useEffect(() => {
     if (openCreateAdModal) {
       setIsCreateAdModalOpen(true);

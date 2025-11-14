@@ -15,7 +15,7 @@ import aiRouter from './routes/ai.route.js';
 import studentDashboardRouter from './routes/student_routes/student.dashboard.route.js'
 import sponsorRoutes from "./routes/sponsor_routes/sponsor.route.js";
 import studentTeamRoutes from "./routes/student_routes/student.team.route.js"; 
-
+import inboxRoute from "./routes/inbox.route.js";
 
 const app = express();
 dotenv.config();
@@ -32,7 +32,7 @@ app.use(cors({
 }));
 
 app.use(cookieParser());
-app.use(morgan("dev")); 
+app.use(morgan("dev"));
 
 app.use('/api/auth', authRouter);
 app.use(express.text({ type: 'application/json' }));
@@ -45,6 +45,7 @@ app.use('/api/student-dashboard', studentDashboardRouter);
 app.use("/api/sponsors", sponsorRoutes);
 app.use('/api/event-manage', eventManageRouter);
 app.use("/api/student/teams", studentTeamRoutes);
+app.use("/api/inbox", inboxRoute);
 
 app.get("/", authentication, authorizeRoles("student","organizer", "sponsor", "admin"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
