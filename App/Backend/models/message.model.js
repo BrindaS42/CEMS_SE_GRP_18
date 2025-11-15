@@ -16,12 +16,12 @@ const InboxEntitySchema = new mongoose.Schema({
   title: String,
   description: String,
   from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  to: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  to: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   status: { type: String, enum: ["Draft", "Sent", "Approved", "Rejected", "Pending"], default: "Draft" },
   message: String,
   relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
   relatedTeam: { type: mongoose.Schema.Types.ObjectId, refPath: "relatedTeamModel" },
-  relatedTeamModel: { type: String, enum: ["OrganizerTeam", "StudentTeam"] },
+  relatedTeamModel: { type: String, enum: ["Team", "StudentTeam"] },
   role: { type: String },
 }, { timestamps: true });
 

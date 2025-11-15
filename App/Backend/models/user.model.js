@@ -49,6 +49,7 @@ const userSchema = new mongoose.Schema(
       required: true, 
       unique: false 
     },
+    
     college : { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: "College", 
@@ -57,6 +58,8 @@ const userSchema = new mongoose.Schema(
       }
     },
     passwordHash: { type: String },
+       status : { type: String, enum: ["active", "suspended"], default: "Active" },
+
 
     profile: {
       name: { type: String, required: true },
@@ -99,6 +102,7 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+  
 );
 
 userSchema.index({ email: 1, role: 1 }, { unique: true });

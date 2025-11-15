@@ -1,4 +1,4 @@
-import InboxEntity from "../models/inbox.model.js";
+import InboxEntity from "../models/message.model.js";
 
 
 export const createDraft = async (req, res) => {

@@ -41,7 +41,7 @@ const EventSchema = new mongoose.Schema({
     ],
     subEvents:
  [{ subevent:{type : mongoose.Schema.Types.ObjectId, ref: "Event"} ,
-status : { type: String, enum: ["Pending", "Approved", "Reject"], default: "Pending" }}],
+status : { type: String, enum: ["Pending", "Approved", "Reject", "suspended"], default: "Pending" }}],
     gallery: [{ type: String }], // image URLs
     config: {
         fees: { type: Number, default: 0 },

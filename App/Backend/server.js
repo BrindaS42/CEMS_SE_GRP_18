@@ -16,7 +16,8 @@ import studentDashboardRouter from './routes/student_routes/student.dashboard.ro
 import sponsorRoutes from "./routes/sponsor_routes/sponsor.route.js";
 import studentTeamRoutes from "./routes/student_routes/student.team.route.js"; 
 import inboxRoute from "./routes/inbox.route.js";
-
+import adminRoute from "./routes/admin.route.js";
+import collegeRouter from './routes/college.route.js';
 const app = express();
 dotenv.config();
 
@@ -46,7 +47,8 @@ app.use("/api/sponsors", sponsorRoutes);
 app.use('/api/event-manage', eventManageRouter);
 app.use("/api/student/teams", studentTeamRoutes);
 app.use("/api/inbox", inboxRoute);
-
+app.use("/api/admin", adminRoute);
+app.use('/api/colleges', collegeRouter);
 app.get("/", authentication, authorizeRoles("student","organizer", "sponsor", "admin"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
 });
