@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Edit, Trash2, Send, Users, Lock, Eye, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, Edit, Trash2, Send, Users, Lock, Eye, FileText, Map } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ export function DraftedEventsTab({
   onNavigateToRegistration,
 }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -42,6 +44,10 @@ export function DraftedEventsTab({
   const handleViewEvent = (event) => {
     setSelectedEvent(event);
     setViewModalOpen(true);
+  };
+
+  const handleAnnotateMap = (eventId) => {
+    navigate(`/admin/add-location/${eventId}`);
   };
 
   const handleEditClick = (event) => {
@@ -339,6 +345,23 @@ export function DraftedEventsTab({
                     </Tooltip>
                   </TooltipProvider>
 
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-accent border-accent/50 hover:bg-accent hover:text-white"
+                          onClick={() => handleAnnotateMap(event._id)}
+                        >
+                          <Map className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Annotate Map</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-control-geocoder/dist/Control.Geocoder.css";
 import "leaflet-control-geocoder";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchEventLocation } from "../../../Store/map_annotator.slice.js";
+import { fetchEventLocation } from "../../../store/map_annotator.slice.js";
 
 // Fix default marker icons for Leaflet in bundlers
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";

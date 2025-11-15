@@ -8,9 +8,9 @@ const InboxEntitySchema = new mongoose.Schema(
         "announcement",
         "team_invite",
         "subevent_invite",
-        "sponsorship_req",
-        "mou_req",
-        "registration_approval",
+        "sponsorship_request",
+        "mou_approval_request",
+        "registration_approval_request",
         "message"
       ],
       required: true,
@@ -27,7 +27,7 @@ const InboxEntitySchema = new mongoose.Schema(
     message: String,
     relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
     relatedTeam: { type: mongoose.Schema.Types.ObjectId, refPath: "relatedTeamModel" },
-    relatedTeamModel: { type: String, enum: ["OrganizerTeam", "StudentTeam"] },
+    relatedTeamModel: { type: String, enum: ["Team", "StudentTeam"] },
     meta: {
       subEventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event" }
     }

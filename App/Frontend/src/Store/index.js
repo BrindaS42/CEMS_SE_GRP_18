@@ -8,6 +8,7 @@ import registrationReducer from './registration.slice.js';
 import sponsorReducer from './sponsor.slice.js';
 import aiReducer from './ai.slice.js';
 import studentEventsReducer from './studentEvents.slice.js';
+import inboxReducer from './inbox.slice.js';
 
 const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ const store = configureStore({
     sponsor: sponsorReducer,
     ai: aiReducer,
     studentEvents: studentEventsReducer,
+    inbox: inboxReducer,
   },
 });
 

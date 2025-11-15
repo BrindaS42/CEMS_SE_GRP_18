@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import {motion} from 'motion/react';
 import {
   Inbox,
@@ -52,25 +52,31 @@ import {
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/ui/skeleton';
-import { Separator } from '../components/ui/separator';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { messageService } from '../services/messageService';
-import { registrationService } from '../services/registrationService';
 import { toast } from 'sonner';
 import {Sidebar} from '../components/general/Sidebar';
+import {
+  fetchArrivals,
+  fetchSent,
+  fetchDrafts,
+  createDraft,
+  sendMessage,
+  sendDirectMessage,
+  updateDraft,
+  deleteMessage,
+  approveMessage,
+  rejectMessage,
+} from '../store/inbox.slice';
 
 
 const InboxPage = () => {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const { arrivals, sent, drafts, status: loading } = useSelector((state) => state.inbox) || { arrivals: [], sent: [], drafts: [], status: 'idle' };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [activePage, setActivePage] = useState('inbox');
-
   const handleNavigation = (page) => setActivePage(page);
-  const [inboxMessages, setInboxMessages] = useState([]);
-  const [sentMessages, setSentMessages] = useState([]);
-  const [draftMessages, setDraftMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [actionDialog, setActionDialog] = useState({
@@ -80,89 +86,37 @@ const InboxPage = () => {
   });
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
   const [composeForm, setComposeForm] = useState({
+    _id: null, // To track editing
     type: 'message',
     title: '',
     description: '',
     message: '',
     to: '',
-    status: 'draft',
+    status: 'Draft',
   });
 
-  const isOrganizerView = user?.role === 'organizer';
-  const isStudentView = user?.role === 'student';
 
   useEffect(() => {
     loadMessages();
   }, []);
 
   const loadMessages = async () => {
-    setLoading(true);
-    try {
-      const mockInbox = [
-        {
-          _id: '1',
-          type: 'registration_approval',
-          title: 'Registration Approved',
-          description: 'Your registration for TechFest 2024 has been approved',
-          message: 'Congratulations! Your registration has been approved. Please check your email for further details.',
-          from: { _id: 'org1', username: 'organizer1', email: 'org@example.com' },
-          to: { _id: user?._id || 'user1', username: user?.username, email: user?.email },
-          status: 'sent',
-          approvalStatus: 'approved',
-          createdAt: new Date(Date.now() - 3600000),
-        },
-        {
-          _id: '2',
-          type: 'team_invite',
-          title: 'Team Invitation',
-          description: 'You have been invited to join a team',
-          message: 'You have been invited to join team "Code Warriors" for the upcoming hackathon.',
-          from: { _id: 'user2', username: 'john_doe', email: 'john@example.com' },
-          to: { _id: user?._id || 'user1', username: user?.username, email: user?.email },
-          status: 'sent',
-          approvalStatus: 'pending',
-          createdAt: new Date(Date.now() - 7200000),
-        },
-      ];
+    dispatch(fetchArrivals());
+    dispatch(fetchSent());
+    dispatch(fetchDrafts());
+  };
 
-      const mockSent = [
-        {
-          _id: '3',
-          type: 'sponsorship_request',
-          title: 'Sponsorship Request for Annual Fest',
-          description: 'Request for sponsorship',
-          message: 'We would like to request sponsorship for our annual college fest.',
-          from: { _id: user?._id || 'user1', username: user?.username, email: user?.email },
-          to: { _id: 'sponsor1', username: 'techcorp', email: 'sponsor@techcorp.com' },
-          status: 'sent',
-          approvalStatus: 'pending',
-          createdAt: new Date(Date.now() - 86400000),
-        },
-      ];
-
-      const mockDrafts = [
-        {
-          _id: '4',
-          type: 'message',
-          title: 'Draft: Event Inquiry',
-          description: 'Inquiry about event details',
-          message: 'I would like to know more about...',
-          from: { _id: user?._id || 'user1', username: user?.username, email: user?.email },
-          to: { _id: '', username: '', email: '' },
-          status: 'draft',
-          createdAt: new Date(Date.now() - 172800000),
-        },
-      ];
-
-      setInboxMessages(mockInbox);
-      setSentMessages(mockSent);
-      setDraftMessages(mockDrafts);
-    } catch (error) {
-      console.error('Failed to load messages:', error);
-      toast.error('Failed to load messages');
-    } finally {
-      setLoading(false);
-    }
+  const handleEditDraft = (draft) => {
+    setComposeForm({
+      _id: draft._id,
+      type: draft.type,
+      title: draft.title,
+      description: draft.description || '',
+      message: draft.message || '',
+      to: draft.to?.map(u => u.email || u.username).join(', ') || '',
+      status: 'Draft',
+    });
+    setComposeDialogOpen(true);
   };
 
   const handleComposeMessage = async (saveAs) => {
@@ -171,22 +125,32 @@ const InboxPage = () => {
       return;
     }
 
-    if (saveAs === 'sent' && !composeForm.to.trim()) {
+    const recipients = composeForm.to.split(',').map(e => e.trim()).filter(Boolean);
+    if (saveAs === 'Sent' && recipients.length === 0) {
       toast.error('Please specify a recipient');
       return;
     }
 
     try {
-      const newMessage = {
-        ...composeForm,
-        status: saveAs,
-        from: user._id,
-        createdAt: new Date().toISOString(),
-      };
+      const payload = { ...composeForm, to: recipients };
 
-      await messageService.createMessage(newMessage);
+      if (saveAs === 'Draft') {
+        delete payload._id; // Don't send _id in the body for create/update
+        const thunk = composeForm._id ? updateDraft({ draftId: composeForm._id, payload }) : createDraft(payload);
+        await dispatch(thunk).unwrap();
+        toast.success('Saved as draft');
+      } else { // 'Sent'
+        if (composeForm._id) {
+          // It's an existing draft, so update it then send it
+          const draftResult = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
+          await dispatch(sendMessage(draftResult._id)).unwrap();
+        } else {
+          // It's a new message, send it directly
+          await dispatch(sendDirectMessage(payload)).unwrap();
+        }
+        toast.success('Message sent successfully');
+      }
 
-      toast.success(saveAs === 'draft' ? 'Saved as draft' : 'Message sent successfully');
       setComposeDialogOpen(false);
       setComposeForm({
         type: 'message',
@@ -194,32 +158,32 @@ const InboxPage = () => {
         description: '',
         message: '',
         to: '',
-        status: 'draft',
+        status: 'Draft',
       });
-      loadMessages();
     } catch (error) {
-      toast.error('Failed to save message');
+      toast.error(error || 'Failed to save message');
     }
   };
 
   const handleDeleteMessage = async (messageId) => {
     try {
-      await messageService.deleteMessage(messageId);
+      await dispatch(deleteMessage(messageId)).unwrap();
       toast.success('Message deleted');
-      loadMessages();
+      if (selectedMessage?._id === messageId) {
+        setSelectedMessage(null);
+      }
     } catch (error) {
-      toast.error('Failed to delete message');
+      toast.error(error || 'Failed to delete message');
     }
   };
 
   const handleApprovalAction = async (action) => {
     if (!actionDialog.messageId) return;
-
     try {
-      await messageService.updateMessageApproval(actionDialog.messageId, action);
+      const thunk = action === 'accept' ? approveMessage : rejectMessage;
+      await dispatch(thunk(actionDialog.messageId)).unwrap();
       toast.success(`Request ${action}ed successfully`);
       setActionDialog({ open: false, type: null, messageId: null });
-      loadMessages();
     } catch (error) {
       toast.error(`Failed to ${action} request`);
     }
@@ -242,13 +206,13 @@ const InboxPage = () => {
     }
   };
 
-  const getApprovalBadge = (approvalStatus) => {
-    switch (approvalStatus) {
-      case 'approved':
+  const getApprovalBadge = (status) => {
+    switch (status) {
+      case 'Approved':
         return <Badge className="bg-green-600">Approved</Badge>;
-      case 'rejected':
+      case 'Rejected':
         return <Badge className="bg-red-600">Rejected</Badge>;
-      case 'pending':
+      case 'Pending':
         return <Badge className="bg-yellow-600">Pending</Badge>;
       default:
         return null;
@@ -272,7 +236,7 @@ const InboxPage = () => {
   const renderMessageList = (messages, emptyText) => {
     const filtered = filterMessages(messages);
 
-    if (loading) {
+    if (loading === 'loading') {
       return (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -317,11 +281,11 @@ const InboxPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-black truncate">{message.title}</h3>
-                      {message.approvalStatus && getApprovalBadge(message.approvalStatus)}
+                      {message.status && getApprovalBadge(message.status)}
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
-                      {message.from ? `From: ${message.from.username || message.from.email}` : ''}
-                      {message.to && ` → To: ${message.to.username || message.to.email}`}
+                      {message.from ? `From: ${message.from.profile?.name || message.from.username}` : 'From: [Deleted User]'}
+                      {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name || message.to[0]?.username}` : ''}
                     </p>
                     <p className="text-sm text-gray-500 line-clamp-2">
                       {message.description || message.message}
@@ -358,8 +322,13 @@ const InboxPage = () => {
 
     const needsApproval = selectedMessage.type !== 'message' &&
       selectedMessage.type !== 'announcement' &&
-      selectedMessage.approvalStatus === 'pending' &&
-      selectedMessage.to?._id === user?._id;
+      selectedMessage.status === 'Pending' &&
+      selectedMessage.to?.some(recipient => recipient._id === user?.id);
+
+    const isDraftOwner =
+      selectedMessage.status === 'Draft' &&
+      selectedMessage.from?._id === user?.id;
+
 
     return (
       <Card className="h-full flex flex-col">
@@ -370,12 +339,12 @@ const InboxPage = () => {
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  From: {selectedMessage.from?.username || selectedMessage.from?.email}
+                  From: {selectedMessage.from?.profile?.name || selectedMessage.from?.username || '[Deleted User]'}
                 </div>
-                {selectedMessage.to && (
+                {selectedMessage.to && selectedMessage.to.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Send className="w-4 h-4" />
-                    To: {selectedMessage.to?.username || selectedMessage.to?.email}
+                    To: {selectedMessage.to[0]?.profile?.name || selectedMessage.to[0]?.username || '[Deleted User]'}
                   </div>
                 )}
                 <div className="flex items-center gap-1">
@@ -384,20 +353,26 @@ const InboxPage = () => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const status = selectedMessage.status;
-                handleDeleteMessage(selectedMessage._id, status);
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {isDraftOwner && (
+                <Button variant="ghost" size="sm" onClick={() => handleEditDraft(selectedMessage)}>
+                  <Edit3 className="w-4 h-4" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDeleteMessage(selectedMessage._id)}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+
           </div>
           <div className="flex gap-2">
             <Badge>{selectedMessage.type.replace('_', ' ')}</Badge>
-            {selectedMessage.approvalStatus && getApprovalBadge(selectedMessage.approvalStatus)}
+            {selectedMessage.status && getApprovalBadge(selectedMessage.status)}
           </div>
         </div>
 
@@ -439,6 +414,11 @@ const InboxPage = () => {
       </Card>
     );
   };
+
+
+  console.log('Arrivals:', arrivals);
+  console.log('Sent:', sent);
+  console.log('Drafts:', drafts);
 
   return (
     <div className="flex h-screen bg-background pt-16">
@@ -504,42 +484,42 @@ const InboxPage = () => {
                   <TabsTrigger value="inbox" className="flex items-center gap-2">
                     <Inbox className="w-4 h-4" />
                     Inbox
-                    {inboxMessages.length > 0 && (
+                    {arrivals.length > 0 && (
                       <Badge variant="secondary" className="ml-1">
-                        {inboxMessages.length}
+                        {arrivals.length}
                       </Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="sent" className="flex items-center gap-2">
                     <Send className="w-4 h-4" />
                     Sent
-                    {sentMessages.length > 0 && (
+                    {sent.length > 0 && (
                       <Badge variant="secondary" className="ml-1">
-                        {sentMessages.length}
+                        {sent.length}
                       </Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="draft" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Draft
-                    {draftMessages.length > 0 && (
+                    {drafts.length > 0 && (
                       <Badge variant="secondary" className="ml-1">
-                        {draftMessages.length}
+                        {drafts.length}
                       </Badge>
                     )}
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="inbox">
-                  {renderMessageList(inboxMessages, 'No messages in inbox')}
+                  {renderMessageList(arrivals, 'No messages in inbox')}
                 </TabsContent>
 
                 <TabsContent value="sent">
-                  {renderMessageList(sentMessages, 'No sent messages')}
+                  {renderMessageList(sent, 'No sent messages')}
                 </TabsContent>
 
                 <TabsContent value="draft">
-                  {renderMessageList(draftMessages, 'No draft messages')}
+                  {renderMessageList(drafts, 'No draft messages')}
                 </TabsContent>
               </Tabs>
             </div>
@@ -579,7 +559,7 @@ const InboxPage = () => {
 
               <div>
                 <Label htmlFor="to">To (Email or Username)</Label>
-                <Input
+                <Textarea
                   id="to"
                   placeholder="recipient@example.com"
                   value={composeForm.to}
@@ -621,15 +601,15 @@ const InboxPage = () => {
             <DialogFooter className="gap-2">
               <Button
                 variant="outline"
-                onClick={() => handleComposeMessage('draft')}
-                disabled={!composeForm.title.trim()}
+                onClick={() => handleComposeMessage('Draft')}
+                disabled={loading === 'loading' || !composeForm.title.trim()}
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Save as Draft
               </Button>
               <Button
-                onClick={() => handleComposeMessage('sent')}
-                disabled={!composeForm.title.trim() || !composeForm.to.trim()}
+                onClick={() => handleComposeMessage('Sent')}
+                disabled={loading === 'loading' || !composeForm.title.trim() || !composeForm.to.trim()}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 <Send className="w-4 h-4 mr-2" />

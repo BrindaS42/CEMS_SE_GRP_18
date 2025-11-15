@@ -31,7 +31,7 @@ router.route('/events/:eventId/registrations').get(authentication, authorizeRole
 router.route('/events/:eventId/attendees').get(authentication, authorizeRoles('organizer'), getAttendeesByEID);
 router.route('/events/:eventId/ratings').get(authentication, authorizeRoles('organizer'), getReviewRatingsByEID);
 router.route('/teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams);         
-router.route('/my-teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams); // Renaming for clarity
+router.route('/my-teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams); 
 router.route('/events/:eventId/announcements')
     .post(authentication, authorizeRoles('organizer'), addAnnouncement);  
 router.route('/events/:eventId/announcements/:announcementId')

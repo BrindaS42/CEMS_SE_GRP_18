@@ -20,10 +20,15 @@ import SponsorAdminPanel from './Pages/Sponsor/AdminPanel.page.jsx';
 import OrganizerDashboard from './Pages/Organizer/Dashboard.page.jsx';
 import OrganizerAdminPanel from './Pages/Organizer/AdminPanel.page.jsx';
 import AdminControlPanel from './Pages/Admin/ControlPanel.page.jsx';
+import { socket } from './service/socket.js'
+import MapWindow from './components/EventComponents/Map/mapWindow.jsx';
+import { setSocketConnected, setSocketDisconnected } from './store/socket.slice.js';
+import { addMessage } from './store/event.interaction.slice.js';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+  
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -180,6 +185,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/add-location/:eventId"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'organizer']}>
+            <MapWindow />
+          </ProtectedRoute>
+        }
+      />
 
       {/* 404 */}
       <Route
@@ -202,6 +215,41 @@ const AppRoutes = () => {
 
 // Main App Component
 export default function App() {
+  const { isAuthenticated } = useSelector((s) => s.auth);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    
+    if (isAuthenticated) {
+      socket.connect();
+
+      function onConnect() {
+        dispatch(setSocketConnected());
+      }
+
+      function onDisconnect() {
+        dispatch(setSocketDisconnected());
+      }
+
+      function onReceiveMessage(newMessage) {
+        console.log('Received message:', newMessage);
+        dispatch(addMessage(newMessage));
+      }
+
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+      socket.on('receive_message', onReceiveMessage);
+
+      return () => {
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
+        socket.off('receive_message', onReceiveMessage);
+        socket.disconnect();
+      };
+    } else {
+      socket.disconnect();
+    }
+  }, [isAuthenticated, dispatch]);
   return (
     <AppLayout>
       <AppRoutes />

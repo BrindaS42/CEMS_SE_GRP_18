@@ -9,7 +9,7 @@ import {
   getListOfRatingReviewByEID,
 } from "../controllers/student/event.controller.js";
 
-import { protect } from "../middleware/auth.middleware.js"; // middleware to verify JWT, sets req.user
+import { protect } from "../../middleware/auth.middleware.js"; // middleware to verify JWT, sets req.user
 
 const router = express.Router();
 

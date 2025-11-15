@@ -13,10 +13,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calender';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { fetchTeamList } from '@/store/team.slice';
 import { updateEventDraft, fetchPotentialSubEvents } from '@/store/event.slice';
+import { uploadToCloudinary } from '@/service/cloudinary';
 
 // Category options
 const CATEGORY_OPTIONS = [
@@ -41,14 +43,19 @@ export function EditEventModal({ open, onClose, event }) {
   const [description, setDescription] = useState('');
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [posterPreview, setPosterPreview] = useState(null);
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterUrlInput, setPosterUrlInput] = useState('');
   const [selectedPOC, setSelectedPOC] = useState('');
   const [pocName, setPocName] = useState('');
   const [pocPhone, setPocPhone] = useState('');
   const [eventVenue, setEventVenue] = useState('');
-  const [rulebookFile, setRulebookFile] = useState(null);
+  const [rulebookUrl, setRulebookUrl] = useState('');
+  const [rulebookUrlInput, setRulebookUrlInput] = useState('');
   const [registrationType, setRegistrationType] = useState('Individual');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [gallery, setGallery] = useState([]);
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [timeline, setTimeline] = useState([]);
   const [newTimelineEntry, setNewTimelineEntry] = useState({
     title: '',
@@ -65,6 +72,7 @@ export function EditEventModal({ open, onClose, event }) {
   const [subEventSearch, setSubEventSearch] = useState('');
   const [selectedSubEvents, setSelectedSubEvents] = useState([]);
   const [timelineDatePickerOpen, setTimelineDatePickerOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const leaderTeams = useMemo(() => {
     if (!user || !teamList) return [];
@@ -90,6 +98,7 @@ export function EditEventModal({ open, onClose, event }) {
       setSelectedTeam(foundTeam || null);
 
       setPosterPreview(event.posterUrl || null);
+      setPosterUrlInput(event.posterUrl || '');
 
       // Set POC if it exists, using the 'foundTeam' which is guaranteed to be correct here.
       if (event.poc?.name && foundTeam) {
@@ -105,9 +114,13 @@ export function EditEventModal({ open, onClose, event }) {
         setPocPhone('');
       }
 
-      setRulebookFile(event.ruleBook || null);
+      setRulebookUrl(event.ruleBook || '');
+      setRulebookUrlInput(event.ruleBook || '');
       setSelectedCategories([...event.categoryTags]);
-      setGallery([...event.gallery]);
+      // Map existing gallery URLs to an object structure for consistent handling
+      setGallery((event.gallery || []).map(url => ({ id: url, preview: url })));
+      setGalleryFiles([]);
+
       setRegistrationType(event.config?.registrationType || 'Individual');
 
       // Load timeline data
@@ -140,12 +153,17 @@ export function EditEventModal({ open, onClose, event }) {
       setEventVenue('');
       setSelectedTeam(null);
       setPosterPreview(null);
+      setPosterFile(null);
+      setPosterUrlInput('');
       setSelectedPOC('');
       setPocName('');
       setPocPhone('');
-      setRulebookFile(null);
+      setRulebookUrl('');
+      setRulebookUrlInput('');
       setSelectedCategories([]);
       setGallery([]);
+      setGalleryFiles([]);
+      setGalleryUrlInput('');
       setTimeline([]);
       setRegistrationType('Individual');
       setSelectedSubEvents([]);
@@ -178,6 +196,8 @@ export function EditEventModal({ open, onClose, event }) {
         setPosterPreview(reader.result);
       };
       reader.readAsDataURL(file);
+      setPosterFile(file);
+      setPosterUrlInput(''); // Clear URL input if a file is uploaded
       toast.success('Poster uploaded successfully');
     }
   };
@@ -185,10 +205,11 @@ export function EditEventModal({ open, onClose, event }) {
   const handleRulebookUpload = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
-      setRulebookFile(file.name);
+      // Storing name for display. A real implementation would upload the file.
+      setRulebookUrl(file.name);
       toast.success('Rulebook uploaded successfully');
     } else {
-      toast.error('Please upload a PDF file');
+      toast.error('Please upload a valid PDF file');
     }
   };
 
@@ -197,11 +218,24 @@ export function EditEventModal({ open, onClose, event }) {
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setGallery(prev => [...prev, reader.result]);
+        setGallery(prev => [...prev, { preview: reader.result, id: file.name + Date.now() }]);
       };
       reader.readAsDataURL(file);
     });
+    setGalleryFiles(prev => [...prev, ...files]);
     toast.success(`${files.length} image(s) added to gallery`);
+  };
+
+  const addGalleryUrl = () => {
+    const urls = galleryUrlInput.split('\n').map(url => url.trim()).filter(url => url);
+    if (urls.length > 0) {
+      const newImages = urls.map(url => ({ preview: url, id: url + Date.now() }));
+      setGallery(prev => [...prev, ...newImages]);
+      setGalleryUrlInput('');
+      toast.success(`${urls.length} image URL(s) added to gallery`);
+    } else {
+      toast.error('Please paste at least one valid image URL.');
+    }
   };
 
   const toggleCategory = (category) => {
@@ -284,24 +318,48 @@ export function EditEventModal({ open, onClose, event }) {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm() || !event) return;
+    setIsSubmitting(true);
+
+    let finalPosterUrl = null;
+    if (posterFile) {
+      try {
+        finalPosterUrl = await uploadToCloudinary(posterFile);
+      } catch (error) {
+        toast.error('Poster upload failed. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (posterPreview) { // This means a URL was provided or existed before
+      finalPosterUrl = posterPreview;
+    }
+
+    // Separate existing URLs from new file previews
+    const existingGalleryUrls = gallery
+      .map(img => img.preview)
+      .filter(url => !url.startsWith('data:'));
+
+    // Upload only the new files
+    const newUploadedUrls = await Promise.all(galleryFiles.map(file => uploadToCloudinary(file)));
+
+    const finalGallery = [...existingGalleryUrls, ...newUploadedUrls];
 
     const eventData = {
       _id: event._id, // Important for update
       title,
       description,
       createdBy: selectedTeam._id,
-      posterUrl: posterPreview || undefined,
+      posterUrl: finalPosterUrl || undefined,
       pocName: pocName,
       pocPhone: pocPhone,
       venue: eventVenue,
-      ruleBook: rulebookFile || undefined,
+      ruleBook: rulebookUrl || undefined,
       config: {
         registrationType: registrationType,
       },
       categoryTags: selectedCategories,
-      gallery,
+      gallery: finalGallery,
       timeline: timeline.map(({ id, from, to, ...rest }) => ({
         ...rest,
         duration: { from, to }
@@ -314,6 +372,7 @@ export function EditEventModal({ open, onClose, event }) {
     };
 
     dispatch(updateEventDraft(eventData));
+    setIsSubmitting(false);
     toast.success('Event updated successfully');
     onClose();
   };
@@ -394,33 +453,47 @@ export function EditEventModal({ open, onClose, event }) {
 
           {/* Poster Upload */}
           <div className="space-y-2">
-            <Label>Event Poster</Label>
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('poster-upload')?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {posterPreview ? 'Change Poster' : 'Upload Poster'}
-              </Button>
-              <input
-                id="poster-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePosterUpload}
-              />
-              {posterPreview && (
-                <div className="relative h-20 w-20 rounded overflow-hidden border">
-                  <ImageWithFallback 
-                    src={posterPreview} 
-                    alt="Poster preview"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
+          <Label>Event Poster</Label>
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">Upload File</TabsTrigger>
+              <TabsTrigger value="url">From URL</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload">
+              <div className="flex items-center gap-4 pt-2">
+                <Button type="button" variant="outline" onClick={() => document.getElementById('edit-poster-upload')?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {posterFile ? 'Change File' : 'Upload New File'}
+                </Button>
+                <input id="edit-poster-upload" type="file" accept="image/*" className="hidden" onChange={handlePosterUpload} />
+              </div>
+            </TabsContent>
+            <TabsContent value="url">
+              <div className="space-y-2 pt-2">
+                <Input
+                  placeholder="https://example.com/poster.jpg"
+                  value={posterUrlInput}
+                  onChange={(e) => {
+                    setPosterUrlInput(e.target.value);
+                    setPosterFile(null); // Clear file if URL is being used
+                  }}
+                />
+                <Button size="sm" onClick={() => setPosterPreview(posterUrlInput)}>Set as Poster</Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+          {posterPreview && (
+            <div className="mt-4 space-y-2">
+              <Label>Current Poster Preview</Label>
+              <div className="relative h-48 w-full rounded overflow-hidden border">
+                <ImageWithFallback 
+                  src={posterPreview} 
+                  alt="Poster preview"
+                  className="h-full w-full object-cover"
+                />
+              </div>
             </div>
+          )}
           </div>
 
           {/* Point of Contact */}
@@ -623,55 +696,75 @@ export function EditEventModal({ open, onClose, event }) {
 
           {/* Rulebook Upload */}
           <div className="space-y-2">
-            <Label>Rule Book (PDF)</Label>
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('rulebook-upload')?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {rulebookFile ? 'Change Rule Book' : 'Upload Rule Book'}
-              </Button>
-              <input
-                id="rulebook-upload"
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={handleRulebookUpload}
-              />
-              {rulebookFile && (
-                <span className="text-sm text-muted-foreground">{rulebookFile}</span>
-              )}
-            </div>
+            <Label>Rulebook</Label>
+            <Tabs defaultValue="upload" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+                <TabsTrigger value="url">From URL</TabsTrigger>
+              </TabsList>
+              <TabsContent value="upload">
+                <div className="pt-2">
+                  <Button variant="outline" className="w-full" onClick={() => document.getElementById('edit-rulebook-upload')?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload New Rulebook
+                  </Button>
+                  <input id="edit-rulebook-upload" type="file" accept=".pdf" className="hidden" onChange={handleRulebookUpload} />
+                </div>
+              </TabsContent>
+              <TabsContent value="url">
+                <div className="flex gap-2 pt-2">
+                  <Input placeholder="https://example.com/rulebook.pdf" value={rulebookUrlInput} onChange={(e) => setRulebookUrlInput(e.target.value)} />
+                  <Button onClick={() => setRulebookUrl(rulebookUrlInput)}>Set URL</Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+            {rulebookUrl && (
+              <div className="flex-1 flex items-center justify-between p-3 border border-border rounded-lg mt-2">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <FileText className="w-5 h-5 text-destructive flex-shrink-0" />
+                  <a href={rulebookUrl} target="_blank" rel="noopener noreferrer" className="text-sm truncate hover:underline">{rulebookUrl}</a>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => { setRulebookUrl(''); setRulebookUrlInput(''); }}><X className="w-4 h-4" /></Button>
+              </div>
+            )}
           </div>
 
           {/* Gallery Upload */}
           <div className="space-y-2">
             <Label>Gallery Images</Label>
             <div className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('gallery-upload')?.click()}
-              >
-                <ImageIcon className="mr-2 h-4 w-4" />
-                Add Images to Gallery
-              </Button>
-              <input
-                id="gallery-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleGalleryUpload}
-              />
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">Upload Files</TabsTrigger>
+                  <TabsTrigger value="url">From URLs</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload">
+                  <div className="pt-2">
+                    <Button variant="outline" className="w-full" onClick={() => document.getElementById('edit-gallery-upload')?.click()}>
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      Add Images to Gallery
+                    </Button>
+                    <input id="edit-gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
+                  </div>
+                </TabsContent>
+                <TabsContent value="url">
+                  <div className="space-y-2 pt-2">
+                    <Textarea
+                      placeholder="Paste image URLs here, one per line."
+                      value={galleryUrlInput}
+                      onChange={(e) => setGalleryUrlInput(e.target.value)}
+                      rows={4}
+                    />
+                    <Button onClick={addGalleryUrl}>Add URLs</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
               {gallery.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {gallery.map((image, idx) => (
-                    <div key={image} className="relative group">
+                  {gallery.map((img, idx) => (
+                    <div key={img.id} className="relative group">
                       <ImageWithFallback 
-                        src={image} 
+                        src={img.preview} 
                         alt={`Gallery ${idx + 1}`}
                         className="h-24 w-full object-cover rounded"
                       />
@@ -679,7 +772,7 @@ export function EditEventModal({ open, onClose, event }) {
                         variant="destructive"
                         size="sm"
                         className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))}
+                        onClick={() => setGallery(prev => prev.filter(item => item.id !== img.id))}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -696,7 +789,7 @@ export function EditEventModal({ open, onClose, event }) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isSubmitting}>
             <Save className="w-4 h-4 mr-2" />
             Save Changes
           </Button>

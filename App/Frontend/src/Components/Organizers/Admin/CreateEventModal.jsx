@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea'; 
 import { Plus, X, CheckCircle, XCircle, Upload, Image as ImageIcon, FileText, Calendar as CalendarIcon, MapPin, Clock, Users, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -13,10 +13,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calender';
 import { fetchTeamList } from '@/store/team.slice';
 import { fetchPotentialSubEvents } from '@/store/event.slice';
 import { createEventDraft, publishEvent } from '@/store/event.slice';
+import { uploadToCloudinary } from '@/service/cloudinary';
 
 // Category options
 const CATEGORY_OPTIONS = [
@@ -60,14 +62,19 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
   const [description, setDescription] = useState('');
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [posterPreview, setPosterPreview] = useState(null);
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterUrlInput, setPosterUrlInput] = useState('');
   const [selectedPOC, setSelectedPOC] = useState('');
   const [pocName, setPocName] = useState('');
   const [pocPhone, setPocPhone] = useState('');
   const [eventVenue, setEventVenue] = useState('');
-  const [rulebookFile, setRulebookFile] = useState(null);
+  const [rulebookUrl, setRulebookUrl] = useState('');
+  const [rulebookUrlInput, setRulebookUrlInput] = useState('');
   const [registrationType, setRegistrationType] = useState('Individual');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [gallery, setGallery] = useState([]);
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [timeline, setTimeline] = useState([]);
   const [newTimelineEntry, setNewTimelineEntry] = useState({
     title: '',
@@ -90,6 +97,7 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
   const [subEventSearch, setSubEventSearch] = useState('');
   const [timelineDatePickerOpen, setTimelineDatePickerOpen] = useState(false);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const leaderTeams = useMemo(() => {
     if (!user || !teamList) return [];
     console.log('Filtering leader teams for user ID:', user.id);
@@ -106,14 +114,19 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
       setDescription('');
       setSelectedTeam(null);
       setPosterPreview(null);
+      setPosterFile(null);
+      setPosterUrlInput('');
       setSelectedPOC('');
       setPocName('');
       setPocPhone('');
       setEventVenue('');
-      setRulebookFile(null);
+      setRulebookUrl('');
+      setRulebookUrlInput('');
       setRegistrationType('Individual');
       setSelectedCategories([]);
       setGallery([]);
+      setGalleryFiles([]);
+      setGalleryUrlInput('');
       setTimeline([]);
       setSelectedSubEvents([]);
     }
@@ -167,6 +180,8 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
         setPosterPreview(reader.result);
       };
       reader.readAsDataURL(file);
+      setPosterFile(file);
+      setPosterUrlInput(''); // Clear URL input if a file is uploaded
       toast.success('Poster uploaded successfully');
     }
   };
@@ -174,10 +189,11 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
   const handleRulebookUpload = (e) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
-      setRulebookFile(file.name);
+      // For now, we're just storing the name. A real implementation would upload this file.
+      setRulebookUrl(file.name);
       toast.success('Rulebook uploaded successfully');
     } else {
-      toast.error('Please upload a PDF file');
+      toast.error('Please upload a valid PDF file');
     }
   };
 
@@ -186,11 +202,24 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setGallery(prev => [...prev, reader.result]);
+        setGallery(prev => [...prev, { preview: reader.result, id: file.name + Date.now() }]);
       };
       reader.readAsDataURL(file);
     });
+    setGalleryFiles(prev => [...prev, ...files]);
     toast.success(`${files.length} image(s) added to gallery`);
+  };
+
+  const addGalleryUrl = () => {
+    const urls = galleryUrlInput.split('\n').map(url => url.trim()).filter(url => url);
+    if (urls.length > 0) {
+      const newImages = urls.map(url => ({ preview: url, id: url + Date.now() }));
+      setGallery(prev => [...prev, ...newImages]);
+      setGalleryUrlInput('');
+      toast.success(`${urls.length} image URL(s) added to gallery`);
+    } else {
+      toast.error('Please paste at least one valid image URL.');
+    }
   };
 
   const toggleCategory = (category) => {
@@ -289,27 +318,43 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
     return true;
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     // Allow saving draft without full validation
     if (!title.trim()) {
       toast.error('Please enter an event title');
       return;
     }
+    setIsSubmitting(true);
+
+    let finalPosterUrl = null;
+    if (posterFile) {
+      try {
+        finalPosterUrl = await uploadToCloudinary(posterFile);
+      } catch (error) {
+        toast.error('Poster upload failed. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (posterPreview) { // This means a URL was provided
+      finalPosterUrl = posterPreview;
+    }
+
+    const uploadedGalleryUrls = await Promise.all(galleryFiles.map(file => uploadToCloudinary(file)));
 
     const eventData = {
       title,
       description,
       createdBy: selectedTeam?._id,
-      posterUrl: posterPreview,
+      posterUrl: finalPosterUrl,
       pocName: pocName,
       pocPhone: pocPhone,
       venue: eventVenue,
-      ruleBook: rulebookFile,
+      ruleBook: rulebookUrl,
       config: {
         registrationType: registrationType,
       },
       categoryTags: selectedCategories,
-      gallery,
+      gallery: uploadedGalleryUrls,
       timeline: timeline.map(({ id, from, to, ...rest }) => ({
         ...rest,
         duration: { from, to }
@@ -321,11 +366,31 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
     // This also applies to the handlePublish function.
 
     dispatch(createEventDraft(eventData));
+    setIsSubmitting(false);
     onClose();
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!validateForm()) return;
+    setIsSubmitting(true);
+
+    let finalPosterUrl = null;
+    if (posterFile) {
+      try {
+        finalPosterUrl = await uploadToCloudinary(posterFile);
+      } catch (error) {
+        toast.error('Poster upload failed. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (posterPreview) { // This means a URL was provided
+      finalPosterUrl = posterPreview;
+    }
+
+    const uploadedGalleryUrls = await Promise.all(galleryFiles.map(file => uploadToCloudinary(file)));
+
+    // This is a placeholder. The `volunteers` field doesn't seem to be used in the form.
+    const selectedVolunteers = [];
 
      const eventData = {
       title,
@@ -335,16 +400,16 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
       // Assuming the team has a collegeId. If not, this needs adjustment.
       college: selectedTeam.collegeId, 
       // Backend will handle this based on createdBy (teamId).
-      posterUrl: posterPreview,
+      posterUrl: finalPosterUrl,
       pocName: pocName,
       pocPhone: pocPhone,
       venue: eventVenue,
-      ruleBook: rulebookFile,
+      ruleBook: rulebookUrl,
       config: {
         registrationType: registrationType,
       },
       categoryTags: selectedCategories,
-      gallery,
+      gallery: uploadedGalleryUrls,
       timeline: timeline.map(({ id, from, to, ...rest }) => ({
         ...rest,
         duration: { from, to }
@@ -359,6 +424,7 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
     };
 
     dispatch(publishEvent(eventData));
+    setIsSubmitting(false);
     onClose();
   };
 
@@ -472,49 +538,64 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
             {/* Poster Upload */}
             <div className="space-y-2">
               <Label>Event Poster</Label>
-              <div className="flex flex-col gap-3">
-                {posterPreview ? (
-                  <div className="relative w-full h-64 border border-border rounded-lg overflow-hidden">
-                    <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-8 w-8 p-0"
-                        onClick={() => document.getElementById('poster-upload')?.click()}
-                      >
-                        <Edit2 className="w-4 h-4" />
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">Upload File</TabsTrigger>
+                  <TabsTrigger value="url">From URL</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload">
+                  <div className="flex flex-col gap-3 pt-2">
+                    {posterPreview && posterFile ? (
+                      <div className="relative w-full h-64 border border-border rounded-lg overflow-hidden">
+                        <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <Button size="sm" variant="secondary" className="h-8 w-8 p-0" onClick={() => document.getElementById('poster-upload')?.click()}><Edit2 className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="destructive" className="h-8 w-8 p-0" onClick={() => { setPosterPreview(null); setPosterFile(null); }}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="outline" className="w-full h-32 border-dashed" onClick={() => document.getElementById('poster-upload')?.click()}>
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className="w-6 h-6" />
+                          <span>Upload Poster Image</span>
+                        </div>
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setPosterPreview(null)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    )}
+                    <input id="poster-upload" type="file" accept="image/*" className="hidden" onChange={handlePosterUpload} />
                   </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full h-32 border-dashed"
-                    onClick={() => document.getElementById('poster-upload')?.click()}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-6 h-6" />
-                      <span>Upload Poster Image</span>
-                    </div>
-                  </Button>
-                )}
-                <input
-                  id="poster-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePosterUpload}
-                />
-              </div>
+                </TabsContent>
+                <TabsContent value="url">
+                  <div className="space-y-3 pt-2">
+                    <Input
+                      placeholder="https://example.com/poster.jpg"
+                      value={posterUrlInput}
+                      onChange={(e) => {
+                        setPosterUrlInput(e.target.value);
+                        setPosterFile(null); // Clear file if URL is being used
+                      }}
+                    />
+                    <Button onClick={() => setPosterPreview(posterUrlInput)}>Preview URL</Button>
+                    {posterPreview && !posterFile && (
+                       <div className="relative w-full h-64 border border-border rounded-lg overflow-hidden">
+                        <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              setPosterPreview(null);
+                              setPosterUrlInput('');
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* POC Selection */}
@@ -552,40 +633,37 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
 
             {/* Rulebook Upload */}
             <div className="space-y-2">
-              <Label>Rulebook (PDF)</Label>
-              <div className="flex items-center gap-3">
-                {rulebookFile ? (
-                  <div className="flex-1 flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-destructive" />
-                      <span className="text-sm">{rulebookFile}</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setRulebookFile(null)}
-                    >
-                      <X className="w-4 h-4" />
+              <Label>Rulebook</Label>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+                  <TabsTrigger value="url">From URL</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload">
+                  <div className="pt-2">
+                    <Button variant="outline" className="w-full" onClick={() => document.getElementById('rulebook-upload')?.click()}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Upload Rulebook (PDF)
                     </Button>
+                    <input id="rulebook-upload" type="file" accept="application/pdf" className="hidden" onChange={handleRulebookUpload} />
                   </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => document.getElementById('rulebook-upload')?.click()}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Upload Rulebook (PDF)
-                  </Button>
-                )}
-                <input
-                  id="rulebook-upload"
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={handleRulebookUpload}
-                />
-              </div>
+                </TabsContent>
+                <TabsContent value="url">
+                  <div className="flex gap-2 pt-2">
+                    <Input placeholder="https://example.com/rulebook.pdf" value={rulebookUrlInput} onChange={(e) => setRulebookUrlInput(e.target.value)} />
+                    <Button onClick={() => setRulebookUrl(rulebookUrlInput)}>Set URL</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              {rulebookUrl && (
+                <div className="flex-1 flex items-center justify-between p-3 border border-border rounded-lg mt-2">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <FileText className="w-5 h-5 text-destructive flex-shrink-0" />
+                    <a href={rulebookUrl} target="_blank" rel="noopener noreferrer" className="text-sm truncate hover:underline">{rulebookUrl}</a>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => { setRulebookUrl(''); setRulebookUrlInput(''); }}><X className="w-4 h-4" /></Button>
+                </div>
+              )}
             </div>
 
             {/* Category Tags */}
@@ -634,33 +712,42 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
             {/* Event Gallery */}
             <div className="space-y-2">
               <Label>Event Gallery</Label>
-              <p className="text-sm text-muted-foreground">Upload multiple images</p>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => document.getElementById('gallery-upload')?.click()}
-              >
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Add Images to Gallery
-              </Button>
-              <input
-                id="gallery-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleGalleryUpload}
-              />
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">Upload Files</TabsTrigger>
+                  <TabsTrigger value="url">From URLs</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload">
+                  <div className="pt-2">
+                    <Button variant="outline" className="w-full" onClick={() => document.getElementById('gallery-upload')?.click()}>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Add Images to Gallery
+                    </Button>
+                    <input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
+                  </div>
+                </TabsContent>
+                <TabsContent value="url">
+                  <div className="space-y-2 pt-2">
+                    <Textarea
+                      placeholder="Paste image URLs here, one per line."
+                      value={galleryUrlInput}
+                      onChange={(e) => setGalleryUrlInput(e.target.value)}
+                      rows={4}
+                    />
+                    <Button onClick={addGalleryUrl}>Add URLs</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
               {gallery.length > 0 && (
                 <div className="grid grid-cols-4 gap-3">
                   {gallery.map((img, idx) => (
-                    <div key={img} className="relative aspect-square border border-border rounded-lg overflow-hidden group">
-                      <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                    <div key={img.id} className="relative aspect-square border border-border rounded-lg overflow-hidden group">
+                      <img src={img.preview} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
                       <Button
                         size="sm"
                         variant="destructive"
                         className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))}
+                        onClick={() => setGallery(prev => prev.filter((item) => item.id !== img.id))}
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -809,10 +896,10 @@ export function CreateEventModal({ open, onClose, currentUserEmail }) {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="secondary" onClick={handleSaveDraft}>
+          <Button variant="secondary" onClick={handleSaveDraft} disabled={isSubmitting}>
             Save Draft
           </Button>
-          <Button onClick={handlePublish} className="gap-2">
+          <Button onClick={handlePublish} className="gap-2" disabled={isSubmitting}>
             <CheckCircle className="w-4 h-4" />
             Publish
           </Button>
