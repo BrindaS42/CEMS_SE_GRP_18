@@ -1,55 +1,80 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, X, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fetchAllOrganizers } from '@/store/auth.slice';
+import { createTeam, fetchTeamList } from '@/store/team.slice';
 
-// Mock current logged-in organiser
-const CURRENT_ORGANISER = {
-  name: 'John Doe',
-  email: 'john@college.edu',
+// Get current organizer from auth slice
+const getCurrentOrganizer = (user) => {
+  if (user?.profile) {
+    return {
+      name: user.profile.name || user.username,
+      email: user.email,
+      college: user.college,
+    };
+  }
+  return {
+    name: 'Unknown',
+    email: 'unknown@example.com',
+    college: 'Unknown',
+  };
 };
 
-// Mock user database for name search
-const USER_DATABASE = [
-  { name: 'Adam Smith', email: 'adam@college.edu' },
-  { name: 'Adidas Kumar', email: 'adidas@college.edu' },
-  { name: 'Aditi Sharma', email: 'aditi@college.edu' },
-  { name: 'Jane Smith', email: 'jane@college.edu' },
-  { name: 'Bob Wilson', email: 'bob@college.edu' },
-  { name: 'Alice Cooper', email: 'alice@college.edu' },
-  { name: 'Charlie Brown', email: 'charlie@college.edu' },
-  { name: 'David Lee', email: 'david@college.edu' },
-  { name: 'Eva Martinez', email: 'eva@college.edu' },
-  { name: 'Frank Johnson', email: 'frank@college.edu' },
-  { name: 'Grace Kim', email: 'grace@college.edu' },
-  { name: 'Henry Davis', email: 'henry@college.edu' },
-];
-
-// Mock function to check team name availability
-const checkTeamNameAvailability = async (name) => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const existingTeams = ['Innovators', 'Tech Giants', 'Code Warriors'];
-  return !existingTeams.includes(name);
+// Check team name availability against database
+const checkTeamNameAvailability = async (name, teamList) => {
+  if (!teamList) return true;
+  return !teamList.some(team => team.name?.toLowerCase() === name.toLowerCase());
 };
 
 export function CreateTeamModal({ open, onClose }) {
+  const dispatch = useDispatch();
+  const { user, allOrganizers } = useSelector(state => state.auth);
+  const { loading, error, teamList } = useSelector(state => state.team);
+
   const [teamName, setTeamName] = useState('');
+  const [description, setDescription] = useState('');
   const [teamNameStatus, setTeamNameStatus] = useState('idle');
   const [members, setMembers] = useState([]);
   const [searchOpen, setSearchOpen] = useState(null);
   const [searchValue, setSearchValue] = useState({});
 
+  // Fetch organizers and team list whenever modal opens
+  useEffect(() => {
+    if (open) {
+      dispatch(fetchAllOrganizers());
+      dispatch(fetchTeamList());
+    }
+  }, [open, dispatch]);
+
   // Reset form when modal closes
   useEffect(() => {
     if (!open) {
       setTeamName('');
+      setDescription('');
       setTeamNameStatus('idle');
       setMembers([]);
       setSearchOpen(null);
@@ -59,23 +84,23 @@ export function CreateTeamModal({ open, onClose }) {
 
   // Check team name availability
   useEffect(() => {
-    if (teamName.trim().length === 0) {
+    if (teamName.trim().length === 0 || !teamList) {
       setTeamNameStatus('idle');
       return;
     }
 
     setTeamNameStatus('checking');
     const timer = setTimeout(async () => {
-      const isAvailable = await checkTeamNameAvailability(teamName);
+      const isAvailable = await checkTeamNameAvailability(teamName, teamList);
       setTeamNameStatus(isAvailable ? 'available' : 'unavailable');
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [teamName]);
+  }, [teamName, teamList]);
 
   const addMember = () => {
     const newId = Date.now().toString();
-    setMembers([...members, { id: newId, name: '', email: '', role: 'Member' }]);
+    setMembers([...members, { id: newId, name: '', email: '', role: 'volunteer' }]);
   };
 
   const removeMember = (id) => {
@@ -87,28 +112,31 @@ export function CreateTeamModal({ open, onClose }) {
     });
   };
 
-  const handleSelectUser = (memberId, user) => {
-    setMembers(members.map(m => 
-      m.id === memberId 
-        ? { ...m, name: user.name, email: user.email }
+  const handleSelectUser = (memberId, organizer) => {
+    const organizerName = organizer.profile?.name || organizer.username;
+    setMembers(members.map(m =>
+      m.id === memberId
+        ? { ...m, name: organizerName, email: organizer.email, organizerId: organizer.id }
         : m
     ));
-    setSearchValue(prev => ({ ...prev, [memberId]: user.name }));
+    setSearchValue(prev => ({ ...prev, [memberId]: organizerName }));
     setSearchOpen(null);
   };
 
   const getFilteredUsers = (memberId) => {
-    const search = searchValue[memberId]?.toLowerCase() || '';
-    if (!search) return USER_DATABASE;
-    
-    // Filter users by name
-    return USER_DATABASE.filter(user => 
-      user.name.toLowerCase().includes(search)
-    );
+    const search = (searchValue[memberId] || '').toLowerCase();
+    if (!allOrganizers || !user) return [];
+
+    return allOrganizers
+      .filter(o => o.college?.toString() === user.college?.toString() && o.email !== user.email)
+      .filter(o => {
+        const name = o.profile?.name?.toLowerCase() || '';
+        const username = o.username?.toLowerCase() || '';
+        return name.includes(search) || username.includes(search);
+      });
   };
 
   const handleSendInvites = () => {
-    // Validation
     if (teamNameStatus !== 'available') {
       toast.error('Please enter a valid, available team name');
       return;
@@ -125,9 +153,14 @@ export function CreateTeamModal({ open, onClose }) {
       return;
     }
 
-    // Success
+    const teamData = {
+      name: teamName,
+      description: description,
+      members: members.map(m => ({ user: m.organizerId, role: m.role })),
+    };
+    console.log("Creating team with data:", teamData);
+    dispatch(createTeam(teamData));
     toast.success('Team invites sent successfully!');
-    console.log('Creating team:', { teamName, leader: CURRENT_ORGANISER, members });
     onClose();
   };
 
@@ -143,152 +176,172 @@ export function CreateTeamModal({ open, onClose }) {
 
         <div className="flex-1 overflow-y-auto px-8">
           <div className="space-y-6 pb-6">
-          {/* Team Name */}
-          <div className="space-y-2">
-            <Label htmlFor="team-name">Team Name</Label>
-            <Input
-              id="team-name"
-              placeholder="Enter team name"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-            />
-            {teamNameStatus === 'checking' && (
-              <p className="text-sm text-muted-foreground">Checking availability...</p>
-            )}
-            {teamNameStatus === 'available' && (
-              <p className="text-sm text-success flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                Available ✅
-              </p>
-            )}
-            {teamNameStatus === 'unavailable' && (
-              <p className="text-sm text-destructive flex items-center gap-1">
-                <XCircle className="w-4 h-4" />
-                Already in use ❌
-              </p>
-            )}
-          </div>
-
-          {/* Leader Section (Non-editable) */}
-          <div className="space-y-2">
-            <Label>Team Leader</Label>
-            <div className="p-4 border border-border rounded-lg bg-muted/30">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{CURRENT_ORGANISER.name}</p>
-                  <p className="text-sm text-muted-foreground">{CURRENT_ORGANISER.email}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Role: Leader (You)</p>
-                </div>
-                <CheckCircle className="w-5 h-5 text-success" />
-              </div>
-            </div>
-          </div>
-
-          {/* Add Members Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>Add Team Members</Label>
-              <p className="text-sm text-muted-foreground">
-                Search by name to add members
-              </p>
+            {/* Team Name */}
+            <div className="space-y-2">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                placeholder="Enter team name"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+              />
+              {teamNameStatus === 'checking' && (
+                <p className="text-sm text-muted-foreground">Checking availability...</p>
+              )}
+              {teamNameStatus === 'available' && (
+                <p className="text-sm text-success flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" /> Available ✅
+                </p>
+              )}
+              {teamNameStatus === 'unavailable' && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <XCircle className="w-4 h-4" /> Already in use ❌
+                </p>
+              )}
             </div>
 
-            {members.map((member, index) => (
-              <div key={member.id} className="p-6 border border-border rounded-lg space-y-4">
+            {/* Team Description */}
+            <div className="space-y-2">
+              <Label htmlFor="team-description">Team Description</Label>
+              <Textarea
+                id="team-description"
+                placeholder="Briefly describe the team's purpose or focus"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Leader Section */}
+            <div className="space-y-2">
+              <Label>Team Leader</Label>
+              <div className="p-4 border border-border rounded-lg bg-muted/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Member {index + 1}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeMember(member.id)}
-                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor={`member-${member.id}`} className="text-xs">Search by Name</Label>
-                  <Popover 
-                    open={searchOpen === member.id} 
-                    onOpenChange={(open) => setSearchOpen(open ? member.id : null)}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        {member.name || "Type to search..."}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Search by name..." 
-                          value={searchValue[member.id] || ''}
-                          onValueChange={(value) => {
-                            setSearchValue(prev => ({ ...prev, [member.id]: value }));
-                          }}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No users found.</CommandEmpty>
-                          <CommandGroup>
-                            {getFilteredUsers(member.id).map((user) => (
-                              <CommandItem
-                                key={user.email}
-                                value={user.name}
-                                onSelect={() => handleSelectUser(member.id, user)}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{user.name}</span>
-                                  <span className="text-xs text-muted-foreground">{user.email}</span>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Display selected member info */}
-                  {member.name && member.email && (
-                    <div className="mt-2 p-3 bg-muted/30 rounded-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Role: Member</p>
-                        </div>
-                        <CheckCircle className="w-4 h-4 text-success" />
-                      </div>
-                    </div>
-                  )}
+                  <div>
+                    <p className="font-medium">{getCurrentOrganizer(user).name}</p>
+                    <p className="text-sm text-muted-foreground">{getCurrentOrganizer(user).email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Role: Leader (You)</p>
+                  </div>
+                  <CheckCircle className="w-5 h-5 text-success" />
                 </div>
               </div>
-            ))}
+            </div>
 
-            {/* Add Member Button */}
-            <Button
-              variant="outline"
-              onClick={addMember}
-              className="w-full gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Member
-            </Button>
+            {/* Add Members Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Add Team Members</Label>
+                <p className="text-sm text-muted-foreground">Search by name to add members</p>
+              </div>
+
+              {members.map((member, index) => (
+                <div key={member.id} className="p-6 border border-border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Member {index + 1}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeMember(member.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`member-${member.id}`} className="text-xs">Search by Name</Label>
+                    <Popover
+                      open={searchOpen === member.id}
+                      onOpenChange={(open) => setSearchOpen(open ? member.id : null)}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          {member.name || "Type to search..."}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder="Search by name..."
+                            value={searchValue[member.id] || ''}
+                            onValueChange={(value) => setSearchValue(prev => ({ ...prev, [member.id]: value }))}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No users found.</CommandEmpty>
+                            <CommandGroup>
+                              {getFilteredUsers(member.id).map((organizer) => {
+                                const organizerName = organizer.profile?.name || organizer.username;
+                                return (
+                                  <CommandItem
+                                    key={organizer.email}
+                                    value={organizerName}
+                                    onSelect={() => handleSelectUser(member.id, organizer)}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{organizerName}</span>
+                                      <span className="text-xs text-muted-foreground">{organizer.email}</span>
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Role Selection */}
+                    <div className="space-y-1">
+                      <Label htmlFor={`role-${member.id}`} className="text-xs">Role</Label>
+                      <Select
+                        value={member.role}
+                        onValueChange={(value) =>
+                          setMembers(members.map(m => m.id === member.id ? { ...m, role: value } : m))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="co-organizer">Co-Organizer</SelectItem>
+                          <SelectItem value="volunteer">Volunteer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Display selected member info */}
+                    {member.name && member.email && (
+                      <div className="mt-2 p-3 bg-muted/30 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{member.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Role: {member.role === 'co-organizer' ? 'Co-Organizer' : 'Volunteer'}
+                            </p>
+                          </div>
+                          <CheckCircle className="w-4 h-4 text-success" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <Button variant="outline" onClick={addMember} className="w-full gap-2">
+                <Plus className="w-4 h-4" /> Add Member
+              </Button>
+            </div>
           </div>
-        </div>
         </div>
 
         <DialogFooter className="p-8 pt-4 border-t border-border flex-shrink-0">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSendInvites}>
-            Send Invites
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSendInvites}>Send Invites</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

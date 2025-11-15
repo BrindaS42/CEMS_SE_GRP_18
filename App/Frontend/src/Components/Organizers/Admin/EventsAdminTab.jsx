@@ -1,29 +1,35 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { DraftedEventsTab } from './DraftedEventsTab';
 import { PublishedEventsTab } from './PublishedEventsTab';
-import { OngoingEventsTab } from './OngoingEventsTab';
 import { CompletedEventsTab } from './CompletedEventsTab';
 import { CreateEventModal } from './CreateEventModal';
-// Assuming CURRENT_USER_EMAIL is imported from App, but adding a fallback
-import { CURRENT_USER_EMAIL as AppUserEmail } from '@/App';
 import { SegmentedControl } from '@/components/ui/segmented-control';
+import { deleteEvent, fetchDraftEvents, fetchPublishedEvents, fetchCompletedEvents } from '../../../store/event.slice';
 
 
-export function EventsAdminTab({ 
-  onCreateEvent, 
+export function EventsAdminTab({
+  onCreateEvent,
   openCreateEventModal = false,
   highlightEventId = null,
   onClearHighlight,
-  events,
-  onUpdateEvents,
   onNavigateToRegistration,
 }) {
+  const dispatch = useDispatch();
+  const { all: reduxEvents } = useSelector((state) => state.events);
+  const { user } = useSelector((state) => state.auth);
   const [activeSubTab, setActiveSubTab] = useState('drafted');
   const [createModalOpen, setCreateModalOpen] = useState(openCreateEventModal);
-  const [maintenanceEventIds, setMaintenanceEventIds] = useState([]);
+
+  // Fetch specific event lists when the component mounts
+  useEffect(() => {
+    dispatch(fetchDraftEvents());
+    dispatch(fetchPublishedEvents());
+    dispatch(fetchCompletedEvents());
+  }, [dispatch]);
 
   // Open create modal when prop changes
   useEffect(() => {
@@ -35,12 +41,13 @@ export function EventsAdminTab({
   // Switch to appropriate tab when highlightEventId is provided
   useEffect(() => {
     if (highlightEventId) {
-      const event = events.find(e => e.id === highlightEventId);
+      const event = reduxEvents.find(e => e._id === highlightEventId);
       if (event) {
-        setActiveSubTab(event.status);
+        // Can only be published, as drafts are not highlighted from other tabs
+        setActiveSubTab('published');
       }
     }
-  }, [highlightEventId, events]);
+  }, [highlightEventId, reduxEvents]);
 
   const handleCreateEvent = () => {
     setCreateModalOpen(true);
@@ -48,55 +55,21 @@ export function EventsAdminTab({
   };
 
   const handleDeleteEvent = (eventId) => {
-    onUpdateEvents(events.filter(e => e.id !== eventId));
+    dispatch(deleteEvent(eventId));
   };
 
   const handleEditEvent = (eventId, eventData) => {
-    // Add to maintenance if it's a published event
-    const event = events.find(e => e.id === eventId);
-    if (event?.status === 'published' && !maintenanceEventIds.includes(eventId)) {
-      setMaintenanceEventIds(prev => [...prev, eventId]);
-    }
-
-    // Update event with new data
-    onUpdateEvents(events.map(e => 
-      e.id === eventId ? { 
-        ...e, 
-        ...eventData, 
-        updatedAt: new Date().toISOString().split('T')[0] 
-      } : e
-    ));
-
-    // Remove from maintenance after a short delay (simulating save completion)
-    setTimeout(() => {
-      setMaintenanceEventIds(prev => prev.filter(id => id !== eventId));
-    }, 2000);
+    // This will now open an Edit modal which will dispatch an update thunk.
+    // For now, we just log it.
+    console.log("Editing event:", eventId, eventData);
   };
 
-  const handlePublishEvent = (eventId) => {
-    onUpdateEvents(events.map(e => 
-      e.id === eventId ? { ...e, status: 'published', updatedAt: new Date().toISOString().split('T')[0] } : e
-    ));
-  };
-
-  const handleSaveEvent = (eventData) => {
-    // Create new event
-    const newEvent = {
-      id: Date.now(),
-      ...eventData,
-      registrations: 0,
-      checkIns: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-    };
-    onUpdateEvents([...events, newEvent]);
-  };
-
-  // Filter events by status and user access
-  const draftedEvents = events.filter(e => e.status === 'drafted');
-  const publishedEvents = events.filter(e => e.status === 'published');
-  const ongoingEvents = events.filter(e => e.status === 'ongoing');
-  const completedEvents = events.filter(e => e.status === 'completed');
+  // Get events directly from the Redux store
+  const { drafts, published, completed } = useSelector((state) => ({
+    drafts: state.events.drafts,
+    published: state.events.published,
+    completed: state.events.completed,
+  }));
 
   return (
     <div className="space-y-6">
@@ -106,7 +79,6 @@ export function EventsAdminTab({
           options={[
             { value: 'drafted', label: 'Drafted' },
             { value: 'published', label: 'Published' },
-            { value: 'ongoing', label: 'Ongoing' },
             { value: 'completed', label: 'Completed' },
           ]}
           value={activeSubTab}
@@ -123,37 +95,28 @@ export function EventsAdminTab({
 
       {/* Sub-tab Content */}
       {activeSubTab === 'drafted' && (
-        <DraftedEventsTab 
-          events={draftedEvents}
-          currentUserEmail={CURRENT_USER_EMAIL}
+        <DraftedEventsTab
+          events={drafts}
+          currentUserEmail={user?.email}
           onDeleteEvent={handleDeleteEvent}
           onEditEvent={handleEditEvent}
-          onPublishEvent={handlePublishEvent}
           onNavigateToRegistration={onNavigateToRegistration}
         />
       )}
       {activeSubTab === 'published' && (
-        <PublishedEventsTab 
-          events={publishedEvents}
-          currentUserEmail={CURRENT_USER_EMAIL}
+        <PublishedEventsTab
+          events={published}
+          currentUserEmail={user?.email}
           onEditEvent={handleEditEvent}
           highlightEventId={highlightEventId}
           onClearHighlight={onClearHighlight}
-          maintenanceEventIds={maintenanceEventIds}
-        />
-      )}
-      {activeSubTab === 'ongoing' && (
-        <OngoingEventsTab 
-          events={ongoingEvents}
-          currentUserEmail={CURRENT_USER_EMAIL}
-          highlightEventId={highlightEventId}
-          onClearHighlight={onClearHighlight}
+          maintenanceEventIds={[]} // This feature can be re-implemented if needed
         />
       )}
       {activeSubTab === 'completed' && (
-        <CompletedEventsTab 
-          events={completedEvents}
-          currentUserEmail={CURRENT_USER_EMAIL}
+        <CompletedEventsTab
+          events={completed}
+          currentUserEmail={user?.email}
         />
       )}
 
@@ -161,8 +124,7 @@ export function EventsAdminTab({
       <CreateEventModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSave={handleSaveEvent}
-        currentUserEmail={CURRENT_USER_EMAIL}
+        currentUserEmail={user?.email}
       />
     </div>
   );
@@ -173,7 +135,5 @@ EventsAdminTab.propTypes = {
   openCreateEventModal: PropTypes.bool,
   highlightEventId: PropTypes.number,
   onClearHighlight: PropTypes.func,
-  events: PropTypes.arrayOf(PropTypes.object).isRequired, // Using PropTypes.object for brevity, but a full shape is better
-  onUpdateEvents: PropTypes.func.isRequired,
   onNavigateToRegistration: PropTypes.func,
 };

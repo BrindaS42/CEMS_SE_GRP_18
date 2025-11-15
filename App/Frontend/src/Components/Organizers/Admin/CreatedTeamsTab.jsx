@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ export function CreatedTeamsTab({
   onHighlightComplete,
   currentUserEmail
 }) {
+  const { teamList } = useSelector((state) => state.team);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState(null);
   const [highlightedTeam, setHighlightedTeam] = useState(null);
@@ -72,7 +74,7 @@ export function CreatedTeamsTab({
   };
 
   const getStatusBadge = (status) => {
-    if (!status || status === 'Accepted') {
+    if (!status || status === 'Approved') {
       return (
         <Badge variant="outline" className="text-success border-success/50 bg-success/10 gap-1 text-xs">
           ✅ Accepted
@@ -80,7 +82,7 @@ export function CreatedTeamsTab({
       );
     }
     
-    if (status === 'Declined') {
+    if (status === 'Rejected') {
       return (
         <Badge variant="outline" className="text-destructive border-destructive/50 bg-destructive/10 gap-1 text-xs">
           ❌ Declined
@@ -103,15 +105,7 @@ export function CreatedTeamsTab({
   };
 
   const handleViewTeam = (team) => {
-    setTeamToView({
-      id: team.id,
-      name: team.name,
-      leader: team.leader,
-      totalMembers: team.totalMembers,
-      members: team.members,
-      createdAt: team.createdAt,
-      status: team.status,
-    });
+    setTeamToView(team);
     setViewModalOpen(true);
   };
 
@@ -128,24 +122,25 @@ export function CreatedTeamsTab({
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teams.map((team) => {
-          const userCanEdit = canUserEdit(team);
+        {teams.map((teamFromList) => {
+          const userCanEdit = canUserEdit(teamFromList);
+          const team = teamList.find(t => t._id === teamFromList.id);
           
           return (
             <div 
-              key={team.id} 
-              ref={(el) => (teamRefs.current[team.id] = el)}
+              key={teamFromList.id} 
+              ref={(el) => (teamRefs.current[teamFromList.id] = el)}
               className="h-full"
             >
               <Card 
                 className={`h-full flex flex-col hover:shadow-lg transition-all duration-500 ${
-                  highlightedTeam === team.id ? 'bg-warning/20 border-warning animate-pulse' : ''
+                  highlightedTeam === teamFromList.id ? 'bg-warning/20 border-warning animate-pulse' : ''
                 }`}
               >
               <CardHeader className="pb-3 flex-shrink-0">
                 <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg">{team.name}</CardTitle>
-                  {team.status === 'Active' ? (
+                  <CardTitle className="text-lg">{teamFromList.name}</CardTitle>
+                  {teamFromList.status === 'Active' ? (
                     <Badge variant="outline" className="text-success border-success/50 bg-success/10">
                       Active
                     </Badge>
@@ -156,7 +151,7 @@ export function CreatedTeamsTab({
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Created: {new Date(team.createdAt).toLocaleDateString('en-US', { 
+                  Created: {new Date(teamFromList.createdAt).toLocaleDateString('en-US', { 
                     month: 'short', 
                     day: 'numeric', 
                     year: 'numeric' 
@@ -168,20 +163,20 @@ export function CreatedTeamsTab({
                 <div className="flex items-center gap-2 text-sm flex-shrink-0">
                   <Crown className="w-4 h-4 text-secondary" />
                   <span className="text-muted-foreground">Leader:</span>
-                  <span className="font-medium">{team.leader}</span>
+                  <span className="font-medium">{teamFromList.leader}</span>
                 </div>
                 
                 <div className="flex items-center gap-2 text-sm flex-shrink-0">
                   <Users className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">Total Members:</span>
-                  <span className="font-medium">{team.totalMembers}</span>
+                  <span className="font-medium">{teamFromList.totalMembers}</span>
                 </div>
 
                 {/* Member List with Status Badges */}
                 <div className="pt-2 border-t border-border flex-grow flex flex-col min-h-0">
                   <p className="text-sm font-medium mb-2 flex-shrink-0">Team Members</p>
                   <div className="space-y-2 overflow-y-auto flex-grow">
-                    {team.members.map((member) => (
+                    {teamFromList.members.map((member) => (
                       <div key={member.email} className="text-sm flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
                           <span className="text-muted-foreground truncate">{member.name}</span>
@@ -226,7 +221,7 @@ export function CreatedTeamsTab({
                           <Button
                             variant="outline"
                             className="w-full text-secondary border-secondary/50 hover:bg-secondary hover:text-black"
-                            onClick={() => onEditTeam(team.id)}
+                            onClick={() => onEditTeam(teamFromList.id)}
                             disabled={!userCanEdit}
                           >
                             <Edit className="w-4 h-4 mr-2" />
@@ -249,7 +244,7 @@ export function CreatedTeamsTab({
                           <Button
                             variant="outline"
                             className="w-full text-destructive border-destructive/50 hover:bg-destructive hover:text-black"
-                            onClick={() => handleDeleteClick(team.id)}
+                            onClick={() => handleDeleteClick(teamFromList.id)}
                             disabled={!userCanEdit}
                           >
                             <Trash2 className="w-4 h-4 mr-2" />

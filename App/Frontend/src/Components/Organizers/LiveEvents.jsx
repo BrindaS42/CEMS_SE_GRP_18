@@ -16,10 +16,7 @@ export function LiveEvents({ events, onViewEvent }) {
     // Implement CSV/Excel export logic for this event
   };
 
-  // Filter only ongoing/live events
-  const liveEvents = events.filter(event => event.status === 'ongoing');
-
-  if (liveEvents.length === 0) {
+  if (events.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground animate-fade-in-up">
         <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -31,7 +28,7 @@ export function LiveEvents({ events, onViewEvent }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-stagger-container>
-      {liveEvents.map((event, index) => {
+      {events.map((event, index) => {
         const mainTimeline = event.timeline[0];
 
         return (

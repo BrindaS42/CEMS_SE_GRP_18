@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { 
   BarChart, 
@@ -15,32 +17,39 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { TrendingUp, Users, Star, Calendar } from 'lucide-react';
-
-const eventRatingsData = [
-  { name: 'Tech Symposium', rating: 4.5 },
-  { name: 'Cultural Fest', rating: 4.8 },
-  { name: 'Sports Day', rating: 4.3 },
-  { name: 'Hackathon', rating: 4.6 },
-  { name: 'Music Festival', rating: 4.9 },
-];
-
-const attendanceRatioData = [
-  { month: 'Jan', registered: 450, attended: 398 },
-  { month: 'Feb', registered: 380, attended: 345 },
-  { month: 'Mar', registered: 520, registered: 490 },
-  { month: 'Apr', registered: 600, attended: 565 },
-  { month: 'May', registered: 480, attended: 430 },
-  { month: 'Jun', registered: 550, attended: 520 },
-];
-
-const eventPerformanceData = [
-  { name: 'Excellent', value: 45, color: '#2D3E7E' },
-  { name: 'Good', value: 35, color: '#FDB913' },
-  { name: 'Average', value: 15, color: '#FF9F1C' },
-  { name: 'Poor', value: 5, color: '#F24333' },
-];
+import {
+  fetchDashboardStats,
+  fetchEventWiseRatings,
+  fetchAttendanceRatio,
+  fetchEventPerformance,
+} from '../../store/analytics.slice';
 
 export function AnalyticsTab() {
+  const dispatch = useDispatch();
+  const { 
+    stats = { totalEvents: 0, totalRegistrations: 0, avgAttendance: 0, avgRating: 0 }, 
+    eventRatings = [], 
+    attendanceRatio = [], 
+    eventPerformance = [], 
+    status 
+  } = useSelector(state => state.analytics) || {};
+
+  useEffect(() => {
+    dispatch(fetchDashboardStats());
+    dispatch(fetchEventWiseRatings());
+    dispatch(fetchAttendanceRatio());
+    dispatch(fetchEventPerformance());
+  }, [dispatch]);
+
+  if (status === 'loading') {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50 animate-pulse" />
+        <p>Loading analytics...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -53,7 +62,7 @@ export function AnalyticsTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl text-primary">24</div>
+            <div className="text-3xl text-primary">{stats.totalEvents}</div>
             <p className="text-xs text-muted-foreground mt-1">+3 from last month</p>
           </CardContent>
         </Card>
@@ -66,7 +75,7 @@ export function AnalyticsTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl text-secondary">2,845</div>
+            <div className="text-3xl text-secondary">{stats.totalRegistrations}</div>
             <p className="text-xs text-muted-foreground mt-1">+12% increase</p>
           </CardContent>
         </Card>
@@ -79,7 +88,7 @@ export function AnalyticsTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl text-accent">89%</div>
+            <div className="text-3xl text-accent">{stats.avgAttendance}%</div>
             <p className="text-xs text-muted-foreground mt-1">+5% from last month</p>
           </CardContent>
         </Card>
@@ -92,7 +101,7 @@ export function AnalyticsTab() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl text-[var(--success)]">4.6</div>
+            <div className="text-3xl text-[var(--success)]">{stats.avgRating}</div>
             <p className="text-xs text-muted-foreground mt-1">Out of 5.0</p>
           </CardContent>
         </Card>
@@ -107,7 +116,7 @@ export function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={eventRatingsData}>
+              <BarChart data={eventRatings}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
                 <YAxis domain={[0, 5]} />
@@ -125,7 +134,7 @@ export function AnalyticsTab() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={attendanceRatioData}>
+              <LineChart data={attendanceRatio}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -148,7 +157,7 @@ export function AnalyticsTab() {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={eventPerformanceData}
+                    data={eventPerformance}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -157,7 +166,7 @@ export function AnalyticsTab() {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {eventPerformanceData.map((entry, index) => (
+                    {eventPerformance.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>

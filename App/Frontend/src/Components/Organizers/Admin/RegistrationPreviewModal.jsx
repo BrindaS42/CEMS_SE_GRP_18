@@ -5,54 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CreditCard, Users, User, FileText } from 'lucide-react';
 
-// Mock data - in real app, fetch this from backend
-const mockRegistrationData = {
-  isFree: false,
-  combos: [
-    {
-      id: '1',
-      title: 'Bronze',
-      description: 'Basic access package',
-      fees: 299,
-      color: '#CD7F32',
-    },
-    {
-      id: '2',
-      title: 'Silver',
-      description: 'Standard access package',
-      fees: 499,
-      color: '#C0C0C0',
-    },
-  ],
-  registrationType: 'team',
-  teamSizeRange: { min: 2, max: 5 },
-  registrationFields: [
-    {
-      id: '1',
-      type: 'text',
-      title: 'Full Name',
-      required: true,
-    },
-    {
-      id: '2',
-      type: 'text',
-      title: 'Email Address',
-      required: true,
-    },
-    {
-      id: '3',
-      type: 'number',
-      title: 'Phone Number',
-      required: true,
-    },
-  ],
-};
-
 export function RegistrationPreviewModal({
   isOpen,
   onClose,
   event,
 }) {
+  const config = event?.config || {};
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto smooth-scroll">
@@ -107,17 +66,17 @@ export function RegistrationPreviewModal({
                 <h3 className="text-lg font-medium">Payment Configuration</h3>
               </div>
 
-              {mockRegistrationData.isFree ? (
+              {config.isFree ? (
                 <Badge variant="outline" className="bg-success/10 text-success">
                   Free Event
                 </Badge>
               ) : (
                 <div className="space-y-3">
-                  <Badge variant="outline" className="bg-warning/10 text-warning">
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive">
                     Paid Event
                   </Badge>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    {mockRegistrationData.combos.map((combo) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                    {(config.combos || []).map((combo) => (
                       <div
                         key={combo.id}
                         className="border-2 rounded-lg p-4"
@@ -144,7 +103,7 @@ export function RegistrationPreviewModal({
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                {mockRegistrationData.registrationType === 'team' ? (
+                {config.registrationType === 'Team' ? (
                   <Users className="w-5 h-5 text-primary" />
                 ) : (
                   <User className="w-5 h-5 text-primary" />
@@ -153,15 +112,13 @@ export function RegistrationPreviewModal({
               </div>
 
               <div className="space-y-2">
-                <Badge variant="outline">
-                  {mockRegistrationData.registrationType === 'team'
-                    ? 'Team Registration'
-                    : 'Individual Registration'}
+                <Badge variant="outline" className="capitalize">
+                  {config.registrationType} Registration
                 </Badge>
-                {mockRegistrationData.registrationType === 'team' && (
+                {config.registrationType === 'Team' && (
                   <p className="text-sm text-muted-foreground">
-                    Team size: {mockRegistrationData.teamSizeRange.min} -{' '}
-                    {mockRegistrationData.teamSizeRange.max} members
+                    Team size: {config.teamSizeRange?.min || 'N/A'} -{' '}
+                    {config.teamSizeRange?.max || 'N/A'} members
                   </p>
                 )}
               </div>
@@ -177,7 +134,7 @@ export function RegistrationPreviewModal({
               </div>
 
               <div className="space-y-3">
-                {mockRegistrationData.registrationFields.map((field, index) => (
+                {(config.registrationFields || []).map((field, index) => (
                   <div key={field.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <span className="text-sm font-medium text-muted-foreground">
                       {index + 1}.
@@ -186,11 +143,11 @@ export function RegistrationPreviewModal({
                       <span className="font-medium">{field.title}</span>
                       {field.required && <span className="text-destructive ml-1">*</span>}
                     </div>
-                    <Badge variant="outline">{field.type}</Badge>
+                    <Badge variant="outline" className="capitalize">{field.inputType}</Badge>
                   </div>
                 ))}
 
-                {mockRegistrationData.registrationFields.length === 0 && (
+                {(config.registrationFields || []).length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No custom fields configured
                   </p>

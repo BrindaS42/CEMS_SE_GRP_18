@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { PaymentConfigStep } from './Registration/PaymentConfigStep';
 import { RegistrationTypeStep } from './Registration/RegistrationTypeStep';
 import { RegistrationFieldsStep } from './Registration/RegistrationFieldsStep';
+import { updateEventConfig } from '@/store/event.slice';
 import { toast } from 'sonner';
 
 const STEPS = [
@@ -16,6 +18,7 @@ const STEPS = [
 ];
 
 export function RegistrationConfigModal({ isOpen, onClose, event }) {
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [direction, setDirection] = useState('forward');
   
@@ -23,10 +26,24 @@ export function RegistrationConfigModal({ isOpen, onClose, event }) {
   const [config, setConfig] = useState({
     isFree: true,
     combos: [],
-    registrationType: 'individual',
+    registrationType: 'Individual',
     teamSizeRange: { min: 2, max: 5 },
     registrationFields: [],
   });
+
+  useEffect(() => {
+    if (isOpen && event?.config) {
+      setConfig({
+        isFree: event.config.isFree ?? true,
+        combos: event.config.combos || [],
+        qrCodeUrl: event.config.qrCodeUrl || '',
+        registrationType: event.config.registrationType || 'Individual',
+        teamSizeRange: event.config.teamSizeRange || { min: 2, max: 5 },
+        registrationFields: event.config.registrationFields || [],
+      });
+    }
+  }, [isOpen, event]);
+
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -47,23 +64,18 @@ export function RegistrationConfigModal({ isOpen, onClose, event }) {
   const handleSave = () => {
     // Validate form
     if (!config.isFree && config.combos.length === 0) {
-      toast.error('Please add at least one payment combo');
-      return;
-    }
-
-    if (!config.isFree && !config.qrCodeUrl) {
-      toast.error('Please upload a QR code for payment');
+      toast.error('Please add at least one payment combo for a paid event.');
+      setCurrentStep(1);
       return;
     }
 
     if (config.registrationFields.length === 0) {
-      toast.error('Please add at least one registration field');
+      toast.error('Please add at least one field to the registration form.');
       setCurrentStep(3);
       return;
     }
 
-    // Save logic here
-    console.log('Saving registration config:', config);
+    dispatch(updateEventConfig({ eventId: event._id, config }));
     toast.success('Registration configuration saved successfully!');
     onClose();
   };
@@ -233,7 +245,7 @@ RegistrationConfigModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
 };

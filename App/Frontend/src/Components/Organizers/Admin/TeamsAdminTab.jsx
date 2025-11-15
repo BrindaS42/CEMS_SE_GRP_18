@@ -1,123 +1,83 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { PendingTeamsTab } from './PendingTeamsTab';
 import { CreatedTeamsTab } from './CreatedTeamsTab';
-import { InUseTeamsTab } from './InUseTeamsTab';
-import { ArchivedTeamsTab } from './ArchivedTeamsTab';
 import { EditTeamModal } from './EditTeamModal';
 import { SegmentedControl } from '@/components/ui/segmented-control';
-
-// Mock current logged-in organiser email
-const CURRENT_USER_EMAIL = 'john@college.edu';
-
-const initialPendingTeams = [
-  {
-    id: 1,
-    name: 'Web Wizards',
-    createdAt: '2025-10-28',
-    members: [
-      { name: 'John Doe', email: 'john@college.edu', role: 'Leader', status: 'Accepted' },
-      { name: 'Jane Smith', email: 'jane@college.edu', role: 'Member', status: 'Accepted' },
-      { name: 'Bob Wilson', email: 'bob@college.edu', role: 'Member', status: 'Pending' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Data Dynamos',
-    createdAt: '2025-10-29',
-    members: [
-      { name: 'Alice Cooper', email: 'alice@college.edu', role: 'Leader', status: 'Accepted' },
-      { name: 'Charlie Brown', email: 'charlie@college.edu', role: 'Member', status: 'Accepted' },
-      { name: 'David Lee', email: 'david@college.edu', role: 'Member', status: 'Accepted' },
-      { name: 'Eva Martinez', email: 'eva@college.edu', role: 'Member', status: 'Accepted' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'AI Architects',
-    createdAt: '2025-10-30',
-    members: [
-      { name: 'Frank Johnson', email: 'frank@college.edu', role: 'Leader', status: 'Accepted' },
-      { name: 'Grace Kim', email: 'grace@college.edu', role: 'Member', status: 'Declined' },
-      { name: 'Henry Davis', email: 'henry@college.edu', role: 'Member', status: 'Pending' },
-    ],
-  },
-];
-
-const initialCreatedTeams = [
-  {
-    id: 1,
-    name: 'Innovators',
-    leader: 'Sarah Johnson',
-    totalMembers: 6,
-    createdAt: '2025-10-20',
-    status: 'In Use',
-    members: [
-      { name: 'Sarah Johnson', email: 'sarah@college.edu', role: 'Leader' },
-      { name: 'Mike Chen', email: 'mike@college.edu', role: 'Member' },
-      { name: 'Lisa Wang', email: 'lisa@college.edu', role: 'Member' },
-      { name: 'Tom Baker', email: 'tom@college.edu', role: 'Member' },
-      { name: 'Emma Davis', email: 'emma@college.edu', role: 'Member' },
-      { name: 'John Doe', email: 'john@college.edu', role: 'Member' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Tech Giants',
-    leader: 'Alex Martinez',
-    totalMembers: 4,
-    createdAt: '2025-10-22',
-    status: 'In Use',
-    members: [
-      { name: 'Alex Martinez', email: 'alex@college.edu', role: 'Leader' },
-      { name: 'Nina Patel', email: 'nina@college.edu', role: 'Member' },
-      { name: 'Ryan Lee', email: 'ryan@college.edu', role: 'Member' },
-      { name: 'Sophia Kim', email: 'sophia@college.edu', role: 'Member' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Code Warriors',
-    leader: 'Daniel Brown',
-    totalMembers: 4,
-    createdAt: '2025-10-25',
-    status: 'Active',
-    members: [
-      { name: 'Daniel Brown', email: 'daniel@college.edu', role: 'Leader' },
-      { name: 'Olivia Taylor', email: 'olivia@college.edu', role: 'Member' },
-      { name: 'James Wilson', email: 'james@college.edu', role: 'Member' },
-      { name: 'John Doe', email: 'john@college.edu', role: 'Member' },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Digital Pioneers',
-    leader: 'John Doe',
-    totalMembers: 6,
-    createdAt: '2025-10-26',
-    status: 'Active',
-    members: [
-      { name: 'John Doe', email: 'john@college.edu', role: 'Leader' },
-      { name: 'Chris Garcia', email: 'chris@college.edu', role: 'Member' },
-      { name: 'Rachel Green', email: 'rachel@college.edu', role: 'Member' },
-      { name: 'Kevin White', email: 'kevin@college.edu', role: 'Member' },
-      { name: 'Amy Chen', email: 'amy@college.edu', role: 'Member' },
-      { name: 'Sam Murphy', email: 'sam@college.edu', role: 'Member' },
-    ],
-  },
-];
+import { fetchTeamList, deleteTeam, editTeam } from '../../../store/team.slice';
 
 export function TeamsAdminTab({ onCreateTeam, highlightTeamId, editTeamId, onClearHighlight }) {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { teamList } = useSelector((state) => state.team);
   const [activeSubTab, setActiveSubTab] = useState('created');
-  const [pendingTeams, setPendingTeams] = useState(initialPendingTeams);
-  const [createdTeams, setCreatedTeams] = useState(initialCreatedTeams);
-  const [archivedTeams, setArchivedTeams] = useState([]);
+  const [pendingTeams, setPendingTeams] =useState([]);
+  const [createdTeams, setCreatedTeams] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [teamToEdit, setTeamToEdit] = useState(null);
   const [isEditingFromPending, setIsEditingFromPending] = useState(false);
   const [processedHighlightId, setProcessedHighlightId] = useState(null);
+
+  // Fetch teams on component mount
+  useEffect(() => {
+    dispatch(fetchTeamList());
+  }, [dispatch]);
+
+  // Process teamList into pending and created, filtering for teams where user is leader
+  useEffect(() => {
+    if (!user || !teamList || !Array.isArray(teamList)) {
+      return; // Stop execution until both are loaded
+    }
+
+    const pending = [];
+    const created = [];
+
+    teamList.forEach(team => {
+      // Only include teams where current user is the leader
+      const isLeader = team.leader && team.leader._id === user.id; // Use user._id
+
+      // Only add team to list if user is the leader
+      if (isLeader) {
+        const hasPending = team.members && Array.isArray(team.members) && team.members.some(m => m.status === 'Pending');
+        if (hasPending) {
+          pending.push({
+            id: team._id,
+            name: team.name,
+            createdAt: team.createdAt,
+            members: team.members.map(m => ({
+              name: m?.user?.profile?.name,
+              email: m?.user?.email,
+              role: m?.role,
+              status: m?.status,
+            })),
+          });
+        } else {
+          created.push({
+            id: team._id,
+            name: team.name,
+            leader: team.leader?.profile?.name || 'Unknown',
+            totalMembers: team.members ? team.members.length : 0,
+            members: team.members ? team.members.map(m => ({
+              name: m?.user?.profile?.name,
+              email: m.user?.email,
+              role: m.role,
+              status: m.status,
+            })) : [],
+            createdAt: team.createdAt,
+            status: 'Active',
+          });
+        }
+      }
+
+    });
+
+    setPendingTeams(pending);
+    setCreatedTeams(created);
+    
+  }, [teamList, user]); // Depend on both teamList and the user object
 
   // Handle opening edit modal when editTeamId is provided
   useEffect(() => {
@@ -188,148 +148,39 @@ export function TeamsAdminTab({ onCreateTeam, highlightTeamId, editTeamId, onCle
   };
 
   const handleDeleteCreatedTeam = (teamId) => {
-    const team = createdTeams.find(t => t.id === teamId);
-    if (!team) return;
-
-    // Move to archived
-    const archivedTeam = {
-      id: team.id,
-      name: team.name,
-      leader: team.leader,
-      members: team.members,
-      archivedAt: new Date().toISOString(),
-      reason: 'deleted',
-    };
-
-    setArchivedTeams(prev => [archivedTeam, ...prev]);
-    setCreatedTeams(prev => prev.filter(t => t.id !== teamId));
+    dispatch(deleteTeam(teamId));
   };
 
   const handleDeletePendingTeam = (teamId) => {
-    const team = pendingTeams.find(t => t.id === teamId);
-    if (!team) return;
-
-    const leader = team.members.find(m => m.role === 'Leader');
-
-    // Move to archived
-    const archivedTeam = {
-      id: team.id,
-      name: team.name,
-      leader: leader?.name || 'Unknown',
-      members: team.members.map(m => ({
-        name: m.name,
-        email: m.email,
-        role: m.role,
-      })),
-      archivedAt: new Date().toISOString(),
-      reason: 'deleted',
-    };
-
-    setArchivedTeams(prev => [archivedTeam, ...prev]);
-    setPendingTeams(prev => prev.filter(t => t.id !== teamId));
+    dispatch(deleteTeam(teamId));
   };
 
   const handleEditCreatedTeam = (teamId) => {
-    const team = createdTeams.find(t => t.id === teamId);
-    if (!team) return;
+  const fullTeam = teamList.find(t => t._id === teamId);
+  if (!fullTeam) return;
 
-    setTeamToEdit({
-      id: team.id,
-      name: team.name,
-      members: team.members.map(m => ({ ...m })),
-    });
-    setIsEditingFromPending(false);
-    setEditModalOpen(true);
-  };
+  setTeamToEdit(fullTeam);
+  setIsEditingFromPending(false);
+  setEditModalOpen(true);
+};
 
-  const handleEditPendingTeam = (teamId) => {
-    const team = pendingTeams.find(t => t.id === teamId);
-    if (!team) return;
+const handleEditPendingTeam = (teamId) => {
+  const fullTeam = teamList.find(t => t._id === teamId);
+  if (!fullTeam) return;
 
-    setTeamToEdit({
-      id: team.id,
-      name: team.name,
-      members: team.members.map(m => ({ ...m })),
-    });
-    setIsEditingFromPending(true);
-    setEditModalOpen(true);
-  };
+  setTeamToEdit(fullTeam);
+  setIsEditingFromPending(true);
+  setEditModalOpen(true);
+};
+
 
   const handleSaveEditedTeam = (teamId, updatedTeam, hasNewMembers) => {
-    if (isEditingFromPending) {
-      // Update pending team
-      setPendingTeams(prev => prev.map(t => {
-        if (t.id === teamId) {
-          return {
-            ...t,
-            name: updatedTeam.name,
-            members: updatedTeam.members.map(m => ({
-              name: m.name,
-              email: m.email,
-              role: m.role,
-              status: m.isNew ? 'Pending' : (t.members.find(om => om.email === m.email)?.status || 'Accepted'),
-            })),
-          };
-        }
-        return t;
-      }));
-    } else {
-      // Editing from created teams
-      if (hasNewMembers) {
-        // Move to pending
-        const team = createdTeams.find(t => t.id === teamId);
-        if (!team) return;
-
-        const newPendingTeam = {
-          id: Date.now(),
-          name: updatedTeam.name,
-          createdAt: new Date().toISOString().split('T')[0],
-          members: updatedTeam.members.map(m => ({
-            name: m.name,
-            email: m.email,
-            role: m.role,
-            status: m.isNew ? 'Pending' : 'Accepted',
-          })),
-        };
-
-        setPendingTeams(prev => [...prev, newPendingTeam]);
-        setCreatedTeams(prev => prev.filter(t => t.id !== teamId));
-        setActiveSubTab('pending');
-      } else {
-        // Update in place
-        setCreatedTeams(prev => prev.map(t => {
-          if (t.id === teamId) {
-            const leader = updatedTeam.members.find(m => m.role === 'Leader');
-            return {
-              ...t,
-              name: updatedTeam.name,
-              leader: leader?.name || t.leader,
-              totalMembers: updatedTeam.members.length,
-              members: updatedTeam.members.map(m => ({
-                name: m.name,
-                email: m.email,
-                role: m.role,
-              })),
-            };
-          }
-          return t;
-        }));
-      }
-    }
+    dispatch(editTeam({ teamId, updatedTeam }));
   };
-
-  // Filter to only show teams where current user is a participant
-  const userTeamsFilter = (team) => {
-    return team.members.some(m => m.email === CURRENT_USER_EMAIL);
-  };
-
-  // Filter pending teams
-  const filteredPendingTeams = pendingTeams.filter(userTeamsFilter);
 
   // Filter teams for Created tab (Active teams first, In Use at the end)
-  const userCreatedTeams = createdTeams.filter(userTeamsFilter);
-  const activeTeams = userCreatedTeams.filter(t => t.status === 'Active');
-  const inUseTeams = userCreatedTeams.filter(t => t.status === 'In Use');
+  const activeTeams = createdTeams.filter(t => t.status === 'Active');
+  const inUseTeams = createdTeams.filter(t => t.status === 'In Use');
   const sortedCreatedTeams = [...activeTeams, ...inUseTeams];
 
   return (
@@ -340,8 +191,6 @@ export function TeamsAdminTab({ onCreateTeam, highlightTeamId, editTeamId, onCle
           options={[
             { value: 'pending', label: 'Pending' },
             { value: 'created', label: 'Created' },
-            { value: 'inuse', label: 'In Use' },
-            { value: 'archived', label: 'Archived' },
           ]}
           value={activeSubTab}
           onChange={(value) => setActiveSubTab(value)}
@@ -358,24 +207,23 @@ export function TeamsAdminTab({ onCreateTeam, highlightTeamId, editTeamId, onCle
       {/* Sub-tab Content */}
       {activeSubTab === 'pending' && (
         <PendingTeamsTab 
-          teams={filteredPendingTeams} 
+          teams={pendingTeams} 
           onMoveToCreated={handleMoveToCreated}
           onEditTeam={handleEditPendingTeam}
           onDeleteTeam={handleDeletePendingTeam}
         />
       )}
       {activeSubTab === 'created' && (
-        <CreatedTeamsTab 
-          teams={sortedCreatedTeams} 
+        <CreatedTeamsTab
+          teams={sortedCreatedTeams}
           onDeleteTeam={handleDeleteCreatedTeam}
           onEditTeam={handleEditCreatedTeam}
           highlightTeamId={processedHighlightId === highlightTeamId ? null : highlightTeamId}
           onHighlightComplete={handleHighlightComplete}
-          currentUserEmail={CURRENT_USER_EMAIL}
+          currentUserEmail={user?.email}
         />
       )}
-      {activeSubTab === 'inuse' && <InUseTeamsTab />}
-      {activeSubTab === 'archived' && <ArchivedTeamsTab teams={archivedTeams} />}
+
 
       {/* Edit Team Modal */}
       <EditTeamModal
@@ -397,18 +245,21 @@ const memberShape = PropTypes.shape({
   name: PropTypes.string.isRequired,
   email: PropTypes.string.isRequired,
   role: PropTypes.oneOf(['Leader', 'Member']).isRequired,
-  status: PropTypes.oneOf(['Pending', 'Accepted', 'Declined']),
+  status: PropTypes.oneOf(['Pending', 'Approved', 'Rejected']),
 });
 
+// Note: `id` from the backend is a string, but you are creating
+// new ones with Date.now() (a number). This might be ok,
+// but PropTypes.oneOfType([PropTypes.string, PropTypes.number]) is safer.
 const teamShape = PropTypes.shape({
-  id: PropTypes.number.isRequired,
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   name: PropTypes.string.isRequired,
   members: PropTypes.arrayOf(memberShape).isRequired,
 });
 
 TeamsAdminTab.propTypes = {
   onCreateTeam: PropTypes.func.isRequired,
-  highlightTeamId: PropTypes.number,
-  editTeamId: PropTypes.number,
+  highlightTeamId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  editTeamId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onClearHighlight: PropTypes.func,
 };

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Sidebar } from '../../components/general/Sidebar';
 import { TeamsAdminTab } from '../../components/Organizers/Admin/TeamsAdminTab';
 import { CreateTeamModal } from '../../components/Organizers/Admin/CreateTeamModal';
@@ -8,23 +9,33 @@ import { RegistrationsAdminTab } from '../../components/Organizers/Admin/Registr
 import { AnnouncementsAdminTab } from '../../components/Organizers/Admin/AnnouncementsAdminTab';
 import { SegmentedControl } from '../../components/ui/segmented-control';
 import { CURRENT_USER_EMAIL } from '../../App';
+import { fetchDashboardEvents } from '../../store/event.slice';
 
-export default function AdminPanel({ 
-  onNavigate, 
-  openCreateTeamModal = false, 
-  highlightTeamId = null, 
+export default function AdminPanel({
+  onNavigate,
+  openCreateTeamModal = false,
+  highlightTeamId = null,
   editTeamId = null,
   openCreateEventModal = false,
   highlightEventId = null,
   onClearHighlight,
-  events,
-  onUpdateEvents,
   isSidebarCollapsed,
   onToggleSidebar,
 }) {
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('teams');
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(openCreateTeamModal);
   const [scrollToRegistrationId, setScrollToRegistrationId] = useState(null);
+
+  // Redux state
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  // Fetch events on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchDashboardEvents());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Open modal when openCreateTeamModal prop changes
   useEffect(() => {
@@ -74,9 +85,6 @@ export default function AdminPanel({
     setScrollToRegistrationId(null);
   };
 
-  // Get drafted events for registrations tab
-  const draftedEvents = events.filter(e => e.status === 'drafted');
-
   return (
     <div className="flex h-screen bg-background pt-16">
       {/* Sidebar */}
@@ -118,33 +126,23 @@ export default function AdminPanel({
                 />
               )}
               {activeTab === 'events' && (
-                <EventsAdminTab 
+                <EventsAdminTab
                   openCreateEventModal={openCreateEventModal}
                   highlightEventId={highlightEventId}
                   onClearHighlight={onClearHighlight}
-                  events={events}
-                  onUpdateEvents={onUpdateEvents}
                   onNavigateToRegistration={handleNavigateToRegistration}
                 />
               )}
               {activeTab === 'registrations' && (
                 <RegistrationsAdminTab 
                   onNavigate={onNavigate}
-                  draftedEvents={draftedEvents}
                   scrollToEventId={scrollToRegistrationId}
                   onClearScroll={handleClearScrollToRegistration}
                 />
               )}
               {activeTab === 'announcements' && (
                 <AnnouncementsAdminTab
-                  events={events}
                   currentUserEmail={CURRENT_USER_EMAIL}
-                  onUpdateEvent={(eventId, eventData) => {
-                    const updatedEvents = events.map(e => 
-                      e.id === eventId ? { ...e, ...eventData } : e
-                    );
-                    onUpdateEvents(updatedEvents);
-                  }}
                 />
               )}
             </div>
@@ -169,8 +167,6 @@ AdminPanel.propTypes = {
   openCreateEventModal: PropTypes.bool,
   highlightEventId: PropTypes.number,
   onClearHighlight: PropTypes.func,
-  events: PropTypes.array.isRequired,
-  onUpdateEvents: PropTypes.func.isRequired,
   isSidebarCollapsed: PropTypes.bool.isRequired,
   onToggleSidebar: PropTypes.func.isRequired,
 };

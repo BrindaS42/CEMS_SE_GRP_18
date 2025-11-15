@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Plus } from 'lucide-react';
 import { SegmentedControl } from '../../components/ui/segmented-control';
 
-export default function OrganizerDashboard({ onNavigate, events, isSidebarCollapsed, onToggleSidebar }) {
+export default function OrganizerDashboard({ onNavigate, isSidebarCollapsed, onToggleSidebar }) {
   const [activeTab, setActiveTab] = useState('events');
 
   const handleCreateEvent = () => {
@@ -75,9 +75,9 @@ export default function OrganizerDashboard({ onNavigate, events, isSidebarCollap
 
             {/* Tab Content */}
             <div className="tab-transition">
-              {activeTab === 'events' && <EventsTab events={events} onViewEvent={handleViewEvent} />}
+              {activeTab === 'events' && <EventsTab onViewEvent={handleViewEvent} />}
               {activeTab === 'analytics' && <AnalyticsTab />}
-              {activeTab === 'teams' && onNavigate && <TeamsTab onNavigate={onNavigate} />}
+              {activeTab === 'teams' && <TeamsTab onNavigate={onNavigate} />}
             </div>
           </div>
         </main>
@@ -88,7 +88,6 @@ export default function OrganizerDashboard({ onNavigate, events, isSidebarCollap
 
 OrganizerDashboard.propTypes = {
   onNavigate: PropTypes.func,
-  events: PropTypes.array.isRequired,
   isSidebarCollapsed: PropTypes.bool.isRequired,
   onToggleSidebar: PropTypes.func.isRequired,
 };

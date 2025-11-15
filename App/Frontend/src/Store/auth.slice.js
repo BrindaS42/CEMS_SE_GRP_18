@@ -215,6 +215,58 @@ export const updateAuthProfile = createAsyncThunk(
   }
 );
 
+export const fetchAllStudents = createAsyncThunk(
+  'auth/fetchAllStudents',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE}/profile/students`);
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to fetch students';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchAllOrganizers = createAsyncThunk(
+  'auth/fetchAllOrganizers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE}/profile/organizers`);
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to fetch organizers';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchAllSponsors = createAsyncThunk(
+  'auth/fetchAllSponsors',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE}/profile/sponsors`);
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to fetch sponsors';
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchAllAdmins = createAsyncThunk(
+  'auth/fetchAllAdmins',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE}/profile/admins`);
+      return response.data;
+    } catch (error) {
+      const message = error?.response?.data?.error || 'Failed to fetch admins';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   user: null,
   profile: null,
@@ -225,6 +277,10 @@ const initialState = {
   passwordResetStatus: 'idle',
   accountVerificationStatus: 'idle',
   forgotPasswordStatus: 'idle',
+  allOrganizers: null,
+  allStudents: null,
+  allSponsors: null,
+  allAdmins: null,
 };
 
 const authSlice = createSlice({
@@ -373,7 +429,7 @@ const authSlice = createSlice({
         state.forgotPasswordStatus = 'failed';
         state.error = action.payload;
       })
-      
+
       // Account Verification
       .addCase(generateOtpForAccount.pending, (state) => {
         state.accountVerificationStatus = 'loading';
@@ -412,9 +468,17 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.profile = action.payload?.profile || action.payload;
       })
+      // ⬇️ THIS IS THE FIX ⬇️
       .addCase(fetchAuthProfile.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
+        // If fetching the profile fails (e.g., 401 invalid token), 
+        // we must log the user out completely.
+        state.user = null;
+        state.profile = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        setAuthToken(null); // This clears sessionStorage and axios headers
       })
 
       // Update Profile
@@ -428,6 +492,62 @@ const authSlice = createSlice({
         state.profile = action.payload?.profile || action.payload;
       })
       .addCase(updateAuthProfile.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Fetch All Students
+      .addCase(fetchAllStudents.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAllStudents.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.allStudents = action.payload;
+      })
+      .addCase(fetchAllStudents.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Fetch All Organizers
+      .addCase(fetchAllOrganizers.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAllOrganizers.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.allOrganizers = action.payload;
+      })
+      .addCase(fetchAllOrganizers.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Fetch All Sponsors
+      .addCase(fetchAllSponsors.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAllSponsors.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.allSponsors = action.payload;
+      })
+      .addCase(fetchAllSponsors.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      })
+
+      // Fetch All Admins
+      .addCase(fetchAllAdmins.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchAllAdmins.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.allAdmins = action.payload;
+      })
+      .addCase(fetchAllAdmins.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       });

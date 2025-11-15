@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -23,12 +24,12 @@ export function ViewEventModal({
   open, 
   onClose, 
   event, 
-  currentUserEmail,
   onEdit 
 }) {
+  const { user } = useSelector((state) => state.auth);
   if (!event) return null;
-
-  const canEdit = event.leaderEmail === currentUserEmail;
+  console.log('Event in ViewEventModal:', event);
+  const canEdit = event.createdBy?.leader?._id === user?.id; // Now 'user' is defined
   const mainTimeline = event.timeline[0];
 
   const getStatusBadge = () => {
@@ -100,11 +101,11 @@ export function ViewEventModal({
             <div className="bg-muted/30 rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Team Name:</span>
-                <span className="font-medium">{event.teamName}</span>
+                <span className="font-medium">{event.createdBy?.name || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Team Leader:</span>
-                <span className="font-medium">{event.leaderEmail}</span>
+                <span className="font-medium">{event.createdBy?.leader?.profile?.name || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -118,11 +119,11 @@ export function ViewEventModal({
             <div className="bg-muted/30 rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Name:</span>
-                <span className="font-medium">{event.poc.name}</span>
+                <span className="font-medium">{event.poc?.name || 'N/A'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Contact:</span>
-                <span className="font-medium">{event.poc.contact}</span>
+                <span className="font-medium">{event.poc?.contact || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -253,7 +254,7 @@ export function ViewEventModal({
           )}
 
           {/* Volunteers */}
-          {event.volunteers.length > 0 && (
+          {event.volunteers?.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <Users className="w-4 h-4 text-primary" />
@@ -288,7 +289,7 @@ export function ViewEventModal({
           )}
 
           {/* Gallery */}
-          {event.gallery.length > 0 && (
+          {event.gallery?.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
                 <ImageIcon className="w-4 h-4 text-primary" />
@@ -396,9 +397,9 @@ const volunteerShape = PropTypes.shape({
 const eventShape = PropTypes.shape({
   id: PropTypes.number.isRequired,
   title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  leaderEmail: PropTypes.string.isRequired,
-  teamName: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  leaderEmail: PropTypes.string, // Deprecated but kept for safety
+  teamName: PropTypes.string, // Deprecated but kept for safety
   posterUrl: PropTypes.string,
   poc: PropTypes.shape({
     name: PropTypes.string.isRequired,
@@ -421,6 +422,5 @@ ViewEventModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: eventShape,
-  currentUserEmail: PropTypes.string.isRequired,
   onEdit: PropTypes.func,
 };

@@ -46,7 +46,7 @@ export function DeleteAnnouncementModal({
     if (selectedIds.length === sortedAnnouncements.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(sortedAnnouncements.map(a => a.id));
+      setSelectedIds(sortedAnnouncements.map(a => a._id));
     }
   };
 
@@ -108,9 +108,9 @@ export function DeleteAnnouncementModal({
                 <div className="space-y-3">
                   {sortedAnnouncements.map((announcement) => (
                     <Card 
-                      key={announcement.id}
+                      key={announcement._id}
                       className={`hover:shadow-md transition-shadow cursor-pointer ${
-                        selectedIds.includes(announcement.id) ? 'border-destructive' : ''
+                        selectedIds.includes(announcement._id) ? 'border-destructive' : ''
                       }`}
                       onClick={() => toggleSelection(announcement.id)}
                     >
@@ -119,9 +119,9 @@ export function DeleteAnnouncementModal({
                           {/* Checkbox */}
                           <div className="flex-shrink-0 pt-1">
                             <Checkbox
-                              id={`checkbox-${announcement.id}`}
-                              checked={selectedIds.includes(announcement.id)}
-                              onCheckedChange={() => toggleSelection(announcement.id)}
+                              id={`checkbox-${announcement._id}`}
+                              checked={selectedIds.includes(announcement._id)}
+                              onCheckedChange={() => toggleSelection(announcement._id)}
                             />
                           </div>
 
@@ -145,7 +145,7 @@ export function DeleteAnnouncementModal({
                               </div>
                               <div className="flex items-center gap-1">
                                 <User className="w-4 h-4" />
-                                <span>{announcement.author.name || announcement.author.email}</span>
+                                <span>{announcement.author?.profile?.name || announcement.author?.email || 'N/A'}</span>
                               </div>
                             </div>
 
@@ -209,16 +209,17 @@ DeleteAnnouncementModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
   announcements: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
+    _id: PropTypes.string.isRequired,
     date: PropTypes.string.isRequired,
     time: PropTypes.string.isRequired,
     author: PropTypes.shape({
-      name: PropTypes.string,
-      email: PropTypes.string.isRequired,
+      _id: PropTypes.string,
+      profile: PropTypes.shape({ name: PropTypes.string }),
+      email: PropTypes.string,
     }).isRequired,
     message: PropTypes.string.isRequired,
   })).isRequired,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useSelector } from 'react-redux';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,9 +15,9 @@ export function AddAnnouncementModal({
   open,
   onClose,
   event,
-  currentUserEmail,
   onSave,
 }) {
+  const { user } = useSelector((state) => state.auth);
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
   const [message, setMessage] = useState('');
@@ -29,15 +30,9 @@ export function AddAnnouncementModal({
     }
 
     const newAnnouncement = {
-      id: `ann_${Date.now()}`,
       date: date.toISOString(),
       time,
-      author: {
-        id: 'user_1', // This would come from actual user context
-        name: 'Current Organiser', // This would come from actual user context
-        email: currentUserEmail,
-      },
-      message: message.trim(),
+      message: message.trim(), // Backend will add author
     };
 
     onSave(newAnnouncement);
@@ -115,7 +110,7 @@ export function AddAnnouncementModal({
             <Label>Author</Label>
             <div className="flex items-center gap-2 p-3 border border-border rounded-lg bg-muted/30">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">Current Organiser ({currentUserEmail})</span>
+              <span className="text-sm">{user?.profile?.name} ({user?.email})</span>
             </div>
           </div>
 
@@ -153,9 +148,8 @@ AddAnnouncementModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
-  currentUserEmail: PropTypes.string.isRequired,
   onSave: PropTypes.func.isRequired,
 };

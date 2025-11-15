@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, CheckCircle, XCircle, Edit, AlertCircle, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +22,7 @@ import {
 import { ViewTeamModal } from './ViewTeamModal';
 
 export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTeam }) {
+  const { teamList } = useSelector((state) => state.team);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -92,14 +95,7 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
   };
 
   const handleViewTeam = (team) => {
-    setTeamToView({
-      id: team.id,
-      name: team.name,
-      leader: team.members.find(m => m.role === 'Leader')?.name || '',
-      totalMembers: team.members.length,
-      members: team.members,
-      createdAt: team.createdAt,
-    });
+    setTeamToView(team);
     setViewModalOpen(true);
   };
 
@@ -115,15 +111,16 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {teams.map((team) => {
-        const showWarning = hasPendingMembers(team);
+      {teams.map((teamFromList) => {
+        const showWarning = hasPendingMembers(teamFromList);
+        const team = teamList.find(t => t._id === teamFromList.id);
         
         return (
-          <Card key={team.id} className="hover:shadow-lg transition-shadow flex flex-col">
+          <Card key={teamFromList.id} className="hover:shadow-lg transition-shadow flex flex-col">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{team.name}</CardTitle>
+              <CardTitle className="text-lg">{teamFromList.name}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Created: {new Date(team.createdAt).toLocaleDateString('en-US', { 
+                Created: {new Date(teamFromList.createdAt).toLocaleDateString('en-US', { 
                   month: 'short', 
                   day: 'numeric', 
                   year: 'numeric' 
@@ -133,10 +130,10 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
             
             <CardContent className="space-y-3 flex-1">
               <div className="space-y-2">
-                <p className="text-sm font-medium">Members ({team.members.length})</p>
-                <ScrollArea className={team.members.length > 3 ? 'h-32' : ''}>
+                <p className="text-sm font-medium">Members ({teamFromList.members.length})</p>
+                <ScrollArea className={teamFromList.members.length > 3 ? 'h-32' : ''}>
                   <div className="space-y-2">
-                    {team.members.map((member) => (
+                    {teamFromList.members.map((member) => (
                       <div key={member.email} className="flex items-center justify-between gap-2 text-sm">
                         <div className="flex-1 min-w-0">
                           <p className="truncate font-medium">{member.name}</p>
@@ -180,7 +177,7 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
                 <Button
                   variant="outline"
                   className="flex-1 text-secondary border-secondary/50 hover:bg-secondary hover:text-black"
-                  onClick={() => onEditTeam(team.id)}
+                  onClick={() => onEditTeam(teamFromList.id)}
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
@@ -188,7 +185,7 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
                 <Button
                   variant="outline"
                   className="flex-1 text-destructive border-destructive/50 hover:bg-destructive hover:text-black"
-                  onClick={() => handleDeleteClick(team.id)}
+                  onClick={() => handleDeleteClick(teamFromList.id)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete
@@ -198,7 +195,7 @@ export function PendingTeamsTab({ teams, onMoveToCreated, onEditTeam, onDeleteTe
               {/* Move to Created - Full Width */}
               <Button
                 className="w-full"
-                onClick={() => handleMoveToCreated(team.id)}
+                onClick={() => handleMoveToCreated(teamFromList.id)}
               >
                 Move to Created
               </Button>

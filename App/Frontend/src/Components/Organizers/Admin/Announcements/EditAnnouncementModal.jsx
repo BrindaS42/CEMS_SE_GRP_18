@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,9 +17,9 @@ export function EditAnnouncementModal({
   onClose,
   event,
   announcements,
-  currentUserEmail,
   onSave,
 }) {
+  const { user } = useSelector((state) => state.auth);
   const [editingId, setEditingId] = useState(null);
   const [editDate, setEditDate] = useState(new Date());
   const [editTime, setEditTime] = useState('');
@@ -27,18 +28,18 @@ export function EditAnnouncementModal({
 
   // Sort announcements by date/time in reverse chronological order
   const sortedAnnouncements = [...announcements].sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.time}`).getTime();
-    const dateB = new Date(`${b.date} ${b.time}`).getTime();
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
     return dateB - dateA;
   });
 
   // Filter only announcements the user can edit
   const editableAnnouncements = sortedAnnouncements.filter(
-    a => a.author.email === currentUserEmail
+    a => a.author?._id === user?.id
   );
 
   const handleEditClick = (announcement) => {
-    setEditingId(announcement.id);
+    setEditingId(announcement._id);
     setEditDate(new Date(announcement.date));
     setEditTime(announcement.time);
     setEditMessage(announcement.message);
@@ -87,13 +88,13 @@ export function EditAnnouncementModal({
           ) : (
             editableAnnouncements.map((announcement) => (
               <Card 
-                key={announcement.id} 
+                key={announcement._id} 
                 className={`hover:shadow-md transition-shadow ${
-                  editingId === announcement.id ? 'border-primary' : ''
+                  editingId === announcement._id ? 'border-primary' : ''
                 }`}
               >
                 <CardContent className="pt-6">
-                  {editingId === announcement.id ? (
+                  {editingId === announcement._id ? (
                     // Edit mode
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -183,7 +184,7 @@ export function EditAnnouncementModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          <span>{announcement.author.name || announcement.author.email}</span>
+                          <span>{announcement.author?.profile?.name || 'N/A'}</span>
                         </div>
                       </div>
 
@@ -220,19 +221,18 @@ EditAnnouncementModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
   announcements: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
+    _id: PropTypes.string.isRequired,
     date: PropTypes.string.isRequired,
     time: PropTypes.string.isRequired,
     author: PropTypes.shape({
-      name: PropTypes.string,
-      email: PropTypes.string.isRequired,
+      _id: PropTypes.string,
+      profile: PropTypes.shape({ name: PropTypes.string }),
     }).isRequired,
     message: PropTypes.string.isRequired,
   })).isRequired,
-  currentUserEmail: PropTypes.string.isRequired,
   onSave: PropTypes.func.isRequired,
 };

@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 export const fetchUsers = createAsyncThunk('team/fetchUsers', async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_BASE}/team/users`)
+    const res = await axios.get(`${API_BASE}/organizer/teams/users`)
     return res.data
   } catch (err) {
     return rejectWithValue(err?.response?.data?.error || 'Failed to load users')
@@ -15,16 +15,19 @@ export const fetchUsers = createAsyncThunk('team/fetchUsers', async (_, { reject
 
 export const fetchTeamList = createAsyncThunk('team/fetchTeamList', async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_BASE}/team/list`)
+    const res = await axios.get(`${API_BASE}/organizer/teams/list`)
+    console.log('Fetched team list:', res.data)
     return res.data
   } catch (err) {
     return rejectWithValue(err?.response?.data?.error || 'Failed to load team list')
   }
 })
 
+
+
 export const createTeam = createAsyncThunk('team/create', async (payload, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${API_BASE}/team/create`, payload)
+    const res = await axios.post(`${API_BASE}/organizer/teams/create`, payload)
     return res.data
   } catch (err) {
     return rejectWithValue(err?.response?.data?.message || err?.response?.data?.error || 'Failed to create team')
@@ -33,10 +36,29 @@ export const createTeam = createAsyncThunk('team/create', async (payload, { reje
 
 export const inviteMember = createAsyncThunk('team/inviteMember', async ({ teamId, username, role }, { rejectWithValue }) => {
   try {
-    const res = await axios.post(`${API_BASE}/team/${teamId}/invite`, { username, role })
+    const res = await axios.post(`${API_BASE}/organizer/teams/${teamId}/invite`, { username, role })
     return res.data
   } catch (err) {
     return rejectWithValue(err?.response?.data?.message || err?.response?.data?.error || 'Failed to invite member')
+  }
+})
+
+export const deleteTeam = createAsyncThunk('team/deleteTeam', async (teamId, { rejectWithValue }) => {
+  try {
+    const res = await axios.delete(`${API_BASE}/organizer/teams/${teamId}`)
+    return { teamId, ...res.data }
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.message || err?.response?.data?.error || 'Failed to delete team')
+  }
+})
+
+export const editTeam = createAsyncThunk('team/editTeam', async ({ teamId, updatedTeam }, { rejectWithValue, dispatch }) => {
+  try {
+    const res = await axios.patch(`${API_BASE}/organizer/teams/${teamId}`, updatedTeam)
+    dispatch(fetchTeamList()) // Refresh team list after edit
+    return { teamId, ...res.data }
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.message || err?.response?.data?.error || 'Failed to edit team')
   }
 })
 
@@ -86,10 +108,23 @@ const teamSlice = createSlice({
       .addCase(fetchUsers.fulfilled, (state, action) => { state.loading = false; state.users = action.payload })
       .addCase(fetchUsers.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(fetchTeamList.fulfilled, (state, action) => { state.teamList = action.payload })
+
       .addCase(createTeam.pending, (state) => { state.loading = true; state.error = null })
       .addCase(createTeam.fulfilled, (state, action) => { state.loading = false; state.lastCreatedTeam = action.payload })
       .addCase(createTeam.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(inviteMember.rejected, (state, action) => { state.error = action.payload })
+      .addCase(deleteTeam.fulfilled, (state, action) => {
+        state.teamList = state.teamList.filter(team => team._id !== action.payload.teamId)
+      })
+      .addCase(deleteTeam.rejected, (state, action) => { state.error = action.payload })
+      .addCase(editTeam.fulfilled, (state, action) => {
+        // Update the specific team in the list
+        const index = state.teamList.findIndex(team => team._id === action.payload.teamId)
+        if (index !== -1) {
+          state.teamList[index] = action.payload.team
+        }
+      })
+      .addCase(editTeam.rejected, (state, action) => { state.error = action.payload })
   }
 })
 

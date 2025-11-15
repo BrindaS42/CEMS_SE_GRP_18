@@ -1,12 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../ui/button';
-import { PublishedEvents } from './PublishedEvents';
-import { LiveEvents } from './LiveEvents';
+import { LiveEvents } from './LiveEvents.jsx';
+import { CompletedEvents } from './CompletedEvents.jsx';
 import { SegmentedControl } from '../ui/segmented-control';
+import { fetchPublishedEvents, fetchCompletedEvents } from '../../store/event.slice';
 
-export function EventsTab({ events, onViewEvent }) {
-  const [activeSubTab, setActiveSubTab] = useState('published');
+export function EventsTab({ onViewEvent }) {
+  const dispatch = useDispatch();
+  const [activeSubTab, setActiveSubTab] = useState('live');
+
+  // Redux state
+  const { published, completed } = useSelector((state) => state.events);
+  const { user } = useSelector((state) => state.auth);
+
+  // Fetch events on component mount
+  useEffect(() => {
+    dispatch(fetchPublishedEvents());
+    dispatch(fetchCompletedEvents());
+  }, [dispatch]);
 
   return (
     <div className="space-y-6">
@@ -14,8 +27,8 @@ export function EventsTab({ events, onViewEvent }) {
       <div className="animate-fade-in-up stagger-2">
         <SegmentedControl
           options={[
-            { value: 'published', label: 'Published' },
             { value: 'live', label: 'Live' },
+            { value: 'completed', label: 'Completed' },
           ]}
           value={activeSubTab}
           onChange={(value) => setActiveSubTab(value)}
@@ -25,14 +38,13 @@ export function EventsTab({ events, onViewEvent }) {
 
       {/* Sub-tab Content */}
       <div className="tab-transition">
-        {activeSubTab === 'published' && <PublishedEvents events={events} onViewEvent={onViewEvent} />}
-        {activeSubTab === 'live' && <LiveEvents events={events} onViewEvent={onViewEvent} />}
+        {activeSubTab === 'live' && <LiveEvents events={published} onViewEvent={onViewEvent} />}
+        {activeSubTab === 'completed' && <CompletedEvents events={completed} />}
       </div>
     </div>
   );
 }
 
 EventsTab.propTypes = {
-  events: PropTypes.arrayOf(PropTypes.object).isRequired,
   onViewEvent: PropTypes.func.isRequired,
 };

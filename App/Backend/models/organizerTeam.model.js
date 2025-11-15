@@ -13,7 +13,12 @@ const teamSchema = new mongoose.Schema({
   ],
 }, { timestamps: true });
 
+teamSchema.virtual('approvedMembers', {
+  ref: 'Team.members',
+  localField: 'members',
+  foreignField: '_id',
+  justOne: false,
+});
+
 const Team = mongoose.model("Team", teamSchema);
 export default Team;
-
-

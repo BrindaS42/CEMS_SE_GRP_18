@@ -11,12 +11,42 @@ async function getUserTeamIds(userId) {
   return teams.map((t) => t._id);
 }
 
+// Helper: standard population for event's createdBy field
+export const populateEventDetails = [
+  {
+    path: 'createdBy',
+    select: 'name members leader',
+    populate: [
+      {
+        path: 'members',
+        match: { status: { $ne: 'Pending' } },
+        populate: {
+          path: 'user',
+          select: 'profile.name email _id'
+        }
+      },
+      { path: 'leader', select: '_id profile.name' }
+    ]
+  },
+  {
+    path: 'subEvents.subevent',
+    select: 'title createdBy',
+    populate: {
+      path: 'createdBy',
+      select: 'name'
+    }
+  }
+];
+
+// Define the fields to select from the Event model to ensure consistency
+const eventFieldsToSelect = 'title description posterUrl categoryTags timeline subEvents status createdBy poc venue gallery config announcements ratings';
+
 export async function getEventsForUser(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthenticated" });
     const teamIds = await getUserTeamIds(userId);
-    const events = await Event.find({ createdBy: { $in: teamIds } }).lean();
+    const events = await Event.find({ createdBy: { $in: teamIds } }).select(eventFieldsToSelect).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' }).lean();
     res.json(events);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -30,7 +60,7 @@ export async function getPublishedEvents(req, res) {
     const events = await Event.find({
       createdBy: { $in: teamIds },
       status: "published",
-    }).lean();
+    }).select(eventFieldsToSelect).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' }).lean();
     res.json(events);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -41,11 +71,9 @@ export async function getDraftEvents(req, res) {
   try {
     const userId = req.user?.id;
     const teamIds = await getUserTeamIds(userId);
-    const events = await Event.find({
-      createdBy: { $in: teamIds },
-      status: "draft",
-    }).lean();
-    res.json(events);
+    const drafts = await Event.find({ createdBy: { $in: teamIds }, status: 'draft' }).select(eventFieldsToSelect).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' }).lean();
+
+    res.json(drafts);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -75,24 +103,20 @@ export async function getCheckIns(req, res) {
 export const fetchCompletedEvents = async (req, res) => {
   try {
     const organizerId = req.user.id;
-    console.log("callling..", organizerId);
-
-    const team = await organizerTeam.findOne({ leader: organizerId });
-
-    if (!team) {
-      return res.status(404).json({ message: "Organizer team not found." });
-    }
+    const teamIds = await getUserTeamIds(organizerId);
 
     const completedEvents = await Event.find({
-      createdBy: team._id,
+      createdBy: { $in: teamIds },
       status: "completed",
     })
-      .select("title description startDate endDate registrationCount")
-      .sort({ endDate: -1 });
+      .select(eventFieldsToSelect)
+      .populate(populateEventDetails)
+      .populate({ path: 'announcements.author', select: 'profile.name email _id' })
+      .sort({ updatedAt: -1 })
+      .lean();
 
     return res.status(200).json(completedEvents);
   } catch (error) {
-    console.error("Error fetching completed events:", error);
     res
       .status(500)
       .json({
@@ -209,8 +233,8 @@ export const getOrganizerTeams = async (req, res) => {
       $or: [{ leader: organizerId }, { "members.user": organizerId }],
     })
       .select("name leader members")
-      .populate("leader", "profile.name")
-      .populate("members.user", "profile.name")
+      .populate("leader", "profile.name email college")
+      .populate("members.user", "profile.name email")
       .lean();
 
     if (!teams || teams.length === 0) {
@@ -242,25 +266,22 @@ export const addAnnouncement = async (req, res) => {
       message: message,
       date: date || new Date(),
       time: time,
-      author: req.user._id,
+      author: req.user.id,
     };
 
     const updatedEvent = await Event.findByIdAndUpdate(
       eventId,
       { $push: { announcements: newAnnouncement } },
       { new: true, runValidators: true }
-    )
-      .select("announcements")
-      .populate("announcements.author", "profile.name");
+    ).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' });
 
     if (!updatedEvent) {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    const latestAnnouncement = updatedEvent.announcements.slice(-1)[0];
     res.status(201).json({
       message: "Announcement added successfully.",
-      announcement: latestAnnouncement,
+      event: updatedEvent,
     });
   } catch (error) {
     console.error("Error adding announcement:", error);
@@ -298,7 +319,7 @@ export const editAnnouncement = async (req, res) => {
             message: message,
             date: date,
             time: time,
-            author: req.user._id,
+            author: req.user.id,
           },
         },
       },
@@ -307,7 +328,7 @@ export const editAnnouncement = async (req, res) => {
         runValidators: true,
         arrayFilters: [{ "elem._id": announcementId }],
       }
-    ).select("announcements");
+    ).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' });
 
     if (!updatedEvent) {
       return res
@@ -315,13 +336,9 @@ export const editAnnouncement = async (req, res) => {
         .json({ message: "Event or Announcement not found." });
     }
 
-    const editedAnnouncement = updatedEvent.announcements.find(
-      (ann) => ann._id.toString() === announcementId
-    );
-
     res.status(200).json({
       message: "Announcement updated successfully.",
-      announcement: editedAnnouncement,
+      event: updatedEvent,
     });
   } catch (error) {
     console.error("Error editing announcement:", error);
@@ -346,7 +363,7 @@ export const deleteAnnouncement = async (req, res) => {
         },
       },
       { new: true }
-    ).select("announcements");
+    ).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' });
 
     if (!updatedEvent) {
       return res.status(404).json({ message: "Event not found." });
@@ -354,7 +371,7 @@ export const deleteAnnouncement = async (req, res) => {
 
     res.status(200).json({
       message: "Announcement deleted successfully.",
-      announcements: updatedEvent.announcements,
+      event: updatedEvent,
     });
   } catch (error) {
     console.error("Error deleting announcement:", error);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,14 @@ import { AddAnnouncementModal } from './Announcements/AddAnnouncementModal';
 import { ViewAnnouncementsModal } from './Announcements/ViewAnnouncementsModal';
 import { EditAnnouncementModal } from './Announcements/EditAnnouncementModal';
 import { DeleteAnnouncementModal } from './Announcements/DeleteAnnouncementModal';
+import { addAnnouncement, editAnnouncement, deleteAnnouncement } from '../../../store/event.slice';
 
-export function AnnouncementsAdminTab({ 
-  events, 
+export function AnnouncementsAdminTab({
   currentUserEmail,
-  onUpdateEvent,
 }) {
+  const dispatch = useDispatch();
+  const { all: events } = useSelector((state) => state.events);
+
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -75,7 +78,7 @@ export function AnnouncementsAdminTab({
 
           return (
             <Card 
-              key={event.id}
+              key={event._id}
               className={`rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ${
                 isOngoing 
                   ? 'border-[#34C759]/50' 
@@ -220,13 +223,7 @@ export function AnnouncementsAdminTab({
             event={selectedEvent}
             currentUserEmail={currentUserEmail}
             onSave={(announcement) => {
-              // Update event with new announcement
-              const currentAnnouncements = getEventAnnouncements(selectedEvent);
-              const updatedEvent = {
-                ...selectedEvent,
-                announcements: [...currentAnnouncements, announcement],
-              };
-              onUpdateEvent(selectedEvent.id, updatedEvent);
+              dispatch(addAnnouncement({ eventId: selectedEvent._id, payload: announcement }));
               setAddModalOpen(false);
             }}
           />
@@ -242,13 +239,7 @@ export function AnnouncementsAdminTab({
               setEditModalOpen(true);
             }}
             onDelete={(announcementId) => {
-              const currentAnnouncements = getEventAnnouncements(selectedEvent);
-              const updatedAnnouncements = currentAnnouncements.filter(a => a.id !== announcementId);
-              const updatedEvent = {
-                ...selectedEvent,
-                announcements: updatedAnnouncements,
-              };
-              onUpdateEvent(selectedEvent.id, updatedEvent);
+              dispatch(deleteAnnouncement({ eventId: selectedEvent._id, announcementId }));
             }}
           />
 
@@ -259,15 +250,7 @@ export function AnnouncementsAdminTab({
             announcements={getEventAnnouncements(selectedEvent)}
             currentUserEmail={currentUserEmail}
             onSave={(announcementId, updatedData) => {
-              const currentAnnouncements = getEventAnnouncements(selectedEvent);
-              const updatedAnnouncements = currentAnnouncements.map(a => 
-                a.id === announcementId ? { ...a, ...updatedData } : a
-              );
-              const updatedEvent = {
-                ...selectedEvent,
-                announcements: updatedAnnouncements,
-              };
-              onUpdateEvent(selectedEvent.id, updatedEvent);
+              dispatch(editAnnouncement({ eventId: selectedEvent._id, announcementId, payload: updatedData }));
               setEditModalOpen(false);
             }}
           />
@@ -278,15 +261,8 @@ export function AnnouncementsAdminTab({
             event={selectedEvent}
             announcements={getEventAnnouncements(selectedEvent)}
             onDelete={(announcementIds) => {
-              const currentAnnouncements = getEventAnnouncements(selectedEvent);
-              const updatedAnnouncements = currentAnnouncements.filter(
-                a => !announcementIds.includes(a.id)
-              );
-              const updatedEvent = {
-                ...selectedEvent,
-                announcements: updatedAnnouncements,
-              };
-              onUpdateEvent(selectedEvent.id, updatedEvent);
+              // This needs to be a loop of dispatches if multiple are deleted
+              announcementIds.forEach(id => dispatch(deleteAnnouncement({ eventId: selectedEvent._id, announcementId: id })));
               setDeleteModalOpen(false);
             }}
           />
@@ -297,7 +273,5 @@ export function AnnouncementsAdminTab({
 }
 
 AnnouncementsAdminTab.propTypes = {
-  events: PropTypes.arrayOf(PropTypes.object).isRequired,
   currentUserEmail: PropTypes.string.isRequired,
-  onUpdateEvent: PropTypes.func.isRequired,
 };

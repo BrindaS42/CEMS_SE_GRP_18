@@ -1,17 +1,19 @@
 import PropTypes from 'prop-types';
 import { useState, useRef, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Calendar, Clock } from 'lucide-react';
 import { RegistrationConfigModal } from './RegistrationConfigModal';
 import { RegistrationPreviewModal } from './RegistrationPreviewModal';
 
-export function RegistrationsAdminTab({ 
-  onNavigate, 
-  draftedEvents = [],
+export function RegistrationsAdminTab({
+  onNavigate,
   scrollToEventId = null,
   onClearScroll,
 }) {
+  const { drafts: draftedEvents } = useSelector((state) => state.events);
+
   const cardRefs = useRef({});
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -82,12 +84,12 @@ export function RegistrationsAdminTab({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
           {draftedEvents.map((event) => {
             const mainTimeline = event.timeline[0];
-            const hasRegistrationSetup = false; // TODO: Add registration config to event model
+            const hasRegistrationSetup = event.config && Object.keys(event.config).length > 1; // Check if config is more than just default type
             
             return (
               <div
-                key={event.id}
-                ref={el => (cardRefs.current[event.id] = el)}
+                key={event._id}
+                ref={el => (cardRefs.current[event._id] = el)}
               >
                 <Card className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                   <CardHeader className="pb-3">
@@ -184,7 +186,7 @@ export function RegistrationsAdminTab({
 }
 
 const eventShape = PropTypes.shape({
-  id: PropTypes.number.isRequired,
+  _id: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   timeline: PropTypes.arrayOf(PropTypes.shape({
     date: PropTypes.string.isRequired,

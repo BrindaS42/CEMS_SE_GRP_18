@@ -1,5 +1,5 @@
 import StudentTeam from "../../models/studentTeam.model.js";
-import InboxEntity from "../../models/message.model.js";
+import InboxEntity from "../../models/inbox.model.js";
 
 export const createStudentTeam = async (req, res) => {
     try {
@@ -59,6 +59,8 @@ export const getStudentTeams = async (req, res) => {
             .populate('leader', 'name email')
             .populate('members.member', 'name email');
     
+
+            
         const [leaderTeams, memberTeams] = await Promise.all([
             leaderTeamsQuery,
             memberTeamsQuery

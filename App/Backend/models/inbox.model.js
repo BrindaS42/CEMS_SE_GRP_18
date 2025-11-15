@@ -28,6 +28,9 @@ const InboxEntitySchema = new mongoose.Schema(
     relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
     relatedTeam: { type: mongoose.Schema.Types.ObjectId, refPath: "relatedTeamModel" },
     relatedTeamModel: { type: String, enum: ["OrganizerTeam", "StudentTeam"] },
+    meta: {
+      subEventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event" }
+    }
   },
   { timestamps: true }
 );

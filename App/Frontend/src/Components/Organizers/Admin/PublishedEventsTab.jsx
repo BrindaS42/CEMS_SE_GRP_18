@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Eye, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Eye, Users, CheckCircle } from 'lucide-react';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { ViewEventModal } from './ViewEventModal';
+import { completeEvent } from '../../../store/event.slice';
+import { toast } from 'sonner';
 
 export function PublishedEventsTab({ 
   events, 
-  currentUserEmail,
   onEditEvent,
   highlightEventId,
   onClearHighlight,
@@ -17,6 +19,8 @@ export function PublishedEventsTab({
 }) {
   const cardRefs = useRef({});
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Sort events: maintenance events first, then by date
@@ -32,6 +36,16 @@ export function PublishedEventsTab({
   const handleViewEvent = (event) => {
     setSelectedEvent(event);
     setViewModalOpen(true);
+  };
+
+  const handleCompleteEvent = (event) => {
+    dispatch(completeEvent(event._id));
+    toast.success(`Event "${event.title}" marked as completed.`);
+  };
+
+  const canUserComplete = (event) => {
+    if (!user || !event.createdBy) return false;
+    return event.createdBy.leader?._id === user.id;
   };
 
   useEffect(() => {
@@ -86,12 +100,13 @@ export function PublishedEventsTab({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedEvents.map((event) => {
           const mainTimeline = event.timeline[0];
-          const isInMaintenance = maintenanceEventIds.includes(event.id);
+          const isInMaintenance = maintenanceEventIds.includes(event._id);
+          const userCanComplete = canUserComplete(event);
 
           return (
             <div 
-              key={event.id}
-              ref={el => (cardRefs.current[event.id] = el)}
+              key={event._id}
+              ref={el => (cardRefs.current[event._id] = el)}
             >
               <Card className={`h-full flex flex-col hover:shadow-lg transition-all duration-300 ${isInMaintenance ? 'maintenance-mode' : ''}`}>
             {/* Poster */}
@@ -181,14 +196,14 @@ export function PublishedEventsTab({
               )}
 
               {/* Volunteers count */}
-              {event.volunteers.length > 0 && (
+              {event.volunteers?.length > 0 && (
                 <div className="text-xs text-muted-foreground flex-shrink-0">
                   {event.volunteers.filter(v => v.status === 'Accepted').length} Volunteer{event.volunteers.filter(v => v.status === 'Accepted').length !== 1 ? 's' : ''}
                 </div>
               )}
             </CardContent>
 
-            <CardFooter className="flex gap-2 pt-4 flex-shrink-0">
+            <CardFooter className="flex flex-col gap-2 pt-4 flex-shrink-0">
               <Button
                 variant="outline"
                 className="w-full text-info border-info/50 hover:bg-info hover:text-white"
@@ -197,6 +212,15 @@ export function PublishedEventsTab({
                 <Eye className="w-4 h-4 mr-2" />
                 View Details
               </Button>
+              {userCanComplete && (
+                <Button
+                  className="w-full bg-success text-success-foreground hover:bg-success/90"
+                  onClick={() => handleCompleteEvent(event)}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Mark as Complete
+                </Button>
+              )}
             </CardFooter>
               </Card>
             </div>
@@ -208,7 +232,6 @@ export function PublishedEventsTab({
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
         event={selectedEvent}
-        currentUserEmail={currentUserEmail}
         onEdit={undefined}
       />
     </>
@@ -217,7 +240,6 @@ export function PublishedEventsTab({
 
 PublishedEventsTab.propTypes = {
   events: PropTypes.arrayOf(PropTypes.object).isRequired,
-  currentUserEmail: PropTypes.string.isRequired,
   onEditEvent: PropTypes.func,
   highlightEventId: PropTypes.number,
   onClearHighlight: PropTypes.func,

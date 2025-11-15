@@ -41,12 +41,24 @@ const EventSchema = new mongoose.Schema({
     ],
     subEvents:
  [{ subevent:{type : mongoose.Schema.Types.ObjectId, ref: "Event"} ,
-status : { type: String, enum: ["Pending", "Approved", "Reject"], default: "Pending" }}],
+status : { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" }}],
     gallery: [{ type: String }], // image URLs
     config: {
         fees: { type: Number, default: 0 },
         qrCodeUrl: String,
-        registrationType: { type: String, enum: ["Individual", "Team"], required: true },
+        registrationType: { 
+            type: String, 
+            enum: ["Individual", "Team"], 
+            required: true,
+            set: v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase() // Capitalizes the value before saving
+        },
+        combos: [{
+            title: String,
+            description: String,
+            fees: Number,
+            color: String,
+        }],
+        isFree: { type: Boolean, default: true },
         teamSizeRange: { min: Number, max: Number },
         registrationFields: [
           {

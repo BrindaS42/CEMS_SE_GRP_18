@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,16 +22,16 @@ export function ViewAnnouncementsModal({
   onClose,
   event,
   announcements,
-  currentUserEmail,
   onEdit,
   onDelete,
 }) {
+  const { user } = useSelector((state) => state.auth);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
 
   // Sort announcements by date/time in reverse chronological order
   const sortedAnnouncements = [...announcements].sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.time}`).getTime();
+    const dateA = new Date(a.date).getTime();
     const dateB = new Date(`${b.date} ${b.time}`).getTime();
     return dateB - dateA;
   });
@@ -50,7 +51,7 @@ export function ViewAnnouncementsModal({
   };
 
   const canEdit = (announcement) => {
-    return announcement.author.email === currentUserEmail;
+    return announcement.author?._id === user?.id;
   };
 
   return (
@@ -72,7 +73,7 @@ export function ViewAnnouncementsModal({
               </div>
             ) : (
               sortedAnnouncements.map((announcement) => (
-                <Card key={announcement.id} className="hover:shadow-md transition-shadow">
+                <Card key={announcement._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="pt-6">
                     <div className="space-y-3">
                       {/* Date, Time, Author */}
@@ -93,7 +94,7 @@ export function ViewAnnouncementsModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          <span>{announcement.author.name || announcement.author.email}</span>
+                          <span>{announcement.author?.profile?.name || 'N/A'}</span>
                         </div>
                       </div>
 
@@ -118,7 +119,7 @@ export function ViewAnnouncementsModal({
                             size="sm"
                             variant="outline"
                             className="gap-1 text-destructive border-destructive/50 hover:bg-destructive hover:text-white"
-                            onClick={() => handleDeleteClick(announcement.id)}
+                            onClick={() => handleDeleteClick(announcement._id)}
                           >
                             <Trash2 className="w-3 h-3" />
                             Delete
@@ -167,20 +168,19 @@ ViewAnnouncementsModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   event: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
   }).isRequired,
   announcements: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
+    _id: PropTypes.string.isRequired,
     date: PropTypes.string.isRequired,
     time: PropTypes.string.isRequired,
     author: PropTypes.shape({
-      name: PropTypes.string,
-      email: PropTypes.string.isRequired,
+      _id: PropTypes.string,
+      profile: PropTypes.shape({ name: PropTypes.string }),
     }).isRequired,
     message: PropTypes.string.isRequired,
   })).isRequired,
-  currentUserEmail: PropTypes.string.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
 };
