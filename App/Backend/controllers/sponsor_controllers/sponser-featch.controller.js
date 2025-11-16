@@ -1,4 +1,4 @@
-import SponsorAd from "../../models/sponsorAd.model.js";
+import SponsorAd from "../../models/sponsorad.model.js";
 
 export const GetAllSponsorNameDescpNoOfEsponsred = async (req, res) => {
     try {

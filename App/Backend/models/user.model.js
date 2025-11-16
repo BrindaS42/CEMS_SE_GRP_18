@@ -24,16 +24,6 @@ const userSchema = new mongoose.Schema(
     passwordForgotTokenExpires: {
       type: Date,
     },
-    
-    passwordResetTokenExpires: {
-      type: Date,
-    },
-    passwordForgotToken: {
-      type: String,
-    },
-    passwordForgotTokenExpires: {
-      type: Date,
-    },
     role: {
       type: String,
       enum: ["student", "organizer", "sponsor", "admin"],

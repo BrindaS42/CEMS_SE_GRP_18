@@ -130,25 +130,10 @@ export const logout = async (req, res) => {
 
 export const requestPasswordReset = async (req, res) => {
   try {
-    const { email, role } = req.body;
 
-    // If user is authenticated, get from token, otherwise require email/role
-    let user;
-    if (req.user && req.user.id) {
-      // Authenticated user
-      user = await User.findById(req.user.id);
-      if (!user) {
-        return res.status(404).json({ success: false, message: "User not found" });
-      }
-    } else {
-      if (!email || !role) {
-        return res.status(400).json({ success: false, message: "Email and role are required" });
-      }
-
-      user = await User.findOne({ email, role });
-      if (!user) {
-        return res.status(200).json({ success: true, message: "If an account with that email and role exists, an OTP has been sent." });
-      }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const toEmail = user.email;
@@ -214,23 +199,14 @@ export const requestPasswordReset = async (req, res) => {
 
 export const verifyOtpAndResetPassword = async (req, res) => {
   try {
-    const { otp, newPassword, email, role } = req.body;
+    const { otp, newPassword} = req.body;
+    const { email, role } = req.user;
 
     if (!otp || !newPassword) {
       return res.status(400).json({ success: false, message: "OTP and new password are required" });
     }
 
-    let user;
-    if (req.user && req.user.id) {
-      // Authenticated user
-      user = await User.findById(req.user.id);
-    } else {
-      // Non-authenticated user - require email and role
-      if (!email || !role) {
-        return res.status(400).json({ success: false, message: "Email and role are required" });
-      }
-      user = await User.findOne({ email, role });
-    }
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(400).json({ success: false, message: "User not found" });
