@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, MapPin, Bell } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { cn } from '../../ui/utils';
+import { fetchTimelineReminders } from '@/store/student.slice';
 
 // Helper function to calculate days until event
 const getDaysUntil = (dateString) => {
@@ -21,43 +24,14 @@ const formatCountdown = (days) => {
   return `In ${days} days`;
 };
 
-// Mock data - replace with actual API data fetching events within 7 days
-const upcomingEvents = [
-  {
-    id: '1',
-    name: 'Tech Hackathon 2025',
-    date: '2025-11-15',
-    time: '09:00 AM',
-    location: 'Main Auditorium',
-    duration: '2 days',
-  },
-  {
-    id: '2',
-    name: 'AI Workshop Series',
-    date: '2025-11-20',
-    time: '02:00 PM',
-    location: 'Lab 203',
-    duration: '3 hours',
-  },
-  {
-    id: '3',
-    name: 'Design Sprint Challenge',
-    date: '2025-11-10',
-    time: '10:00 AM',
-    location: 'Creative Studio',
-    duration: '1 day',
-  },
-  {
-    id: '4',
-    name: 'Startup Pitch Day',
-    date: '2025-11-12',
-    time: '11:00 AM',
-    location: 'Innovation Hub',
-    duration: '4 hours',
-  },
-].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
 export function TimelineReminders() {
+  const dispatch = useDispatch();
+  const { timelineReminders, loading } = useSelector((state) => state.student);
+  const upcomingEvents = timelineReminders?.data || [];
+
+  useEffect(() => {
+    dispatch(fetchTimelineReminders());
+  }, [dispatch]);
   
   // Refactored from nested ternary to avoid linter warnings
   const getUrgencyColor = (days) => {
@@ -88,7 +62,7 @@ export function TimelineReminders() {
         </Badge>
       </div>
 
-      {upcomingEvents.length === 0 ? (
+      {loading === false && upcomingEvents.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border border-border">
           <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-foreground mb-2">No Upcoming Events</h3>
@@ -99,8 +73,9 @@ export function TimelineReminders() {
       ) : (
         <div className="space-y-3">
           {upcomingEvents.map((event, index) => {
-            const daysUntil = getDaysUntil(event.date);
-            
+            const firstTimelineEntry = event.timeline?.[0];
+            if (!firstTimelineEntry) return null;
+            const daysUntil = getDaysUntil(firstTimelineEntry.date);
             return (
               <div
                 key={event.id}
@@ -116,12 +91,12 @@ export function TimelineReminders() {
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex-1">
-                      <h4 className="text-foreground mb-1">{event.name}</h4>
+                      <h4 className="text-foreground mb-1">{event.title}</h4>
                       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-4 h-4 text-primary" />
                           <span>
-                            {new Date(event.date).toLocaleDateString('en-US', {
+                            {new Date(firstTimelineEntry.date).toLocaleDateString('en-US', {
                               weekday: 'short',
                               month: 'short',
                               day: 'numeric',
@@ -130,11 +105,11 @@ export function TimelineReminders() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-4 h-4 text-primary" />
-                          <span>{event.time}</span>
+                          <span>{firstTimelineEntry.duration?.from}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <MapPin className="w-4 h-4 text-primary" />
-                          <span>{event.location}</span>
+                          <span>{firstTimelineEntry.venue}</span>
                         </div>
                       </div>
                     </div>
@@ -157,7 +132,7 @@ export function TimelineReminders() {
                         }}
                       />
                     </div>
-                    <span className="text-xs text-muted-foreground">{event.duration}</span>
+                    <span className="text-xs text-muted-foreground">{firstTimelineEntry.title}</span>
                   </div>
                 </div>
               </div>

@@ -1,92 +1,19 @@
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { AlertTriangle, Calendar, Clock, ArrowLeftRight } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import { cn } from '../../ui/utils';
-
-// Helper function to check if two date ranges overlap
-const checkOverlap = (
-  start1,
-  end1,
-  start2,
-  end2
-) => {
-  return start1 < end2 && start2 < end1;
-};
-
-// Mock data - replace with actual API data
-const allEvents = [
-  {
-    id: '1',
-    name: 'Tech Hackathon 2025',
-    startDate: '2025-11-15T09:00:00',
-    endDate: '2025-11-17T18:00:00',
-  },
-  {
-    id: '2',
-    name: 'AI Workshop Series',
-    startDate: '2025-11-16T14:00:00',
-    endDate: '2025-11-16T17:00:00',
-  },
-  {
-    id: '3',
-    name: 'Design Sprint Challenge',
-    startDate: '2025-11-20T10:00:00',
-    endDate: '2025-11-20T18:00:00',
-  },
-  {
-    id: '4',
-    name: 'Robotics Workshop',
-    startDate: '2025-11-20T14:00:00',
-    endDate: '2025-11-20T17:00:00',
-  },
-  {
-    id: '5',
-    name: 'Startup Pitch Day',
-    startDate: '2025-11-25T09:00:00',
-    endDate: '2025-11-25T13:00:00',
-  },
-  {
-    id: '6',
-    name: 'Marketing Seminar',
-    startDate: '2025-11-25T11:00:00',
-    endDate: '2025-11-25T15:00:00',
-  },
-];
-
-// Detect clashes
-const detectClashes = () => {
-  const clashes = [];
-
-  for (let i = 0; i < allEvents.length; i++) {
-    for (let j = i + 1; j < allEvents.length; j++) {
-      const event1 = allEvents[i];
-      const event2 = allEvents[j];
-      
-      const start1 = new Date(event1.startDate);
-      const end1 = new Date(event1.endDate);
-      const start2 = new Date(event2.startDate);
-      const end2 = new Date(event2.endDate);
-
-      if (checkOverlap(start1, end1, start2, end2)) {
-        const overlapStart = start1 > start2 ? start1 : start2;
-        const overlapEnd = end1 < end2 ? end1 : end2;
-        
-        clashes.push({
-          id: `${event1.id}-${event2.id}`,
-          event1,
-          event2,
-          overlapStart: overlapStart.toISOString(),
-          overlapEnd: overlapEnd.toISOString(),
-        });
-      }
-    }
-  }
-
-  return clashes;
-};
+import { fetchClashWarnings } from '@/store/student.slice';
 
 export function ClashDetection() {
-  const clashes = detectClashes();
+  const dispatch = useDispatch();
+  const { clashWarnings, loading } = useSelector((state) => state.student);
+  const clashes = clashWarnings?.data || [];
+
+  useEffect(() => {
+    dispatch(fetchClashWarnings());
+  }, [dispatch]);
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
@@ -149,9 +76,9 @@ export function ClashDetection() {
       ) : (
         <div className="space-y-4">
           {clashes.map((clash, index) => {
-            const event1DateTime = formatDateTime(clash.event1.startDate);
-            const event2DateTime = formatDateTime(clash.event2.startDate);
-            const overlapDuration = calculateOverlapDuration(clash.overlapStart, clash.overlapEnd);
+            const event1DateTime = formatDateTime(clash.eventA.starts);
+            const event2DateTime = formatDateTime(clash.eventB.starts);
+            const overlapDuration = calculateOverlapDuration(clash.eventA.starts, clash.eventA.ends);
 
             return (
               <div
@@ -181,7 +108,7 @@ export function ClashDetection() {
 
                   {/* Event 1 */}
                   <div className="bg-card rounded-lg p-4 border border-border">
-                    <h4 className="text-foreground mb-2">{clash.event1.name}</h4>
+                    <h4 className="text-foreground mb-2">{clash.eventA.title}</h4>
                     <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-4 h-4 text-primary" />
@@ -190,7 +117,7 @@ export function ClashDetection() {
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-primary" />
                         <span>
-                          {formatDateTime(clash.event1.startDate).time} - {formatDateTime(clash.event1.endDate).time}
+                          {formatDateTime(clash.eventA.starts).time} - {formatDateTime(clash.eventA.ends).time}
                         </span>
                       </div>
                     </div>
@@ -206,7 +133,7 @@ export function ClashDetection() {
 
                   {/* Event 2 */}
                   <div className="bg-card rounded-lg p-4 border border-border">
-                    <h4 className="text-foreground mb-2">{clash.event2.name}</h4>
+                    <h4 className="text-foreground mb-2">{clash.eventB.title}</h4>
                     <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-4 h-4 text-primary" />
@@ -215,7 +142,7 @@ export function ClashDetection() {
                       <div className="flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-primary" />
                         <span>
-                          {formatDateTime(clash.event2.startDate).time} - {formatDateTime(clash.event2.endDate).time}
+                          {formatDateTime(clash.eventB.starts).time} - {formatDateTime(clash.eventB.ends).time}
                         </span>
                       </div>
                     </div>

@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,35 +9,28 @@ import { Label } from '@/components/ui/label';
 import { X, Plus, Search, CheckCircle, AlertCircle, User } from 'lucide-react';
 import { cn } from '@/components/ui/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { createStudentTeam, fetchAllStudents } from '@/store/student.slice';
 
-// Mock current user - replace with actual auth context
-const CURRENT_USER = {
-  id: 'user_1',
-  name: 'John Doe',
-  email: 'john@college.edu',
-};
-
-// Mock students database - replace with actual API call
-const mockStudents = [
-  { id: 'student_1', name: 'Adam Smith', email: 'adam@college.edu' },
-  { id: 'student_2', name: 'Aditi Sharma', email: 'aditi@college.edu' },
-  { id: 'student_3', name: 'Aditya Kumar', email: 'aditya@college.edu' },
-  { id: 'student_4', name: 'Sarah Johnson', email: 'sarah@college.edu' },
-  { id: 'student_5', name: 'Michael Chen', email: 'michael@college.edu' },
-  { id: 'student_6', name: 'Emma Wilson', email: 'emma@college.edu' },
-  { id: 'student_7', name: 'Daniel Brown', email: 'daniel@college.edu' },
-  { id: 'student_8', name: 'Olivia Taylor', email: 'olivia@college.edu' },
-];
 
 // Mock existing teams - replace with actual API call
 const existingTeamNames = ['Code Warriors', 'Tech Titans', 'Digital Pioneers'];
 
 export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { allStudents } = useSelector((state) => state.student);
   const [teamName, setTeamName] = useState('');
   const [teamNameStatus, setTeamNameStatus] = useState('idle');
   const [members, setMembers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Fetch all students when the modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchAllStudents());
+    }
+  }, [isOpen, dispatch]);
 
   // Check team name availability
   useEffect(() => {
@@ -58,10 +53,11 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
   }, [teamName]);
 
   // Filter students based on search query
-  const filteredStudents = mockStudents.filter(student => 
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    !members.some(m => m.id === student.id) &&
-    student.id !== CURRENT_USER.id
+  const filteredStudents = allStudents.filter(student => 
+    student.college === user.college && // Filter by current user's college
+    student.profile.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    !members.some(m => m._id === student._id) &&
+    student._id !== user.id
   );
 
   const handleAddMember = (student) => {
@@ -70,30 +66,29 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
     setShowSearchResults(false);
   };
 
-  const handleRemoveMember = (memberId) => {
-    setMembers(members.filter(m => m.id !== memberId));
+  const handleRemoveMember = (member_id) => {
+    setMembers(members.filter(m => m._id !== member_id));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (teamNameStatus !== 'available' || members.length === 0) {
       return;
     }
 
     const teamData = {
       teamName,
-      leader: CURRENT_USER,
-      members: members.map(m => ({
-        member: m,
-        status: 'Pending'
-      })),
+      members: members.map(m => m._id), // Send only member IDs
     };
 
-    onSubmit(teamData);
-    
-    // Reset form
-    setTeamName('');
-    setMembers([]);
-    setSearchQuery('');
+    const promise = dispatch(createStudentTeam(teamData)).unwrap();
+
+    toast.promise(promise, {
+      loading: 'Creating team and sending invites...',
+      success: 'Team created successfully!',
+      error: (err) => err || 'Failed to create team.',
+    });
+
+    handleCancel();
   };
 
   const handleCancel = () => {
@@ -165,8 +160,8 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-foreground">{CURRENT_USER.name}</p>
-                  <p className="text-xs text-muted-foreground">{CURRENT_USER.email}</p>
+                  <p className="text-sm text-foreground">{user?.profile?.name || 'Loading...'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email || '...'}</p>
                 </div>
                 <div className="ml-auto">
                   <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">You</span>
@@ -205,15 +200,15 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
                   >
                     {filteredStudents.map((student) => (
                       <button
-                        key={student.id}
+                        key={student._id}
                         onClick={() => handleAddMember(student)}
                         className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center gap-3"
                       >
                         <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs">
-                          {student.name.split(' ').map(n => n[0]).join('')}
+                          {student.profile.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm text-foreground">{student.name}</p>
+                          <p className="text-sm text-foreground">{student.profile.name}</p>
                           <p className="text-xs text-muted-foreground">{student.email}</p>
                         </div>
                       </button>
@@ -232,7 +227,7 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {members.map((member, index) => (
                     <motion.div
-                      key={member.id}
+                      key={member._id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
@@ -240,16 +235,16 @@ export function CreateTeamModal({ isOpen, onClose, onSubmit }) {
                       className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border"
                     >
                       <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-xs">
-                        {member.name.split(' ').map(n => n[0]).join('')}
+                        {member.profile.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm text-foreground">{member.name}</p>
+                        <p className="text-sm text-foreground">{member.profile.name}</p>
                         <p className="text-xs text-muted-foreground">{member.email}</p>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleRemoveMember(member.id)}
+                        onClick={() => handleRemoveMember(member._id)}
                         className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                       >
                         <X className="w-4 h-4" />

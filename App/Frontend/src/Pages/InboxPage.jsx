@@ -17,6 +17,7 @@ import {
   Send,
   FileText,
   Edit3,
+  Plus,
   Archive,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -90,15 +91,31 @@ const InboxPage = () => {
     type: 'message',
     title: '',
     description: '',
-    message: '',
-    to: '',
+    to: [],
     status: 'Draft',
   });
+  const [currentRecipient, setCurrentRecipient] = useState({ email: '', role: 'student' });
 
 
   useEffect(() => {
     loadMessages();
   }, []);
+
+  useEffect(() => {
+    if (selectedMessage) {
+      const updatedMessage = arrivals.find(m => m._id === selectedMessage._id);
+      if (updatedMessage) {
+        setSelectedMessage(updatedMessage);
+      } else {
+        setSelectedMessage(null);
+      }
+    }
+  }, [arrivals]);
+
+  const resetComposeForm = () => {
+    setComposeForm({ type: 'message', title: '', description: '', to: [], status: 'Draft' });
+    setCurrentRecipient({ email: '', role: 'student' });
+  };
 
   const loadMessages = async () => {
     dispatch(fetchArrivals());
@@ -112,8 +129,7 @@ const InboxPage = () => {
       type: draft.type,
       title: draft.title,
       description: draft.description || '',
-      message: draft.message || '',
-      to: draft.to?.map(u => u.email || u.username).join(', ') || '',
+      to: draft.to?.map(u => ({ email: u.email, role: u.role })) || [],
       status: 'Draft',
     });
     setComposeDialogOpen(true);
@@ -125,14 +141,13 @@ const InboxPage = () => {
       return;
     }
 
-    const recipients = composeForm.to.split(',').map(e => e.trim()).filter(Boolean);
-    if (saveAs === 'Sent' && recipients.length === 0) {
+    if (saveAs === 'Sent' && composeForm.to.length === 0) {
       toast.error('Please specify a recipient');
       return;
     }
 
     try {
-      const payload = { ...composeForm, to: recipients };
+      const payload = { ...composeForm };
 
       if (saveAs === 'Draft') {
         delete payload._id; // Don't send _id in the body for create/update
@@ -152,14 +167,7 @@ const InboxPage = () => {
       }
 
       setComposeDialogOpen(false);
-      setComposeForm({
-        type: 'message',
-        title: '',
-        description: '',
-        message: '',
-        to: '',
-        status: 'Draft',
-      });
+      resetComposeForm();
     } catch (error) {
       toast.error(error || 'Failed to save message');
     }
@@ -217,6 +225,21 @@ const InboxPage = () => {
       default:
         return null;
     }
+  };
+
+  const handleAddRecipient = () => {
+    if (currentRecipient.email.trim()) {
+      if (!composeForm.to.some(r => r.email === currentRecipient.email && r.role === currentRecipient.role)) {
+        setComposeForm(prev => ({ ...prev, to: [...prev.to, currentRecipient] }));
+        setCurrentRecipient({ email: '', role: 'student' });
+      } else {
+        toast.info('Recipient already added.');
+      }
+    }
+  };
+
+  const handleRemoveRecipient = (recipient) => {
+    setComposeForm(prev => ({ ...prev, to: prev.to.filter(r => r.email !== recipient.email || r.role !== recipient.role) }));
   };
 
   const filterMessages = (messages) => {
@@ -284,8 +307,8 @@ const InboxPage = () => {
                       {message.status && getApprovalBadge(message.status)}
                     </div>
                     <p className="text-sm text-gray-600 mb-2">
-                      {message.from ? `From: ${message.from.profile?.name || message.from.username}` : 'From: [Deleted User]'}
-                      {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name || message.to[0]?.username}` : ''}
+                      {message.from ? `From: ${message.from.profile?.name}` : 'From: [Deleted User]'}
+                      {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name}` : ''}
                     </p>
                     <p className="text-sm text-gray-500 line-clamp-2">
                       {message.description || message.message}
@@ -339,12 +362,12 @@ const InboxPage = () => {
               <div className="flex items-center gap-4 text-sm text-gray-500">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  From: {selectedMessage.from?.profile?.name || selectedMessage.from?.username || '[Deleted User]'}
+                  From: {selectedMessage.from?.profile?.name || '[Deleted User]'}
                 </div>
                 {selectedMessage.to && selectedMessage.to.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Send className="w-4 h-4" />
-                    To: {selectedMessage.to[0]?.profile?.name || selectedMessage.to[0]?.username || '[Deleted User]'}
+                    To: {selectedMessage.to.map(u => u.profile?.name || '[Deleted User]').join(', ')}
                   </div>
                 )}
                 <div className="flex items-center gap-1">
@@ -377,15 +400,13 @@ const InboxPage = () => {
         </div>
 
         <ScrollArea className="flex-1 p-6">
-          {selectedMessage.description && (
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-gray-700">{selectedMessage.description}</p>
-            </div>
-          )}
           <div>
-            <h3 className="font-semibold mb-2">Message</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.message}</p>
+            {selectedMessage.description && (
+              <>
+                <h3 className="font-semibold mb-2">Message</h3>
+                <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.description}</p>
+              </>
+            )}
           </div>
         </ScrollArea>
 
@@ -558,13 +579,43 @@ const InboxPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="to">To (Email or Username)</Label>
-                <Textarea
-                  id="to"
-                  placeholder="recipient@example.com"
-                  value={composeForm.to}
-                  onChange={(e) => setComposeForm({ ...composeForm, to: e.target.value })}
-                />
+                <Label>To</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="recipient@example.com"
+                    value={currentRecipient.email}
+                    onChange={(e) => setCurrentRecipient(prev => ({ ...prev, email: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                  />
+                  <Select value={currentRecipient.role} onValueChange={(value) => setCurrentRecipient(prev => ({ ...prev, role: value }))}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="organizer">Organizer</SelectItem>
+                      <SelectItem value="sponsor">Sponsor</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" onClick={handleAddRecipient}><Plus className="w-4 h-4" /></Button>
+                </div>
+                {composeForm.to.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md">
+                    {composeForm.to.map((recipient, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1.5">
+                        {recipient.email} ({recipient.role})
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRecipient(recipient)}
+                          className="rounded-full hover:bg-muted-foreground/20"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -578,25 +629,16 @@ const InboxPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="Brief description"
-                  value={composeForm.description}
-                  onChange={(e) => setComposeForm({ ...composeForm, description: e.target.value })}
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="message">Message *</Label>
                 <Textarea
                   id="message"
                   placeholder="Type your message here..."
-                  value={composeForm.message}
-                  onChange={(e) => setComposeForm({ ...composeForm, message: e.target.value })}
+                  value={composeForm.description}
+                  onChange={(e) => setComposeForm({ ...composeForm, description: e.target.value })}
                   className="min-h-32"
                 />
               </div>
+
             </div>
             <DialogFooter className="gap-2">
               <Button
@@ -609,7 +651,7 @@ const InboxPage = () => {
               </Button>
               <Button
                 onClick={() => handleComposeMessage('Sent')}
-                disabled={loading === 'loading' || !composeForm.title.trim() || !composeForm.to.trim()}
+                disabled={loading === 'loading' || !composeForm.title.trim() || composeForm.to.length === 0}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 <Send className="w-4 h-4 mr-2" />

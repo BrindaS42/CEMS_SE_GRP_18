@@ -11,10 +11,10 @@ const registrationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  teamName: { type: String },
+
+  teamName: { type: mongoose.Schema.Types.ObjectId, ref: "StudentTeam" },
   members: [{ type: String }],
 
-  
   registrationData: [
     {
       question: { type: String, required: true },
@@ -41,13 +41,13 @@ const registrationSchema = new mongoose.Schema({
     unique: true,
   },
 
- checkIns: [
-  {
-    timelineTitle: { type: String, required: true },
-    checkedInAt: { type: Date },
-    status: { type: String, enum: ["absent", "present"], default: "absent" },
-  },
-],
+  checkIns: [
+    {
+      timelineRef: { type: mongoose.Schema.Types.ObjectId, required: true },
+      checkedInAt: { type: Date },
+      status: { type: String, enum: ["absent", "present"], default: "absent" },
+    },
+  ],
 
 
   checkIn: {

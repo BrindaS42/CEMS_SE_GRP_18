@@ -28,6 +28,7 @@ export function CreatedTeamsTab({
   currentUserEmail
 }) {
   const { teamList } = useSelector((state) => state.team);
+  const { user } = useSelector((state) => state.auth);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState(null);
   const [highlightedTeam, setHighlightedTeam] = useState(null);
@@ -98,10 +99,9 @@ export function CreatedTeamsTab({
   };
 
   const canUserEdit = (team) => {
-    // Check if current user is in the team and has accepted
-    const currentMember = team.members.find(m => m.email === currentUserEmail);
-    return currentMember !== undefined && 
-           (currentMember.status === undefined || currentMember.status === 'Accepted');
+    const leaderMember = team.leader;
+    if (leaderMember && leaderMember === user.profile.name) return true;
+    return false; // Or add other roles that can edit here.
   };
 
   const handleViewTeam = (team) => {

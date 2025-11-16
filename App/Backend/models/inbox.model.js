@@ -24,7 +24,6 @@ const InboxEntitySchema = new mongoose.Schema(
       enum: ["Draft", "Sent", "Approved", "Rejected", "Pending"],
       default: "Draft"
     },
-    message: String,
     relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
     relatedTeam: { type: mongoose.Schema.Types.ObjectId, refPath: "relatedTeamModel" },
     relatedTeamModel: { type: String, enum: ["Team", "StudentTeam"] },

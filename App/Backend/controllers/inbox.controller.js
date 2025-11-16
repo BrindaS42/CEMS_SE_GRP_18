@@ -9,7 +9,7 @@ import User from "../models/user.model.js";
 export const createDraft = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { type, title, description, to, message, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
 
     if (!type || !title) {
       return res.status(400).json({ error: "Type and title are required" });
@@ -17,16 +17,14 @@ export const createDraft = async (req, res) => {
 
     let toUserIds = [];
     if (to && Array.isArray(to) && to.length > 0) {
-      // The 'to' field from the frontend is an array of strings (emails or usernames)
-      const recipientIdentifiers = to.filter(Boolean); // Remove any empty strings
-      if (recipientIdentifiers.length > 0) {
-        const recipients = await User.find({
-          $or: [
-            { email: { $in: recipientIdentifiers } },
-            { 'profile.name': { $in: recipientIdentifiers } }
-          ]
-        }).select('_id');
-        toUserIds = recipients.map(user => user._id);
+      // 'to' is an array of {email, role} objects
+      const findUserPromises = to.map(recipient =>
+        User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
+      );
+      const users = await Promise.all(findUserPromises);
+      toUserIds = users.filter(Boolean).map(user => user._id);
+      if (toUserIds.length !== to.length) {
+        console.warn("Some recipients were not found and were skipped.");
       }
     }
 
@@ -36,7 +34,6 @@ export const createDraft = async (req, res) => {
       description,
       from: userId,
       to: toUserIds,
-      message,
       relatedEvent,
       relatedTeam,
       relatedTeamModel,
@@ -44,8 +41,8 @@ export const createDraft = async (req, res) => {
     });
 
     const populatedDraft = await InboxEntity.findById(draft._id)
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name");
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name");
 
     res.status(201).json({
       success: true,
@@ -63,7 +60,7 @@ export const editDraft = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { draftId } = req.params;
-    const { type, title, description, to, message, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
 
     const draft = await InboxEntity.findById(draftId);
 
@@ -81,16 +78,14 @@ export const editDraft = async (req, res) => {
 
     let toUserIds = draft.to;
     if (to && Array.isArray(to) && to.length > 0) {
-      // The 'to' field from the frontend is an array of strings (emails or usernames)
-      const recipientIdentifiers = to.filter(Boolean);
-      if (recipientIdentifiers.length > 0) {
-        const recipients = await User.find({
-          $or: [
-            { email: { $in: recipientIdentifiers } },
-            { 'profile.name': { $in: recipientIdentifiers } }
-          ]
-        }).select('_id');
-        toUserIds = recipients.map(user => user._id);
+      // 'to' is an array of {email, role} objects
+      const findUserPromises = to.map(recipient =>
+        User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
+      );
+      const users = await Promise.all(findUserPromises);
+      toUserIds = users.filter(Boolean).map(user => user._id);
+      if (toUserIds.length !== to.length) {
+        console.warn("Some recipients were not found and were skipped during update.");
       }
     }
 
@@ -102,14 +97,13 @@ export const editDraft = async (req, res) => {
         title: title || draft.title,
         description: description || draft.description,
         to: toUserIds,
-        message: message || draft.message,
         relatedEvent: relatedEvent || draft.relatedEvent,
         relatedTeam: relatedTeam || draft.relatedTeam,
         relatedTeamModel: relatedTeamModel || draft.relatedTeamModel,
       },
       { new: true, runValidators: true }
-    ).populate("from", "username email profile.name")
-     .populate("to", "username email profile.name");
+    ).populate("from", "email profile.name")
+     .populate("to", "email profile.name");
 
     res.status(200).json({
       success: true,
@@ -156,8 +150,8 @@ export const getListOfDrafts = async (req, res) => {
     const userId = req.user?.id;
 
     const drafts = await InboxEntity.find({ from: userId, status: "Draft" })
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name")
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -201,8 +195,8 @@ export const sendMessage = async (req, res) => {
       { status: "Sent" },
       { new: true }
     )
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name")
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -224,7 +218,7 @@ export const sendMessage = async (req, res) => {
 export const sendDirectMessage = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { type, title, description, to, message, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
 
     if (!type || !title) {
       return res.status(400).json({ error: "Type and title are required" });
@@ -235,15 +229,14 @@ export const sendDirectMessage = async (req, res) => {
     }
 
     let toUserIds = [];
-    const recipientIdentifiers = to.filter(Boolean);
-    if (recipientIdentifiers.length > 0) {
-      const recipients = await User.find({
-        $or: [
-          { email: { $in: recipientIdentifiers } },
-          { 'profile.name': { $in: recipientIdentifiers } }
-        ]
-      }).select('_id');
-      toUserIds = recipients.map(user => user._id);
+    // 'to' is an array of {email, role} objects
+    const findUserPromises = to.map(recipient =>
+      User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
+    );
+    const users = await Promise.all(findUserPromises);
+    toUserIds = users.filter(Boolean).map(user => user._id);
+    if (toUserIds.length !== to.length) {
+      return res.status(404).json({ success: false, error: "One or more recipients could not be found. Please check the emails and roles." });
     }
 
     const sentMessage = await InboxEntity.create({
@@ -252,7 +245,6 @@ export const sendDirectMessage = async (req, res) => {
       description,
       from: userId,
       to: toUserIds,
-      message,
       relatedEvent,
       relatedTeam,
       relatedTeamModel,
@@ -260,8 +252,8 @@ export const sendDirectMessage = async (req, res) => {
     });
 
     const populatedMessage = await InboxEntity.findById(sentMessage._id)
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name");
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name");
 
     res.status(201).json({
       success: true,
@@ -283,8 +275,8 @@ export const getListOfSents = async (req, res) => {
       from: userId,
       status: { $in: ["Sent", "Approved", "Rejected", "Pending"] },
     })
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name")
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -310,8 +302,8 @@ export const getListOfArrivals = async (req, res) => {
     const userId = req.user?.id;
 
     const arrivalMessages = await InboxEntity.find({ to: userId })
-      .populate("from", "username email profile.name")
-      .populate("to", "username email profile.name")
+      .populate("from", "email profile.name")
+      .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -344,7 +336,7 @@ export const approveInboxEntity = async (req, res) => {
     if (
       inbox.type === "message" ||
       inbox.type === "announcement" ||
-      inbox.type === "sponsorship_req"
+      inbox.type === "sponsorship_request"
     ) {
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
       return res.status(200).json({
@@ -398,7 +390,7 @@ export const approveInboxEntity = async (req, res) => {
       });
     }
 
-    if (inbox.type === "mou_req") {
+    if (inbox.type === "mou_approval_request") {
       const sponsorId = inbox.to;
       const eventId = inbox.relatedEvent;
 
@@ -432,78 +424,62 @@ export const approveInboxEntity = async (req, res) => {
 
     if (inbox.type === "team_invite") {
       const teamId = inbox.relatedTeam;
-      const newMemberId = inbox.from;
+      const newMemberId = inbox.to[0]; // The user who is accepting the invite
 
-      const studentTeam = await StudentTeam.findById(teamId);
-      if (!studentTeam)
-        return res.status(404).json({ message: "Team not found" });
+      if (inbox.relatedTeamModel === 'StudentTeam') {
+        const studentTeam = await StudentTeam.findById(teamId);
+        if (!studentTeam) return res.status(404).json({ message: "Student Team not found" });
 
-      const exists = studentTeam.members.some(
-        (m) => m.member.toString() === newMemberId.toString()
-      );
+        const memberIndex = studentTeam.members.findIndex(m => m.member.toString() === newMemberId.toString());
 
-      if (exists) {
-        const idx = studentTeam.members.findIndex(
-          (m) => m.member.toString() === newMemberId.toString()
-        );
-        studentTeam.members[idx].status = "Approved";
-      } else {
-        studentTeam.members.push({ member: newMemberId, status: "Approved" });
-      }
+        if (memberIndex !== -1) {
+          studentTeam.members[memberIndex].status = "Approved";
+        } else {
+          // Fallback: if user wasn't in members list, add them.
+          studentTeam.members.push({ member: newMemberId, status: "Approved" });
+        }
 
-      await studentTeam.save();
-      await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
+        await studentTeam.save();
+        await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
 
-      return res.status(200).json({
-        success: true,
-        message: "Student added to team successfully",
-        data: {
-          teamId: studentTeam._id,
-          teamName: studentTeam.teamName,
-          members: studentTeam.members,
-        },
-      });
-    }
-
-    if (inbox.type === "organizer_team_invite") {
-      const teamId = inbox.relatedTeam;
-      const newMemberId = inbox.from;
-      const roleFromMessage = inbox.role || "volunteer";
-
-      const organizerTeam = await Team.findById(teamId);
-      if (!organizerTeam)
-        return res.status(404).json({ message: "Organizer team not found" });
-
-      const exists = organizerTeam.members?.some(
-        (m) => m.user.toString() === newMemberId.toString()
-      );
-
-      if (exists) {
-        const idx = organizerTeam.members.findIndex(
-          (m) => m.user.toString() === newMemberId.toString()
-        );
-        organizerTeam.members[idx].role = roleFromMessage;
-        organizerTeam.members[idx].status = "Approved";
-      } else {
-        organizerTeam.members.push({
-          user: newMemberId,
-          role: roleFromMessage,
-          status: "Approved",
+        return res.status(200).json({
+          success: true,
+          message: "Successfully joined the student team",
+          data: {
+            teamId: studentTeam._id,
+            teamName: studentTeam.teamName,
+            members: studentTeam.members,
+          },
         });
+
+      } else if (inbox.relatedTeamModel === 'Team') {
+        const organizerTeam = await Team.findById(teamId);
+        if (!organizerTeam) return res.status(404).json({ message: "Organizer Team not found" });
+
+        const memberIndex = organizerTeam.members.findIndex(m => m.user.toString() === newMemberId.toString());
+
+        if (memberIndex !== -1) {
+          organizerTeam.members[memberIndex].status = "Approved";
+        } else {
+          // Fallback: if user wasn't in members list, add them.
+          organizerTeam.members.push({ user: newMemberId, role: inbox.role || 'volunteer', status: "Approved" });
+        }
+
+        await organizerTeam.save();
+        await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
+
+        return res.status(200).json({
+          success: true,
+          message: "Successfully joined the organizer team",
+          data: {
+            teamId: organizerTeam._id,
+            teamName: organizerTeam.name,
+            members: organizerTeam.members,
+          },
+        });
+      } else {
+        return res.status(400).json({ message: "Invalid team model for team invite." });
       }
-
-      await organizerTeam.save();
-      await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
-
-      return res.status(200).json({
-        success: true,
-        message: "Organizer added to organizing team successfully",
-        data: {
-          teamId: organizerTeam._id,
-          teamName: organizerTeam.name,
-          members: organizerTeam.members,
-        },
-      });
     }
 
     if (inbox.type === "registration_approval") {
@@ -544,11 +520,35 @@ export const approveInboxEntity = async (req, res) => {
 export const rejectInboxEntity = async (req, res) => {
   try {
     const { id } = req.params;
-    const inbox = await InboxEntity.findById(id);
+    const inbox = await InboxEntity.findById(id).lean();
 
     if (!inbox) {
       return res.status(404).json({ message: "Inbox item not found" });
     }
+
+    // If it's a team invite rejection, remove the member from the team list
+    if (inbox.type === "team_invite") {
+      const teamId = inbox.relatedTeam;
+      const memberIdToReject = inbox.to[0];
+
+      if (inbox.relatedTeamModel === 'StudentTeam') {
+        await StudentTeam.findByIdAndUpdate(teamId, {
+          $pull: { members: { member: memberIdToReject } }
+        });
+      } else if (inbox.relatedTeamModel === 'Team') {
+        await Team.findByIdAndUpdate(teamId, {
+          $pull: { members: { user: memberIdToReject } }
+        });
+      }
+    }
+
+    await InboxEntity.findByIdAndUpdate(id, { status: "Rejected" });
+
+    return res.status(200).json({
+      success: true,
+      message: `${inbox.type} rejected successfully`,
+      data: { id: inbox._id, type: inbox.type },
+    });
 
     inbox.status = "Rejected";
     await inbox.save();

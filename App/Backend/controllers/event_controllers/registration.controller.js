@@ -40,7 +40,7 @@ export const getRegistrationForm = async (req, res) => {
 
 export const submitRegistration = async (req, res) => {
   try {
-    const { eventId, teamName, members, paymentProof, registrationData } = req.body;
+    const { eventId, team, paymentProof, registrationData } = req.body;
     const event = await Event.findById(eventId);
 
     if (!event) return res.status(404).json({ success: false, message: "Event not found" });
@@ -50,7 +50,8 @@ export const submitRegistration = async (req, res) => {
     const checkInCode = crypto.randomBytes(4).toString("hex").toUpperCase();
 
     const checkIns = (event.timeline || []).map((t) => ({
-      timelineTitle: t.title,
+      timelineRef: t._id,
+      checkedInAt: null,
       status: "absent",
     }));
 
@@ -76,8 +77,7 @@ export const submitRegistration = async (req, res) => {
     const registration = await Registration.create({
       eventId,
       userId: req.user.id,
-      teamName,
-      members,
+      team,
       paymentProof,
       registrationData,
       paymentStatus,
@@ -127,16 +127,16 @@ export const getRegistrationStatusByEIDPID = async (req, res) => {
 
 export const markCheckIn = async (req, res) => {
   try {
-    const { checkInCode, timelineTitle } = req.body;
+    const { checkInCode, timelineRef } = req.body;
     const registration = await Registration.findOne({ checkInCode });
     if (!registration) return res.status(404).json({ success: false, message: "Invalid check-in code" });
 
-    const checkIn = registration.checkIns.find(c => c.timelineTitle === timelineTitle);
+    const checkIn = registration.checkIns.find(c => c.timelineRef === timelineRef);
     if (checkIn) {
       checkIn.status = "present";
       checkIn.checkedInAt = new Date();
     } else {
-      registration.checkIns.push({ timelineTitle, status: "present", checkedInAt: new Date() });
+      registration.checkIns.push({ timelineRef, status: "present", checkedInAt: new Date() });
     }
 
     await registration.save();

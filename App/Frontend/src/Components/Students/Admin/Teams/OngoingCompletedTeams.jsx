@@ -3,109 +3,38 @@ import { Users, Calendar, CheckCircle, Clock, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
-import { useState } from 'react';
-
-// Mock data - replace with actual API data
-// Active teams first, then completed
-const mockTeams = [
-  {
-    id: 'ongoing_1',
-    teamName: 'Code Warriors',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm1', name: 'Sarah Johnson', email: 'sarah@college.edu' },
-      { id: 'm2', name: 'Mike Chen', email: 'mike@college.edu' },
-      { id: 'm3', name: 'Emma Wilson', email: 'emma@college.edu' },
-    ],
-    linkedEvent: {
-      id: 'event_1',
-      name: 'Tech Hackathon 2025',
-      date: '2025-11-15',
-    },
-    status: 'Active',
-    createdAt: '2025-10-20',
-  },
-  {
-    id: 'ongoing_2',
-    teamName: 'AI Innovators',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm4', name: 'Alex Brown', email: 'alex@college.edu' },
-      { id: 'm5', name: 'Olivia Taylor', email: 'olivia@college.edu' },
-    ],
-    linkedEvent: {
-      id: 'event_2',
-      name: 'AI Workshop Series',
-      date: '2025-11-20',
-    },
-    status: 'Active',
-    createdAt: '2025-10-28',
-  },
-  {
-    id: 'completed_1',
-    teamName: 'Design Thinkers',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm6', name: 'Noah Martinez', email: 'noah@college.edu' },
-      { id: 'm7', name: 'Ava Anderson', email: 'ava@college.edu' },
-      { id: 'm8', name: 'Liam Thomas', email: 'liam@college.edu' },
-    ],
-    linkedEvent: {
-      id: 'event_3',
-      name: 'Design Sprint Challenge',
-      date: '2025-10-10',
-    },
-    status: 'Completed',
-    createdAt: '2025-09-15',
-  },
-  {
-    id: 'completed_2',
-    teamName: 'Data Wizards',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm9', name: 'Sophia Garcia', email: 'sophia@college.edu' },
-    ],
-    linkedEvent: {
-      id: 'event_4',
-      name: 'Data Science Summit',
-      date: '2025-09-20',
-    },
-    status: 'Completed',
-    createdAt: '2025-08-25',
-  },
-];
+import { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchStudentTeams } from '@/store/student.slice';
+import { ViewTeamMembersModal } from './ViewTeamMembersModal';
 
 export function OngoingCompletedTeams() {
-  const [teams] = useState(mockTeams);
+  const dispatch = useDispatch();
+  const { studentTeams, loading } = useSelector((state) => state.student);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [teamToView, setTeamToView] = useState(null);
 
-  // Sort: Active first, then Completed
-  const sortedTeams = [...teams].sort((a, b) => {
-    if (a.status === 'Active' && b.status === 'Completed') return -1;
-    if (a.status === 'Completed' && b.status === 'Active') return 1;
-    return 0;
-  });
+  useEffect(() => {
+    dispatch(fetchStudentTeams());
+  }, [dispatch]);
 
-  const activeCount = teams.filter(t => t.status === 'Active').length;
-  const completedCount = teams.filter(t => t.status === 'Completed').length;
+  const teams = useMemo(() => {
+    if (!studentTeams.leader) return [];
+    return studentTeams.leader.filter(team => team.isRegisteredForEvent);
+  }, [studentTeams.leader]);
 
-  const handleViewMembers = (teamId) => {
-    console.log('View members for team:', teamId);
-    // Implement view members functionality
+  const handleViewMembers = (team) => {
+    setTeamToView(team);
+    setViewModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setViewModalOpen(false);
+    setTeamToView(null);
   };
 
   const getInitials = (name) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map(n => n[0])
@@ -118,14 +47,14 @@ export function OngoingCompletedTeams() {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-foreground">Ongoing & Completed Teams</h3>
+          <h3 className="text-foreground">Ongoing Teams</h3>
           <p className="text-sm text-muted-foreground">
-            {activeCount} active • {completedCount} completed
+            {teams.length} active team{teams.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
-      {sortedTeams.length === 0 ? (
+      {loading === false && teams.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border border-border">
           <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-foreground mb-2">No Event Teams</h3>
@@ -134,54 +63,25 @@ export function OngoingCompletedTeams() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Active Teams Section */}
-          {activeCount > 0 && (
-            <div>
-              <h4 className="text-foreground mb-3 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-success" />
-                Active Teams ({activeCount})
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedTeams
-                  .filter(team => team.status === 'Active')
-                  .map((team, index) => (
-                    <TeamCard
-                      key={team.id}
-                      team={team}
-                      index={index}
-                      onViewMembers={handleViewMembers}
-                      getInitials={getInitials}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* Completed Teams Section */}
-          {completedCount > 0 && (
-            <div>
-              <h4 className="text-foreground mb-3 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-muted-foreground" />
-                Completed Teams ({completedCount})
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedTeams
-                  .filter(team => team.status === 'Completed')
-                  .map((team, index) => (
-                    <TeamCard
-                      key={team.id}
-                      team={team}
-                      index={index}
-                      onViewMembers={handleViewMembers}
-                      getInitials={getInitials}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {teams.map((team, index) => (
+            <TeamCard
+              key={team._id}
+              team={team}
+              index={index}
+              onViewMembers={handleViewMembers}
+              getInitials={getInitials}
+            />
+          ))}
         </div>
       )}
+
+      {/* View Team Members Modal */}
+      <ViewTeamMembersModal
+        open={viewModalOpen}
+        onClose={handleCloseModal}
+        team={teamToView}
+      />
     </div>
   );
 }
@@ -250,7 +150,7 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
           <div className="flex items-center -space-x-2">
             {team.members.slice(0, 5).map((member) => (
               <div
-                key={member.id}
+                key={member.member._id}
                 className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs border-2 border-card ring-1 ring-border transition-transform duration-200 hover:scale-110 hover:z-10"
                 title={member.name}
               >
@@ -269,7 +169,7 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
 
         {/* Actions */}
         <Button
-          onClick={() => onViewMembers(team.id)}
+          onClick={() => onViewMembers(team)}
           variant="outline"
           className="w-full btn-interact"
         >
@@ -282,13 +182,15 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
 }
 
 const teamMemberShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  email: PropTypes.string.isRequired,
+  member: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    profile: PropTypes.shape({ name: PropTypes.string.isRequired }),
+    email: PropTypes.string.isRequired,
+  })
 });
 
 const ongoingCompletedTeamShape = PropTypes.shape({
-  id: PropTypes.string.isRequired,
+  _id: PropTypes.string.isRequired,
   teamName: PropTypes.string.isRequired,
   leader: PropTypes.shape({
     name: PropTypes.string.isRequired,

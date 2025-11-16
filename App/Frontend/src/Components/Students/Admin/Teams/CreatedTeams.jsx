@@ -3,7 +3,7 @@ import { Users, Crown, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,60 +14,44 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-// Mock data - replace with actual API data
-const mockCreatedTeams = [
-  {
-    id: 'team_1',
-    teamName: 'Code Warriors',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm1', name: 'Sarah Johnson', email: 'sarah@college.edu' },
-      { id: 'm2', name: 'Mike Chen', email: 'mike@college.edu' },
-      { id: 'm3', name: 'Emma Wilson', email: 'emma@college.edu' },
-      { id: 'm4', name: 'Alex Brown', email: 'alex@college.edu' },
-    ],
-    createdAt: '2025-10-25',
-  },
-  {
-    id: 'team_2',
-    teamName: 'Tech Titans',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm5', name: 'Daniel Brown', email: 'daniel@college.edu' },
-      { id: 'm6', name: 'Olivia Taylor', email: 'olivia@college.edu' },
-    ],
-    createdAt: '2025-11-01',
-  },
-  {
-    id: 'team_3',
-    teamName: 'Digital Pioneers',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm7', name: 'Noah Martinez', email: 'noah@college.edu' },
-      { id: 'm8', name: 'Ava Anderson', email: 'ava@college.edu' },
-      { id: 'm9', name: 'Liam Thomas', email: 'liam@college.edu' },
-    ],
-    createdAt: '2025-11-03',
-  },
-];
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
+import { fetchStudentTeams, deleteStudentTeam, updateStudentTeam } from '@/store/student.slice';
+import { EditStudentTeamModal } from './EditStudentTeamModal';
 
 export function CreatedTeams() {
-  const [teams] = useState(mockCreatedTeams);
+  const dispatch = useDispatch();
+  const { studentTeams, loading } = useSelector((state) => state.student);
   const [deleteTeam, setDeleteTeam] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [teamToEdit, setTeamToEdit] = useState(null);
 
-  const handleEdit = (teamId) => {
-    console.log('Edit team:', teamId);
-    // Implement edit functionality
+  useEffect(() => {
+    dispatch(fetchStudentTeams());
+  }, [dispatch]);
+
+  const teams = useMemo(() => {
+    if (!studentTeams.leader) return [];
+    return studentTeams.leader.filter(team => {
+      const hasPending = team.members.some(m => m.status === 'Pending');
+      return !hasPending && !team.isRegisteredForEvent;
+    });
+  }, [studentTeams.leader]);
+
+  const handleEdit = (team) => {
+    setTeamToEdit(team);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveTeam = async (teamId, updatedData) => {
+    const promise = dispatch(updateStudentTeam({ teamId, updatedData })).unwrap();
+    toast.promise(promise, {
+      loading: 'Saving changes...',
+      success: 'Team updated successfully!',
+      error: (err) => err || 'Failed to update team.',
+    });
+    setEditModalOpen(false);
+    setTeamToEdit(null);
   };
 
   const handleDelete = (team) => {
@@ -76,13 +60,18 @@ export function CreatedTeams() {
 
   const confirmDelete = () => {
     if (deleteTeam) {
-      console.log('Delete team:', deleteTeam.id);
-      // Implement delete logic
+      const promise = dispatch(deleteStudentTeam(deleteTeam._id)).unwrap();
+      toast.promise(promise, {
+        loading: `Deleting team "${deleteTeam.teamName}"...`,
+        success: `Team "${deleteTeam.teamName}" deleted.`,
+        error: (err) => err || 'Failed to delete team.',
+      });
       setDeleteTeam(null);
     }
   };
 
   const getInitials = (name) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map(n => n[0])
@@ -102,7 +91,7 @@ export function CreatedTeams() {
         </div>
       </div>
 
-      {teams.length === 0 ? (
+      {loading === false && teams.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border border-border">
           <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-foreground mb-2">No Created Teams</h3>
@@ -114,7 +103,7 @@ export function CreatedTeams() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {teams.map((team, index) => (
             <div
-              key={team.id}
+              key={team._id}
               className={cn(
                 'bg-card rounded-xl border border-border overflow-hidden',
                 'card-interact gpu-accelerate',
@@ -159,7 +148,7 @@ export function CreatedTeams() {
                   <div className="flex items-center -space-x-2">
                     {team.members.slice(0, 5).map((member) => (
                       <div
-                        key={member.id}
+                        key={member.member._id}
                         className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs border-2 border-card ring-1 ring-border transition-transform duration-200 hover:scale-110 hover:z-10"
                         title={member.name}
                       >
@@ -179,14 +168,14 @@ export function CreatedTeams() {
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {team.members.map((member) => (
                       <div
-                        key={member.id}
+                        key={member.member._id}
                         className="flex items-center gap-2 p-2 bg-muted/30 rounded text-xs"
                       >
                         <div className="w-6 h-6 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-[10px]">
-                          {getInitials(member.name)}
+                          {getInitials(member.member.profile.name)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-foreground truncate">{member.name}</p>
+                          <p className="text-foreground truncate">{member.member.profile.name}</p>
                         </div>
                       </div>
                     ))}
@@ -196,7 +185,7 @@ export function CreatedTeams() {
                 {/* Actions */}
                 <div className="flex gap-2 pt-2 border-t border-border">
                   <Button
-                    onClick={() => handleEdit(team.id)}
+                    onClick={() => handleEdit(team)}
                     variant="outline"
                     className="flex-1 btn-interact"
                   >
@@ -206,9 +195,10 @@ export function CreatedTeams() {
                   <Button
                     onClick={() => handleDelete(team)}
                     variant="outline"
-                    className="btn-interact hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                    className="flex-1 btn-interact hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
                   </Button>
                 </div>
               </div>
@@ -223,7 +213,7 @@ export function CreatedTeams() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Team?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteTeam?.teamName}"? This action cannot be undone.
+              Are you sure you want to delete "{deleteTeam?.teamName}"? This will also remove it from any events it's registered with and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -237,6 +227,17 @@ export function CreatedTeams() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Team Modal */}
+      <EditStudentTeamModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setTeamToEdit(null);
+        }}
+        onSave={handleSaveTeam}
+        team={teamToEdit}
+      />
     </div>
   );
 }

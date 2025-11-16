@@ -43,7 +43,7 @@ const aiSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(getRecommendations.pending, (state) => { state.loading = true; state.error = null })
-      .addCase(getRecommendations.fulfilled, (state, action) => { state.loading = false; state.recommendations = action.payload })
+      .addCase(getRecommendations.fulfilled, (state, action) => { state.loading = false; state.recommendations = action.payload.recommendations || [] })
       .addCase(getRecommendations.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(queryChatBot.fulfilled, (state, action) => { 
         state.chatHistory.push({ type: 'bot', message: action.payload })

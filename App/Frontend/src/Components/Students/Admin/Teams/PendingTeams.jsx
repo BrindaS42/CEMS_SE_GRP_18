@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import { Users, CheckCircle, Clock, XCircle, Edit2 } from 'lucide-react';
+import { Users, CheckCircle, Clock, XCircle, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,42 +14,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-// Mock data - replace with actual API data
-const mockPendingTeams = [
-  {
-    id: 'pending_1',
-    teamName: 'Innovation Squad',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm1', name: 'Sarah Johnson', email: 'sarah@college.edu', status: 'Approved' },
-      { id: 'm2', name: 'Mike Chen', email: 'mike@college.edu', status: 'Pending' },
-      { id: 'm3', name: 'Emma Wilson', email: 'emma@college.edu', status: 'Pending' },
-    ],
-    createdAt: '2025-11-05',
-  },
-  {
-    id: 'pending_2',
-    teamName: 'Creative Minds',
-    leader: {
-      name: 'John Doe',
-      email: 'john@college.edu',
-    },
-    members: [
-      { id: 'm4', name: 'Alex Brown', email: 'alex@college.edu', status: 'Pending' },
-      { id: 'm5', name: 'Olivia Taylor', email: 'olivia@college.edu', status: 'Rejected' },
-    ],
-    createdAt: '2025-11-07',
-  },
-];
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'sonner';
+import { fetchStudentTeams, deleteStudentTeam, updateStudentTeam } from '@/store/student.slice';
+import { EditStudentTeamModal } from './EditStudentTeamModal';
 
 export function PendingTeams({ onMoveToCreated }) {
-  const [teams] = useState(mockPendingTeams);
-  const [confirmTeam, setConfirmTeam] = useState(null);
+  const dispatch = useDispatch();
+  const { studentTeams, loading } = useSelector((state) => state.student);
+  const [deleteTeam, setDeleteTeam] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [teamToEdit, setTeamToEdit] = useState(null);
 
+  useEffect(() => {
+    dispatch(fetchStudentTeams());
+  }, [dispatch]);
+
+  const teams = useMemo(() => {
+    if (!studentTeams.leader) return [];
+    return studentTeams.leader.filter(team => 
+      team.members.some(m => m.status === 'Pending') && !team.isRegisteredForEvent
+    );
+  }, [studentTeams.leader]);
+  
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Approved':
@@ -76,30 +63,38 @@ export function PendingTeams({ onMoveToCreated }) {
     return team.members.filter(m => m.status === 'Pending').length;
   };
 
-  const handleCreateTeam = (team) => {
-    const pendingCount = getPendingCount(team);
-    
-    if (pendingCount > 0) {
-      setConfirmTeam(team);
-    } else {
-      finalizeTeam(team);
+  const handleEdit = (team) => {
+    setTeamToEdit(team);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveTeam = async (teamId, updatedData) => {
+    const promise = dispatch(updateStudentTeam({ teamId, updatedData })).unwrap();
+    toast.promise(promise, {
+      loading: 'Saving changes...',
+      success: 'Team updated successfully!',
+      error: (err) => err || 'Failed to update team.',
+    });
+    setEditModalOpen(false);
+    setTeamToEdit(null);
+  };
+
+  const handleDelete = (team) => {
+    setDeleteTeam(team);
+  };
+
+  const confirmDelete = () => {
+    if (deleteTeam) {
+      const promise = dispatch(deleteStudentTeam(deleteTeam._id)).unwrap();
+      toast.promise(promise, {
+        loading: `Deleting team "${deleteTeam.teamName}"...`,
+        success: `Team "${deleteTeam.teamName}" deleted.`,
+        error: (err) => err || 'Failed to delete team.',
+      });
+      setDeleteTeam(null);
     }
   };
 
-  const finalizeTeam = (team) => {
-    console.log('Finalizing team:', team);
-    // Implement team finalization logic
-    // Move to Created tab
-    if (onMoveToCreated) {
-      onMoveToCreated();
-    }
-    setConfirmTeam(null);
-  };
-
-  const handleEdit = (teamId) => {
-    console.log('Edit team:', teamId);
-    // Implement edit functionality
-  };
 
   return (
     <div className="space-y-4">
@@ -112,7 +107,7 @@ export function PendingTeams({ onMoveToCreated }) {
         </div>
       </div>
 
-      {teams.length === 0 ? (
+      {loading === false && teams.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border border-border">
           <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-foreground mb-2">No Pending Teams</h3>
@@ -124,12 +119,12 @@ export function PendingTeams({ onMoveToCreated }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {teams.map((team, index) => {
             const pendingCount = getPendingCount(team);
-            const approvedCount = team.members.filter(m => m.status === 'Approved').length;
+            const approvedCount = team.members.filter(m => m.status === 'Approved' || m.status === 'Accepted').length;
             const rejectedCount = team.members.filter(m => m.status === 'Rejected').length;
 
             return (
               <div
-                key={team.id}
+                key={team._id}
                 className={cn(
                   'bg-card rounded-xl border border-border overflow-hidden',
                   'card-interact gpu-accelerate',
@@ -190,12 +185,12 @@ export function PendingTeams({ onMoveToCreated }) {
                     <div className="space-y-1.5 max-h-32 overflow-y-auto">
                       {team.members.map((member) => (
                         <div
-                          key={member.id}
+                          key={member.member._id}
                           className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs"
                         >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             {getStatusIcon(member.status)}
-                            <span className="text-foreground truncate">{member.name}</span>
+                            <span className="text-foreground truncate">{member.member.profile.name}</span>
                           </div>
                           {getStatusBadge(member.status)}
                         </div>
@@ -205,19 +200,21 @@ export function PendingTeams({ onMoveToCreated }) {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2 border-t border-border">
-                    <Button
-                      onClick={() => handleCreateTeam(team)}
+                     <Button
+                      onClick={() => handleEdit(team)}
+                      variant="outline"
                       className="flex-1 btn-interact"
                     >
-                      Create Team
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Edit
                     </Button>
                     <Button
-                      onClick={() => handleEdit(team.id)}
+                      onClick={() => handleDelete(team)}
                       variant="outline"
-                      size="sm"
-                      className="btn-interact"
+                      className="flex-1 btn-interact hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
                     </Button>
                   </div>
 
@@ -236,23 +233,35 @@ export function PendingTeams({ onMoveToCreated }) {
       )}
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!confirmTeam} onOpenChange={() => setConfirmTeam(null)}>
+      <AlertDialog open={!!deleteTeam} onOpenChange={() => setDeleteTeam(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Create Team with Pending Invites?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Team?</AlertDialogTitle>
             <AlertDialogDescription>
-              Some members have not accepted the invites yet. You can still create the team, and
-              pending members can join later when they accept.
+              Are you sure you want to delete "{deleteTeam?.teamName}"? This will withdraw all pending invitations and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmTeam && finalizeTeam(confirmTeam)}>
-              Create Team
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Team Modal */}
+      <EditStudentTeamModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setTeamToEdit(null);
+        }}
+        onSave={handleSaveTeam}
+        team={teamToEdit}
+      />
     </div>
   );
 }

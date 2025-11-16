@@ -1,43 +1,19 @@
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, MapPin, CheckCircle, Award } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
 import { cn } from '../../../components/ui/utils';
-
-// Mock data - replace with actual API data
-const completedEvents = [
-  {
-    id: '8',
-    name: 'Code-a-thon 2024',
-    poster: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop',
-    date: '2024-10-15',
-    time: '09:00 AM',
-    location: 'Tech Arena',
-    certificate: true,
-    rating: 4.5,
-  },
-  {
-    id: '9',
-    name: 'Web Dev Masterclass',
-    poster: 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?w=400&h=300&fit=crop',
-    date: '2024-09-20',
-    time: '02:00 PM',
-    location: 'Online',
-    certificate: true,
-    rating: 5,
-  },
-  {
-    id: '10',
-    name: 'Innovation Summit',
-    poster: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop',
-    date: '2024-08-10',
-    time: '10:00 AM',
-    location: 'Convention Center',
-    certificate: false,
-    rating: 4,
-  },
-];
+import { fetchCompletedEvents } from '@/store/student.slice';
 
 export function CompletedEvents() {
+  const dispatch = useDispatch();
+  const { completedEvents, loading } = useSelector((state) => state.student);
+
+  useEffect(() => {
+    dispatch(fetchCompletedEvents());
+  }, [dispatch]);
+
   const handleDownloadCertificate = (eventId) => {
     console.log('Download certificate for event:', eventId);
     // Implement certificate download logic
@@ -79,7 +55,7 @@ export function CompletedEvents() {
         </div>
       </div>
 
-      {completedEvents.length === 0 ? (
+      {loading === false && completedEvents.length === 0 ? (
         <div className="text-center py-12 bg-card rounded-xl border border-border">
           <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-foreground mb-2">No Completed Events</h3>
@@ -102,7 +78,7 @@ export function CompletedEvents() {
               {/* Event Poster with Completed Overlay */}
               <div className="relative h-40 bg-muted overflow-hidden">
                 <img 
-                  src={event.poster} 
+                  src={event.posterUrl} 
                   alt={event.name}
                   className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110"
                 />
@@ -119,13 +95,13 @@ export function CompletedEvents() {
               {/* Event Details */}
               <div className="p-4 space-y-3">
                 <div>
-                  <h4 className="text-foreground mb-1 line-clamp-1">{event.name}</h4>
+                  <h4 className="text-foreground mb-1 line-clamp-1">{event.title}</h4>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>{new Date(event.date).toLocaleDateString('en-US', { 
+                    <span>{new Date(event.timeline?.[0]?.date).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric', 
                       year: 'numeric' 
@@ -133,7 +109,7 @@ export function CompletedEvents() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span>{event.time}</span>
+                    <span>{event.timeline?.[0]?.duration?.from}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4 text-muted-foreground" />

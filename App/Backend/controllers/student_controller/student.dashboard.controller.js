@@ -2,18 +2,42 @@ import Registration from "../../models/registration.model.js";
 import Event from "../../models/event.model.js"
 import StudentTeam from "../../models/studentTeam.model.js";
 
+const getStudentEventIds = async (userId) => {
+  // Find teams where the user is a leader or an approved member
+  const userTeams = await StudentTeam.find({
+    $or: [
+      { leader: userId },
+      { members: { $elemMatch: { member: userId, status: 'Approved' } } }
+    ]
+  }).select('_id');
+  const teamIds = userTeams.map(t => t._id);
+
+  // Find registrations for the user directly or for any of their teams
+  const registrations = await Registration.find({
+    $or: [
+      { userId: userId },
+      { teamName: { $in: teamIds } }
+    ]
+  }).select('eventId');
+
+  return registrations.map(r => r.eventId);
+};
+
 export const FetchTheListOfRegisteredEventsByPID = async ( req , res ) => {
     try {
         const userId = req.user.id;
-        const allRegistrations = await Registration.find({student:userId}).populate({
+        const eventIds = await getStudentEventIds(userId);
+
+        const eventList = await Event.find({
+            _id: { $in: eventIds },
+            status: 'Published'
+        }).populate({
             path: "eventId", 
             match: {
                 status: "Published"
             }
         });
 
-        const eventList = allRegistrations.filter(registration => registration.eventId !== null);
-        
         return res.status(200).json({
             success: true,
             message: "Successfully fetched registered events.",
@@ -33,14 +57,14 @@ export const FetchTheListOfRegisteredEventsByPID = async ( req , res ) => {
 export const FetchTheListOfCompletedEventsByPID = async ( req , res ) => {
     try {
         const userId = req.user.id;
-        const allRegistrations = await Registration.find({student:userId}).populate({
-            path: "eventId", 
+        const eventIds = await getStudentEventIds(userId);
+
+        const eventList = await Event.find({
+            _id: { $in: eventIds },
             match: {
                 status: "Completed"
             }
         });
-
-        const eventList = allRegistrations.filter(registration => registration.eventId !== null);
         
         return res.status(200).json({
             success: true,
@@ -60,6 +84,9 @@ export const FetchTheListOfCompletedEventsByPID = async ( req , res ) => {
 
 export const GetTheTimeLineReminders = async(req , res) => {
     try{
+        const userId = req.user.id;
+        const eventIds = await getStudentEventIds(userId);
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -67,6 +94,7 @@ export const GetTheTimeLineReminders = async(req , res) => {
         oneWeekFromNow.setDate(today.getDate() + 7);
 
         const query = {
+            _id: { $in: eventIds },
             status: "Published",
             
             timeline: {
@@ -112,12 +140,8 @@ export const GetTheTimeLineReminders = async(req , res) => {
 export const GetClashDetectionWarnings = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const registrations = await Registration.find({ studentId: userId }).populate({
-      path: "eventId",
-      match: { status: "Published" },
-      select: "title timeline",
-    });
+    const eventIds = await getStudentEventIds(userId);
+    const registrations = await Event.find({ _id: { $in: eventIds }, status: 'Published' }).select("title timeline");
 
     const timeSlots = [];
 
@@ -207,9 +231,9 @@ export const getStudentTeams = async (req, res) => {
         { members: { $elemMatch: { member: studentId } } }
     ]
     })
-    .populate("leader", "name email")
-    .populate("members.member", "name email")
-    .select("name leader members");
+    .populate("leader", "profile.name email")
+    .populate("members.member", "profile.name email")
+    .select("teamName leader members createdAt");
 
     if (!teams || teams.length === 0) {
       return res.status(200).json({
