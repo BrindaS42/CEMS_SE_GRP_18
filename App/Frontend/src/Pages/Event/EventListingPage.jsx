@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'motion/react';
 import {
   Search,
@@ -14,31 +14,31 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
-import { Input } from '../../components/ui/input';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import { Skeleton } from '../../components/ui/skeleton';
-import { eventService } from '../services/eventService';
-import { useAuth } from '../context/AuthContext';
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { fetchPublicEvents } from '@/store/studentEvents.slice';
 
 export const EventListingPage = () => {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { events, pagination, loading } = useSelector((state) => state.studentEvents);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
-  const [sortBy, setSortBy] = useState('trending');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
+  console.log("studentEvents:", events);
+  console.log("pagination:", pagination);
+  
   const isStudentView = user?.role === 'student';
 
   const categoryTags = [
@@ -47,27 +47,18 @@ export const EventListingPage = () => {
   ];
 
   useEffect(() => {
-    loadEvents();
-  }, [searchQuery, selectedTags, sortBy, page]);
+    const params = {
+      page,
+      limit: 12,
+      status: 'published',
+    };
+    if (searchQuery) params.search = searchQuery;
+    if (selectedTags.length > 0) params.categoryTags = selectedTags.join(',');
 
-  const loadEvents = async () => {
-    setLoading(true);
-    try {
-      const response = await eventService.getEvents({
-        page,
-        limit: 12,
-        search: searchQuery,
-        categoryTags: selectedTags,
-        status: 'published',
-      });
-      setEvents(response.data);
-      setTotalPages(response.pagination.pages);
-    } catch (error) {
-      console.error('Failed to load events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    dispatch(fetchPublicEvents(params));
+  }, [dispatch, searchQuery, selectedTags, page]);
+
+  const totalPages = pagination?.pages || 1;
 
   const toggleTag = (tag) => {
     setSelectedTags(prev =>
@@ -172,10 +163,6 @@ export const EventListingPage = () => {
                   <span className="font-semibold">{event.registrationCount || 0}</span>
                   <span className="text-xs text-gray-500">registered</span>
                 </div>
-                <div className="flex items-center gap-1 text-gray-500">
-                  <Eye className="w-4 h-4" />
-                  <span className="text-xs">{event.viewCount || 0} views</span>
-                </div>
               </div>
             </div>
           </div>
@@ -252,31 +239,6 @@ export const EventListingPage = () => {
                 {events.length} events found
               </span>
             </div>
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="trending">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Trending
-                  </div>
-                </SelectItem>
-                <SelectItem value="new">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Newest
-                  </div>
-                </SelectItem>
-                <SelectItem value="popular">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4" />
-                    Most Popular
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </motion.div>
 

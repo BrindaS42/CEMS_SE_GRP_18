@@ -4,10 +4,45 @@ import Registration from "../../models/registration.model.js";
 
 export const getListOfAllEvents = async (req, res) => {
   try {
-    const events = await Event.find({ status: "published" })
-      .select("title categoryTags venue posterUrl createdAt");
+    const { page = 1, limit = 12, search, categoryTags } = req.query;
 
-    res.status(200).json({ success: true, events });
+    const query = { status: "published" };
+
+    if (search) {
+      query.title = { $regex: search, $options: 'i' };
+    }
+
+    if (categoryTags) {
+      const tags = Array.isArray(categoryTags) ? categoryTags : categoryTags.split(',');
+      if (tags.length > 0) {
+        query.categoryTags = { $in: tags };
+      }
+    }
+
+    const events = await Event.aggregate([
+      { $match: query },
+      {
+        $addFields: {
+          registrationCount: { $size: "$registrations" }
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      { $skip: (parseInt(page) - 1) * parseInt(limit) },
+      { $limit: parseInt(limit) },
+      { $project: { title: 1, description: 1, categoryTags: 1, venue: 1, timeline: 1, gallery: 1, registrationCount: 1, createdAt: 1 } }
+    ]);
+
+    const totalEvents = await Event.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: events,
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(totalEvents / parseInt(limit)),
+        total: totalEvents,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch events", error: error.message });
   }

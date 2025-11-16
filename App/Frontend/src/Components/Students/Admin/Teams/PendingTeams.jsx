@@ -22,6 +22,7 @@ import { EditStudentTeamModal } from './EditStudentTeamModal';
 export function PendingTeams({ onMoveToCreated }) {
   const dispatch = useDispatch();
   const { studentTeams, loading } = useSelector((state) => state.student);
+  const { user } = useSelector((state) => state.auth);
   const [deleteTeam, setDeleteTeam] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [teamToEdit, setTeamToEdit] = useState(null);
@@ -30,13 +31,19 @@ export function PendingTeams({ onMoveToCreated }) {
     dispatch(fetchStudentTeams());
   }, [dispatch]);
 
-  const teams = useMemo(() => {
-    if (!studentTeams.leader) return [];
-    return studentTeams.leader.filter(team => 
-      team.members.some(m => m.status === 'Pending') && !team.isRegisteredForEvent
-    );
-  }, [studentTeams.leader]);
   
+  const teams = useMemo(() => {
+    if (!studentTeams.data || !user) return [];
+
+    return studentTeams.data.filter(team => 
+      team.leader._id === user.id &&
+      team.members.some(m => m.status === 'Pending') && 
+      !team.isRegisteredForEvent
+    );
+  }, [studentTeams.data, user]);
+  
+  console.log('Student Teams:', studentTeams);
+  console.log('Filtered Pending Teams:', teams);
   const getStatusIcon = (status) => {
     switch (status) {
       case 'Approved':
@@ -95,7 +102,7 @@ export function PendingTeams({ onMoveToCreated }) {
     }
   };
 
-
+  console.log('Pending Teams:', teams);
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">

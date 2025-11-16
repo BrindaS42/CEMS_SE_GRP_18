@@ -5,7 +5,6 @@ import {
   FetchTheListOfCompletedEventsByPID,
   GetTheTimeLineReminders,
   GetClashDetectionWarnings,
-  getStudentTeams,
 } from "../../controllers/student_controller/student.dashboard.controller.js";
 
 const { authentication, authorizeRoles } = auth;
@@ -18,6 +17,5 @@ router.get("/my-registered-events", FetchTheListOfRegisteredEventsByPID);
 router.get("/my-completed-events", FetchTheListOfCompletedEventsByPID);
 router.get("/timeline-reminders", GetTheTimeLineReminders);
 router.get("/clash-warnings", GetClashDetectionWarnings);
-router.get("/my-teams", getStudentTeams);
 
 export default router;

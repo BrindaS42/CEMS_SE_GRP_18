@@ -43,7 +43,7 @@ export const fetchClashWarnings = createAsyncThunk('student/fetchClashWarnings',
 
 export const fetchStudentTeams = createAsyncThunk('student/fetchStudentTeams', async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_BASE}/student-dashboard/my-teams`);
+    const res = await axios.get(`${API_BASE}/student/teams/my-teams`);
     return res.data
   } catch (err) {
     return rejectWithValue(err?.response?.data?.error || 'Failed to load student teams')
@@ -94,8 +94,7 @@ const initialState = {
   timelineReminders: [],
   clashWarnings: [],
   studentTeams: {
-    leader: [],
-    member: [],
+    data: [], // Simplified to a single data array
   },
   allStudents: [],
   loading: false,
@@ -123,16 +122,21 @@ const studentSlice = createSlice({
       })
       // Team CRUD reducers
       .addCase(createStudentTeam.fulfilled, (state, action) => {
-        state.studentTeams.leader.push(action.payload);
+        state.studentTeams.data.push(action.payload);
       })
       .addCase(updateStudentTeam.fulfilled, (state, action) => {
-        const index = state.studentTeams.leader.findIndex(t => t._id === action.payload._id);
+        if (!state.studentTeams.data) {
+          state.studentTeams.data = [];
+        }
+        const index = state.studentTeams.data.findIndex(t => t._id === action.payload._id);
         if (index !== -1) {
-          state.studentTeams.leader[index] = action.payload;
+          state.studentTeams.data[index] = action.payload;
         }
       })
       .addCase(deleteStudentTeam.fulfilled, (state, action) => {
-        state.studentTeams.leader = state.studentTeams.leader.filter(t => t._id !== action.payload);
+        if (state.studentTeams.data) {
+          state.studentTeams.data = state.studentTeams.data.filter(t => t._id !== action.payload);
+        }
       })
       .addMatcher(
         (action) => action.type.endsWith('/rejected') && action.type.startsWith('student/'),

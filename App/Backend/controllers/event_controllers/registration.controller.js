@@ -1,6 +1,6 @@
 import Registration from "../../models/registration.model.js";
 import Event from "../../models/event.model.js";
-import InboxEntity from "../../models/inboxEntity.model.js";
+import InboxEntity from "../../models/inbox.model.js";
 import crypto from "crypto";
 
 

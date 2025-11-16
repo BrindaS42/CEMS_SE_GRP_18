@@ -93,7 +93,7 @@ export function RegisteredEvents() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4 text-primary" />
-                    <span>{event.location}</span>
+                    <span>{event.venue}</span>
                   </div>
                 </div>
 

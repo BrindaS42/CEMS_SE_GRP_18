@@ -30,14 +30,8 @@ export const FetchTheListOfRegisteredEventsByPID = async ( req , res ) => {
 
         const eventList = await Event.find({
             _id: { $in: eventIds },
-            status: 'Published'
-        }).populate({
-            path: "eventId", 
-            match: {
-                status: "Published"
-            }
-        });
-
+            status: 'published'
+        }).lean();
         return res.status(200).json({
             success: true,
             message: "Successfully fetched registered events.",
@@ -61,10 +55,8 @@ export const FetchTheListOfCompletedEventsByPID = async ( req , res ) => {
 
         const eventList = await Event.find({
             _id: { $in: eventIds },
-            match: {
-                status: "Completed"
-            }
-        });
+            status: "completed"
+        }).lean();
         
         return res.status(200).json({
             success: true,
@@ -95,7 +87,7 @@ export const GetTheTimeLineReminders = async(req , res) => {
 
         const query = {
             _id: { $in: eventIds },
-            status: "Published",
+            status: "published",
             
             timeline: {
                 $elemMatch: {
@@ -109,7 +101,8 @@ export const GetTheTimeLineReminders = async(req , res) => {
 
         const eventList = await Event.find(query)
             .select("title description posterUrl categoryTags timeline")
-            .sort({ publishedAt: -1 });
+            .sort({ publishedAt: -1 })
+            .lean();
 
         if (eventList.length === 0) {
             return res.status(200).json({
@@ -141,14 +134,11 @@ export const GetClashDetectionWarnings = async (req, res) => {
   try {
     const userId = req.user.id;
     const eventIds = await getStudentEventIds(userId);
-    const registrations = await Event.find({ _id: { $in: eventIds }, status: 'Published' }).select("title timeline");
+    const registeredEvents = await Event.find({ _id: { $in: eventIds }, status: 'published' }).select("title timeline").lean();
 
     const timeSlots = [];
 
-    registrations.forEach((reg) => {
-      if (!reg.eventId) return;
-
-      const event = reg.eventId;
+    registeredEvents.forEach((event) => {
 
       event.timeline.forEach((entry) => {
         if (entry.duration && entry.duration.from && entry.duration.to) {
@@ -214,48 +204,6 @@ export const GetClashDetectionWarnings = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error while detecting schedule clashes.",
-      error: err.message,
-    });
-  }
-};
-
-
-export const getStudentTeams = async (req, res) => {
-  try {
-    const studentId = req.user.id;
-
-
-    const teams = await StudentTeam.find({
-    $or: [
-        { leader: studentId },
-        { members: { $elemMatch: { member: studentId } } }
-    ]
-    })
-    .populate("leader", "profile.name email")
-    .populate("members.member", "profile.name email")
-    .select("teamName leader members createdAt");
-
-    if (!teams || teams.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "You are not currently part of any teams.",
-        count: 0,
-        data: [],
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Successfully retrieved your teams.",
-      count: teams.length,
-      data: teams,
-    });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while retrieving teams.",
       error: err.message,
     });
   }

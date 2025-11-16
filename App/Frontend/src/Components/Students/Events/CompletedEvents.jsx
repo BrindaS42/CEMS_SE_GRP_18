@@ -113,7 +113,7 @@ export function CompletedEvents() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span>{event.location}</span>
+                    <span>{event.venue}</span>
                   </div>
                 </div>
 

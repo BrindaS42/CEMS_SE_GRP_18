@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Calendar,
@@ -9,7 +9,6 @@ import {
   Clock,
   Share2,
   Heart,
-  BookmarkPlus,
   ArrowLeft,
   Trophy,
   Megaphone,
@@ -20,7 +19,6 @@ import {
   Mail,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Flag,
   ChevronDown,
   MessageSquare,
@@ -32,28 +30,27 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
-  ThumbsUp,
   Eye,
 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Alert, AlertDescription } from '../../components/ui/alert';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Separator } from '../../components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -61,38 +58,44 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../../components/ui/dropdown-menu';
-import { eventService } from '../services/eventService';
-import { registrationService } from '../services/registrationService';
+} from '@/components/ui/dropdown-menu';
+import {
+  fetchEventDetails,
+  fetchEventAnnouncements,
+  fetchEventSponsors,
+  fetchEventReviews,
+  addEventRating,
+} from '@/store/studentEvents.slice';
+import {
+  getRegistrationForm,
+  submitRegistration,
+  getRegistrationStatus,
+} from '@/store/registration.slice';
 import { toast } from 'sonner';
-import { ScrollArea } from '../../components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const EventDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const [event, setEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { currentEvent: event, loading, announcements, sponsors, reviews } = useSelector((state) => state.studentEvents);
+  const { form: registrationForm, status: registrationStatus } = useSelector((state) => state.registration);
+
   const [registering, setRegistering] = useState(false);
-  const [hasClash, setHasClash] = useState(false);
-  const [clashingEvents, setClashingEvents] = useState([]);
-  const [isRegistered, setIsRegistered] = useState(false);
   const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
   const [checkInCode, setCheckInCode] = useState('');
   const [selectedTimelineIndex, setSelectedTimelineIndex] = useState(null);
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [registrationFormData, setRegistrationFormData] = useState({});
-  const [currentAdIndex, setCurrentAdIndex] = useState(0);
-  const [currentSponsorAdIndex, setCurrentSponsorAdIndex] = useState(0);
   
-  const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -102,120 +105,20 @@ export const EventDetailsPage = () => {
 
   const isStudentView = user?.role === 'student';
   const isOrganizerView = user?.role === 'organizer';
-  const isEventOrganizer = event?.createdBy?.members?.some((m) => m._id === user?._id);
-
-  const eventSponsorAds = [
-    {
-      _id: 'ad1',
-      sponsorId: { _id: 's1', name: 'TechCorp Solutions' },
-      title: 'Special Discount for Event Participants!',
-      description: 'Get 30% off on all our products during the event. Visit our stall for exclusive deals.',
-      images: ['https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=1200&h=600&fit=crop'],
-      videos: [],
-      address: 'Stall #12, Main Campus Building A',
-      contact: '+1 234 567 8900',
-      poster: 'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=1200&h=600&fit=crop',
-      views: 542,
-      likes: 45,
-      status: 'Published',
-    },
-    {
-      _id: 'ad2',
-      sponsorId: { _id: 's2', name: 'CodeMasters Academy' },
-      title: 'Free Coding Workshop',
-      description: 'Join our exclusive workshop for event participants. Learn from industry experts.',
-      images: ['https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop'],
-      videos: [],
-      address: 'Stall #5, Main Campus Building B',
-      contact: '+1 234 567 8901',
-      poster: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop',
-      views: 398,
-      likes: 32,
-      status: 'Published',
-    },
-  ];
-
-  const eventSponsors = [
-    {
-      _id: 's1',
-      name: 'TechCorp Solutions',
-      profile: {
-        firmLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=200&h=200&fit=crop',
-        firmDescription: 'Leading provider of enterprise software solutions',
-      },
-      email: 'contact@techcorp.com',
-      sponsorDetails: {
-        stallLocation: 'Main Campus, Building A, Ground Floor, Stall #12',
-      },
-    },
-    {
-      _id: 's2',
-      name: 'CodeMasters Academy',
-      profile: {
-        firmLogo: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=200&h=200&fit=crop',
-        firmDescription: 'Premier coding bootcamp and training institute',
-      },
-      email: 'info@codemasters.com',
-      sponsorDetails: {
-        stallLocation: 'Main Campus, Building B, First Floor, Stall #5',
-      },
-    },
-    {
-      _id: 's3',
-      name: 'InnovateTech Inc',
-      profile: {
-        firmLogo: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=200&h=200&fit=crop',
-        firmDescription: 'Innovation hub for emerging technologies',
-      },
-      email: 'hello@innovatetech.com',
-      sponsorDetails: {
-        stallLocation: 'Main Campus, Building C, Ground Floor, Stall #8',
-      },
-    },
-  ];
+  const isEventOrganizer = event?.createdBy?._id === user?.teamId; // Simplified check
 
   useEffect(() => {
     if (id) {
-      loadEventDetails();
+      dispatch(fetchEventDetails(id));
       if (isStudentView) {
-        checkForClashes();
-        checkRegistrationStatus();
+        dispatch(getRegistrationStatus({ eventId: id, participantId: user.id }));
       }
+      dispatch(fetchEventAnnouncements(id));
+      dispatch(fetchEventSponsors(id));
+      dispatch(fetchEventReviews(id));
       loadChatMessages();
-      loadReviews();
     }
-  }, [id]);
-
-  const loadEventDetails = async () => {
-    try {
-      const response = await eventService.getEventById(id);
-      setEvent(response.data);
-    } catch (error) {
-      console.error('Failed to load event details:', error);
-      toast.error('Failed to load event details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkForClashes = async () => {
-    try {
-      const response = await registrationService.checkClashes(id);
-      setHasClash(response.data.hasClash);
-      setClashingEvents(response.data.events);
-    } catch (error) {
-      console.error('Failed to check for clashes:', error);
-    }
-  };
-
-  const checkRegistrationStatus = async () => {
-    try {
-      const response = await registrationService.checkRegistration(id);
-      setIsRegistered(response.data.isRegistered);
-    } catch (error) {
-      console.error('Failed to check registration status:', error);
-    }
-  };
+  }, [id, dispatch, isStudentView, user?.id]);
 
   const loadChatMessages = async () => {
     try {
@@ -238,64 +141,17 @@ export const EventDetailsPage = () => {
     }
   };
 
-  const loadReviews = async () => {
-    try {
-      setReviews([
-        {
-          _id: '1',
-          user: {
-            name: 'Alice Johnson',
-            profilePic: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-          },
-          rating: 5,
-          comment: 'Amazing event! The organization was top-notch and I learned so much. Highly recommend to everyone!',
-          createdAt: new Date(Date.now() - 86400000),
-          likes: 12,
-        },
-        {
-          _id: '2',
-          user: {
-            name: 'Bob Smith',
-            profilePic: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-          },
-          rating: 4,
-          comment: 'Great experience overall. The workshops were very informative. Would love to see more networking opportunities next time.',
-          createdAt: new Date(Date.now() - 172800000),
-          likes: 8,
-        },
-        {
-          _id: '3',
-          user: {
-            name: 'Carol Williams',
-            profilePic: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-          },
-          rating: 5,
-          comment: "Absolutely fantastic! The speakers were experts in their field and the venue was perfect. Can't wait for the next one!",
-          createdAt: new Date(Date.now() - 259200000),
-          likes: 15,
-        },
-      ]);
-    } catch (error) {
-      console.error('Failed to load reviews:', error);
-    }
-  };
-
   const handleRegister = async () => {
     if (!isAuthenticated) {
       toast.error('Please login to register');
       return;
     }
 
-    if (hasClash) {
-      toast.error('You have a schedule clash with this event');
-      return;
-    }
-
     setRegistering(true);
     try {
-      await registrationService.registerForEvent(id, registrationFormData);
+      await dispatch(submitRegistration({ eventId: id, ...registrationFormData })).unwrap();
       toast.success('Registration successful! Check your inbox for confirmation.');
-      setIsRegistered(true);
+      dispatch(getRegistrationStatus({ eventId: id, participantId: user.id }));
     } catch (error) {
       toast.error((error && error.response?.data?.message) || 'Registration failed');
     } finally {
@@ -360,25 +216,14 @@ export const EventDetailsPage = () => {
       return;
     }
 
-    try {
-      const review = {
-        _id: Date.now().toString(),
-        user: {
-          name: user?.profile?.name || user?.username || 'Anonymous',
-          profilePic: user?.profile?.profilePic,
-        },
-        rating: newRating,
-        comment: newReview,
-        createdAt: new Date(),
-        likes: 0,
-      };
-      setReviews([review, ...reviews]);
-      setNewReview('');
-      setNewRating(0);
-      toast.success('Review submitted successfully!');
-    } catch (error) {
-      toast.error('Failed to submit review');
-    }
+    dispatch(addEventRating({ eventId: id, rating: { rating: newRating, review: newReview } }))
+      .unwrap()
+      .then(() => {
+        toast.success('Review submitted successfully!');
+        setNewRating(0);
+        setNewReview('');
+      })
+      .catch((err) => toast.error(err || 'Failed to submit review'));
   };
 
   const handleSubmitReport = async () => {
@@ -391,14 +236,6 @@ export const EventDetailsPage = () => {
     } catch (error) {
       toast.error('Failed to submit report');
     }
-  };
-
-  const nextSponsorAd = () => {
-    setCurrentSponsorAdIndex((prev) => (prev + 1) % eventSponsorAds.length);
-  };
-
-  const prevSponsorAd = () => {
-    setCurrentSponsorAdIndex((prev) => (prev - 1 + eventSponsorAds.length) % eventSponsorAds.length);
   };
 
   const averageRating = reviews.length > 0
@@ -457,7 +294,7 @@ export const EventDetailsPage = () => {
           className="relative h-96 rounded-3xl overflow-hidden mb-8 shadow-2xl"
         >
           <img
-            src={event.images?.[0] || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop'}
+            src={event.posterUrl || event.gallery?.[0] || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop'}
             alt={event.title}
             className="w-full h-full object-cover"
           />
@@ -465,10 +302,7 @@ export const EventDetailsPage = () => {
           <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
-                {event.eventType}
-              </Badge>
-              <Badge className="bg-gradient-to-r from-orange-600 to-pink-600">
-                {event.category}
+                {event.categoryTags?.[0] || 'General'}
               </Badge>
               {event.config?.registrationType && (
                 <Badge variant="outline" className="text-white border-white">
@@ -477,33 +311,17 @@ export const EventDetailsPage = () => {
               )}
             </div>
             <h1 className="text-4xl md:text-6xl font-black mb-2">{event.title}</h1>
-            <p className="text-xl text-gray-200 max-w-3xl">{event.tagline}</p>
           </div>
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            {hasClash && (
-              <Alert className="bg-red-50 border-red-200">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  You have a schedule clash with {clashingEvents.length} event(s):
-                  <ul className="mt-2 list-disc list-inside">
-                    {clashingEvents.map((e) => (
-                      <li key={e._id}>{e.title}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
-
             <Card>
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="w-full grid grid-cols-7 lg:grid-cols-7">
+                <TabsList className="w-full grid grid-cols-6 lg:grid-cols-6">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                  <TabsTrigger value="winners">Winners</TabsTrigger>
                   <TabsTrigger value="chatroom">Chatroom</TabsTrigger>
                   <TabsTrigger value="registration">Register</TabsTrigger>
                   <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
@@ -534,94 +352,6 @@ export const EventDetailsPage = () => {
                     </div>
                   )}
 
-                  {eventSponsorAds.length > 0 && (
-                    <div>
-                      <h2 className="text-2xl font-black mb-4">Sponsored Content</h2>
-                      <Card className="p-0 overflow-hidden">
-                        <div className="relative">
-                          <motion.div
-                            key={currentSponsorAdIndex}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5 }}
-                          >
-                            <img
-                              src={eventSponsorAds[currentSponsorAdIndex].poster}
-                              alt={eventSponsorAds[currentSponsorAdIndex].title}
-                              className="w-full h-80 object-cover"
-                            />
-                            <div className="p-6">
-                              <div className="flex items-center gap-3 mb-3">
-                                <Building2 className="w-5 h-5 text-purple-600" />
-                                <span className="font-semibold">
-                                  {eventSponsorAds[currentSponsorAdIndex].sponsorId.name}
-                                </span>
-                              </div>
-                              <h3 className="text-2xl font-black mb-2">
-                                {eventSponsorAds[currentSponsorAdIndex].title}
-                              </h3>
-                              <p className="text-gray-600 mb-4">
-                                {eventSponsorAds[currentSponsorAdIndex].description}
-                              </p>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <Eye className="w-4 h-4" />
-                                    {eventSponsorAds[currentSponsorAdIndex].views} views
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Heart className="w-4 h-4" />
-                                    {eventSponsorAds[currentSponsorAdIndex].likes} likes
-                                  </div>
-                                </div>
-                                <Button
-                                  onClick={() =>
-                                    navigate(`/ads/${eventSponsorAds[currentSponsorAdIndex]._id}`)
-                                  }
-                                >
-                                  View More
-                                </Button>
-                              </div>
-                            </div>
-                          </motion.div>
-
-                          {eventSponsorAds.length > 1 && (
-                            <>
-                              <button
-                                onClick={prevSponsorAd}
-                                className="absolute left-4 top-40 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg"
-                              >
-                                <ChevronLeft className="w-6 h-6" />
-                              </button>
-                              <button
-                                onClick={nextSponsorAd}
-                                className="absolute right-4 top-40 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg"
-                              >
-                                <ChevronRight className="w-6 h-6" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {eventSponsorAds.length > 1 && (
-                          <div className="flex justify-center gap-2 pb-4">
-                            {eventSponsorAds.map((_, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => setCurrentSponsorAdIndex(idx)}
-                                className={`w-2 h-2 rounded-full transition-all ${
-                                  idx === currentSponsorAdIndex
-                                    ? 'bg-purple-600 w-8'
-                                    : 'bg-gray-300 hover:bg-gray-400'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </Card>
-                    </div>
-                  )}
-
                   {event.venue && (
                     <div>
                       <h2 className="text-2xl font-black mb-4 flex items-center gap-2">
@@ -629,37 +359,16 @@ export const EventDetailsPage = () => {
                         Venue Information
                       </h2>
                       <Card className="p-6">
-                        {event.venue.address && (
-                          <p className="text-gray-700 mb-4">{event.venue.address}</p>
-                        )}
-                        {event.venue.mapAnnotations && event.venue.mapAnnotations.length > 0 && (
-                          <div className="space-y-2">
-                            <h3 className="font-semibold">Points of Interest:</h3>
-                            <div className="grid gap-2">
-                              {event.venue.mapAnnotations.map((annotation, idx) => (
-                                <div key={idx} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-                                  <MapPin className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: annotation.color || '#6366f1' }} />
-                                  <div>
-                                    <p className="font-semibold">{annotation.label}</p>
-                                    {annotation.description && (
-                                      <p className="text-sm text-gray-600">{annotation.description}</p>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <p className="text-gray-700 mb-4">{event.venue}</p>
                       </Card>
                     </div>
                   )}
 
-                  {event.pocs && event.pocs.length > 0 && (
+                  {event.poc && (
                     <div>
                       <h2 className="text-2xl font-black mb-4">Points of Contact</h2>
                       <div className="grid md:grid-cols-2 gap-4">
-                        {event.pocs.map((poc, idx) => (
-                          <Card key={idx} className="p-4">
+                          <Card className="p-4">
                             <div className="flex items-center gap-3 mb-3">
                               <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                                 <UserIcon className="w-6 h-6 text-white" />
@@ -667,24 +376,23 @@ export const EventDetailsPage = () => {
                               <div>
                                 <h3 className="font-black">{poc.name}</h3>
                                 <p className="text-sm text-gray-500">{poc.designation || 'Organizer'}</p>
-                              </div>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              {poc.contact && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Phone className="w-4 h-4" />
-                                  {poc.contact}
-                                </div>
-                              )}
-                              {poc.email && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Mail className="w-4 h-4" />
-                                  {poc.email}
-                                </div>
-                              )}
-                            </div>
-                          </Card>
-                        ))}
+                               </div>
+                             </div>
+                             <div className="space-y-2 text-sm">
+                               {event.poc.contact && (
+                                 <div className="flex items-center gap-2 text-gray-600">
+                                   <Phone className="w-4 h-4" />
+                                   {event.poc.contact}
+                                 </div>
+                               )}
+                               {event.poc.email && (
+                                 <div className="flex items-center gap-2 text-gray-600">
+                                   <Mail className="w-4 h-4" />
+                                   {event.poc.email}
+                                 </div>
+                               )}
+                             </div>
+                           </Card>
                       </div>
                     </div>
                   )}
@@ -781,10 +489,10 @@ export const EventDetailsPage = () => {
                         reviews.map((review) => (
                           <Card key={review._id} className="p-6">
                             <div className="flex items-start gap-4">
-                              <Avatar className="w-12 h-12">
-                                <AvatarImage src={review.user.profilePic} />
+                              <Avatar className="w-12 h-12 border-2 border-purple-200">
+                                <AvatarImage src={review.by?.profile?.profilePic} />
                                 <AvatarFallback>
-                                  {review.user.name.charAt(0).toUpperCase()}
+                                  {review.by?.profile?.name?.charAt(0).toUpperCase() || 'U'}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
@@ -809,10 +517,6 @@ export const EventDetailsPage = () => {
                                       </span>
                                     </div>
                                   </div>
-                                  <Button variant="ghost" size="sm" className="text-gray-500">
-                                    <ThumbsUp className="w-4 h-4 mr-1" />
-                                    {review.likes}
-                                  </Button>
                                 </div>
                                 <p className="text-gray-700 leading-relaxed">{review.comment}</p>
                               </div>
@@ -834,12 +538,13 @@ export const EventDetailsPage = () => {
                       {event.timeline.map((item, idx) => (
                         <Card key={idx} className="p-4">
                           <div className="flex items-start justify-between">
-                            <div className="flex-1">
+                            <div className="flex-1 space-y-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <Badge variant="outline">{item.date}</Badge>
-                                <Badge variant="outline">{item.time}</Badge>
+                                <Badge variant="outline">{new Date(item.date).toLocaleDateString()}</Badge>
+                                <Badge variant="outline">{item.duration.from} - {item.duration.to}</Badge>
                               </div>
-                              <p className="text-gray-700">{item.message}</p>
+                              <h4 className="font-semibold">{item.title}</h4>
+                              <p className="text-sm text-gray-600">{item.description}</p>
                             </div>
                             {isEventOrganizer && (
                               <Button
@@ -871,70 +576,10 @@ export const EventDetailsPage = () => {
                     Announcements
                   </h2>
                   {event.announcements && event.announcements.length > 0 ? (
-                    <div className="space-y-4">
-                      {event.announcements.map((announcement, idx) => (
-                        <Card key={idx} className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Megaphone className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-black text-lg mb-1">{announcement.title}</h3>
-                              <p className="text-sm text-gray-500 mb-3">{announcement.date}</p>
-                              <p className="text-gray-700">{announcement.message}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                    <p>Announcements will be shown here.</p> // Placeholder
                   ) : (
                     <Alert>
                       <AlertDescription>No announcements available yet</AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="winners" className="p-6">
-                  <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                    <Trophy className="w-6 h-6" />
-                    Winners
-                  </h2>
-                  {event.winners && event.winners.length > 0 ? (
-                    <div className="space-y-4">
-                      {event.winners.map((winner, idx) => (
-                        <Card key={idx} className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-2xl flex-shrink-0">
-                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '🏆'}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-black text-lg mb-2">{winner.name}</h3>
-                              {winner.team && winner.team.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-3">
-                                  {winner.team.map((member, mIdx) => (
-                                    <Badge key={mIdx} variant="outline">{member}</Badge>
-                                  ))}
-                                </div>
-                              )}
-                              {winner.proof && (
-                                <a
-                                  href={winner.proof}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-purple-600 hover:underline flex items-center gap-1"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  View Proof
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert>
-                      <AlertDescription>Winners will be announced after the event</AlertDescription>
                     </Alert>
                   )}
                 </TabsContent>
@@ -1018,7 +663,7 @@ export const EventDetailsPage = () => {
                           Only students can register for events
                         </AlertDescription>
                       </Alert>
-                    ) : isRegistered ? (
+                    ) : registrationStatus?.registrationStatus === 'confirmed' ? (
                       <Alert className="bg-green-50 border-green-200">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800">
@@ -1027,7 +672,7 @@ export const EventDetailsPage = () => {
                       </Alert>
                     ) : (
                       <form onSubmit={handleRegistrationSubmit} className="space-y-6">
-                        {event.config?.registrationType === 'Team' && (
+                        {registrationForm?.registrationConfig?.registrationType === 'Team' && (
                           <div className="space-y-2">
                             <Label htmlFor="teamName">Team Name *</Label>
                             <Input
@@ -1036,15 +681,15 @@ export const EventDetailsPage = () => {
                               placeholder="Enter your team name"
                               onChange={(e) => handleRegistrationFormChange('teamName', e.target.value)}
                             />
-                            {event.config.teamSizeRange && (
+                            {registrationForm?.registrationConfig?.teamSizeRange && (
                               <p className="text-sm text-gray-500">
-                                Team size: {event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members
+                                Team size: {registrationForm.registrationConfig.teamSizeRange.min} - {registrationForm.registrationConfig.teamSizeRange.max} members
                               </p>
                             )}
                           </div>
                         )}
 
-                        {event.config?.fees && event.config.fees > 0 && (
+                        {registrationForm?.registrationConfig?.fees > 0 && (
                           <div className="space-y-4 border-t pt-4">
                             <div className="flex items-center justify-between">
                               <Label>Registration Fee</Label>
@@ -1076,7 +721,7 @@ export const EventDetailsPage = () => {
                           </div>
                         )}
 
-                        {event.config?.registrationFields?.map((field, idx) => (
+                        {registrationForm?.registrationConfig?.registrationFields?.map((field, idx) => (
                           <div key={idx} className="space-y-2">
                             <Label htmlFor={`field-${idx}`}>
                               {field.title} {field.required && '*'}
@@ -1111,7 +756,7 @@ export const EventDetailsPage = () => {
 
                         <Button
                           type="submit"
-                          disabled={registering || hasClash}
+                          disabled={registering}
                           className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                         >
                           {registering ? 'Registering...' : 'Register for Event'}
@@ -1127,24 +772,24 @@ export const EventDetailsPage = () => {
                     Event Sponsors
                   </h2>
                   
-                  {eventSponsors.length > 0 ? (
+                  {sponsors.length > 0 ? (
                     <div className="space-y-4">
-                      {eventSponsors.map((sponsor) => (
+                      {sponsors.map((sponsor) => (
                         <Card key={sponsor._id} className="p-6">
                           <div className="flex items-start gap-4">
                             <img
-                              src={sponsor.profile.firmLogo}
-                              alt={sponsor.name}
+                              src={sponsor.profile?.firmLogo}
+                              alt={sponsor.profile?.name}
                               className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                             />
                             <div className="flex-1">
-                              <h3 className="font-black text-xl mb-2">{sponsor.name}</h3>
-                              <p className="text-gray-600 mb-3">{sponsor.profile.firmDescription}</p>
+                              <h3 className="font-black text-xl mb-2">{sponsor.profile?.name}</h3>
+                              <p className="text-gray-600 mb-3">{sponsor.profile?.firmDescription}</p>
                               
                               <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
                                 <div className="flex items-center gap-1">
                                   <MapPin className="w-4 h-4" />
-                                  {sponsor.sponsorDetails.stallLocation}
+                                  {sponsor.sponsorDetails?.stallLocation || 'N/A'}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Mail className="w-4 h-4" />
@@ -1155,17 +800,10 @@ export const EventDetailsPage = () => {
                               <div className="flex gap-3">
                                 <Button
                                   variant="outline"
-                                  onClick={() => navigate(`/sponsors/${sponsor._id}`)}
+                                  onClick={() => navigate(`/sponsor-profile/${sponsor._id}`)}
                                 >
                                   <UserIcon className="w-4 h-4 mr-2" />
                                   View Profile
-                                </Button>
-                                <Button
-                                  onClick={() => navigate(`/sponsors/${sponsor._id}`)}
-                                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                                >
-                                  <ImageIcon className="w-4 h-4 mr-2" />
-                                  View Ads
                                 </Button>
                               </div>
                             </div>
@@ -1196,31 +834,15 @@ export const EventDetailsPage = () => {
 
           <div className="space-y-6">
             <Card className="p-6 sticky top-24">
-              <div className="space-y-4">
-                {event.dateTimeRange && (
+              <div className="space-y-4">                
+                {event.timeline?.[0] && (
                   <>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <p className="text-sm text-gray-500">Date</p>
-                        <p className="font-semibold">
-                          {event.dateTimeRange.startDate 
-                            ? new Date(event.dateTimeRange.startDate).toLocaleDateString()
-                            : 'TBA'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
                     <div className="flex items-center gap-3">
                       <Clock className="w-5 h-5 text-purple-600" />
                       <div>
-                        <p className="text-sm text-gray-500">Time</p>
+                        <p className="text-sm text-gray-500">Starts On</p>
                         <p className="font-semibold">
-                          {event.dateTimeRange.startTime && event.dateTimeRange.endTime
-                            ? `${event.dateTimeRange.startTime} - ${event.dateTimeRange.endTime}`
-                            : 'TBA'}
+                          {new Date(event.timeline[0].date).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -1233,11 +855,7 @@ export const EventDetailsPage = () => {
                   <Users className="w-5 h-5 text-purple-600" />
                   <div>
                     <p className="text-sm text-gray-500">Registrations</p>
-                    <p className="font-semibold">
-                      {event.config?.maxCapacity
-                        ? `${event.registrationCount || 0} / ${event.config.maxCapacity}`
-                        : 'Unlimited'}
-                    </p>
+                    <p className="font-semibold">{event.registrations?.length || 0}</p>
                   </div>
                 </div>
 
@@ -1262,19 +880,6 @@ export const EventDetailsPage = () => {
                 </Button>
               )}
 
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" className="flex-1">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Like
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                <Button variant="outline">
-                  <BookmarkPlus className="w-4 h-4" />
-                </Button>
-              </div>
             </Card>
 
             {event.createdBy && (

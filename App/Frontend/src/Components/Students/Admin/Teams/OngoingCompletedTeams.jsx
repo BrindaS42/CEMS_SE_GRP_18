@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Users, Calendar, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Users, Calendar, CheckCircle, Clock, Eye, Crown, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/components/ui/utils';
@@ -11,6 +11,7 @@ import { ViewTeamMembersModal } from './ViewTeamMembersModal';
 export function OngoingCompletedTeams() {
   const dispatch = useDispatch();
   const { studentTeams, loading } = useSelector((state) => state.student);
+  const { user } = useSelector((state) => state.auth);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [teamToView, setTeamToView] = useState(null);
 
@@ -19,9 +20,13 @@ export function OngoingCompletedTeams() {
   }, [dispatch]);
 
   const teams = useMemo(() => {
-    if (!studentTeams.leader) return [];
-    return studentTeams.leader.filter(team => team.isRegisteredForEvent);
-  }, [studentTeams.leader]);
+    if (!studentTeams.data || !user) return [];
+    return studentTeams.data.filter(team => {
+      const isMember = team.leader._id === user.id || team.members.some(m => m.member._id === user.id && m.status === 'Approved');
+      // Assuming isRegisteredForEvent is a boolean flag on the team object from the backend
+      return isMember && team.isRegisteredForEvent;
+    });
+  }, [studentTeams.data, user]);
 
   const handleViewMembers = (team) => {
     setTeamToView(team);
@@ -48,7 +53,7 @@ export function OngoingCompletedTeams() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-foreground">Ongoing Teams</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             {teams.length} active team{teams.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -71,6 +76,7 @@ export function OngoingCompletedTeams() {
               index={index}
               onViewMembers={handleViewMembers}
               getInitials={getInitials}
+              currentUser={user}
             />
           ))}
         </div>
@@ -86,7 +92,7 @@ export function OngoingCompletedTeams() {
   );
 }
 
-function TeamCard({ team, index, onViewMembers, getInitials }) {
+function TeamCard({ team, index, onViewMembers, getInitials, currentUser }) {
   return (
     <div
       className={cn(
@@ -102,7 +108,7 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
           <div className="flex-1">
             <h4 className="text-foreground mb-1">{team.teamName}</h4>
             <p className="text-xs text-muted-foreground">
-              Leader: {team.leader.name}
+              Leader: {team.leader.profile.name}
             </p>
           </div>
           <Badge
@@ -121,6 +127,20 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
           </Badge>
         </div>
 
+        {/* Role Badge */}
+        <div className="flex items-center gap-2">
+          {team.leader._id === currentUser.id ? (
+            <Badge className="bg-secondary text-secondary-foreground">
+              <Crown className="w-3 h-3 mr-1" />
+              Team Leader
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-card">
+              <User className="w-3 h-3 mr-1" />
+              Member
+            </Badge>
+          )}
+        </div>
         {/* Linked Event */}
         {team.linkedEvent && (
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
@@ -128,7 +148,7 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
               <Calendar className="w-3.5 h-3.5 text-primary" />
               <p className="text-xs text-primary">Linked Event</p>
             </div>
-            <p className="text-sm text-foreground">{team.linkedEvent.name}</p>
+            <p className="text-sm text-foreground">{team.linkedEvent.title}</p>
             <p className="text-xs text-muted-foreground">
               {new Date(team.linkedEvent.date).toLocaleDateString('en-US', {
                 month: 'short',
@@ -143,7 +163,7 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">Team Members</p>
-            <p className="text-xs text-foreground">{team.members.length}</p>
+            <p className="text-xs text-foreground">{team.members.length + 1}</p>
           </div>
 
           {/* Member Avatars */}
@@ -152,9 +172,9 @@ function TeamCard({ team, index, onViewMembers, getInitials }) {
               <div
                 key={member.member._id}
                 className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs border-2 border-card ring-1 ring-border transition-transform duration-200 hover:scale-110 hover:z-10"
-                title={member.name}
+                title={member.member.profile.name}
               >
-                {getInitials(member.name)}
+                {getInitials(member.member.profile.name)}
               </div>
             ))}
             {team.members.length > 5 && (
@@ -193,17 +213,19 @@ const ongoingCompletedTeamShape = PropTypes.shape({
   _id: PropTypes.string.isRequired,
   teamName: PropTypes.string.isRequired,
   leader: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    _id: PropTypes.string.isRequired,
+    profile: PropTypes.shape({ name: PropTypes.string.isRequired }),
     email: PropTypes.string.isRequired,
   }).isRequired,
   members: PropTypes.arrayOf(teamMemberShape).isRequired,
   linkedEvent: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
+    _id: PropTypes.string,
+    title: PropTypes.string,
     date: PropTypes.string.isRequired,
   }),
   status: PropTypes.oneOf(['Active', 'Completed']).isRequired,
   createdAt: PropTypes.string.isRequired,
+  isRegisteredForEvent: PropTypes.bool,
 });
 
 TeamCard.propTypes = {
@@ -211,4 +233,5 @@ TeamCard.propTypes = {
   index: PropTypes.number.isRequired,
   onViewMembers: PropTypes.func.isRequired,
   getInitials: PropTypes.func.isRequired,
+  currentUser: PropTypes.object.isRequired,
 };

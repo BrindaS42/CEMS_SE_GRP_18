@@ -22,6 +22,11 @@ import OrganizerAdminPanel from './Pages/Organizer/AdminPanel.page.jsx';
 import AdminControlPanel from './Pages/Admin/ControlPanel.page.jsx';
 import { socket } from './service/socket.js'
 import MapWindow from './components/EventComponents/Map/mapWindow.jsx';
+import { EventListingPage } from './Pages/Event/EventListingPage.jsx';
+import { EventDetailsPage } from './Pages/Event/EventDetailsPage.jsx';
+import { SponsorListingPage } from './Pages/SponsorListings/SponsorListingPage.jsx';
+import AdDetailsPage from './Pages/SponsorListings/AdDetailsPage.jsx';
+import { SponsorDetailsPage } from './Pages/SponsorListings/SponsorDetailsPage.jsx';
 import { setSocketConnected, setSocketDisconnected } from './store/socket.slice.js';
 import { addMessage } from './store/event.interaction.slice.js';
 
@@ -79,9 +84,11 @@ const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<HomePage />} />
-      {/* <Route path="/events" element={<EventListingPage />} />
+      <Route path="/events" element={<EventListingPage />} />
       <Route path="/events/:id" element={<EventDetailsPage />} />
-      <Route path="/sponsors" element={<SponsorListingPage />} /> */}
+      <Route path="/sponsors" element={<SponsorListingPage />} />
+      <Route path="/sponsors/:id" element={<SponsorDetailsPage />} />
+      <Route path="/ads/:id" element={<AdDetailsPage />} />
       <Route path="/register-college" element={<CollegeRegistrationPage />} />
 
       {/* Auth Routes */}

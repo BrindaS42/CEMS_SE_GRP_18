@@ -85,35 +85,43 @@ export const getStudentTeams = async (req, res) => {
             return res.status(401).json({ message: "User not authenticated" });
         }
     
-        const leaderTeamsQuery = StudentTeam.find({ leader: userId });
-        const memberTeamsQuery = StudentTeam.find({ 'members.member': userId });
-    
-        const [leaderTeams, memberTeams] = await Promise.all([
-            leaderTeamsQuery.populate('leader', 'profile.name email').populate('members.member', 'profile.name email').lean(),
-            memberTeamsQuery.populate('leader', 'profile.name email').populate('members.member', 'profile.name email').lean()
-        ]);
+        // Find all teams where the user is either the leader or a member.
+        const teams = await StudentTeam.find({
+            $or: [
+                { leader: userId },
+                { 'members.member': userId }
+            ]
+        })
+        .populate('leader', 'profile.name email')
+        .populate('members.member', 'profile.name email')
+        .lean();
 
-        // Add registration status to leader teams
-        const registrationChecks = leaderTeams.map(team => 
-            Registration.findOne({ teamName: team._id }).select('_id eventId').populate('eventId', 'title').lean()
+        // Add registration status to all found teams
+        const registrationChecks = teams.map(team => 
+            Registration.findOne({ teamName: team._id }).select('_id eventId').populate('eventId', 'title status createdAt').lean()
         );
         const registrations = await Promise.all(registrationChecks);
 
-        const leaderTeamsWithStatus = leaderTeams.map((team, index) => {
+        const teamsWithStatus = teams.map((team, index) => {
             const registration = registrations[index];
+            const isRegisteredAndPublished = !!registration && registration.eventId?.status === 'published';
+
             return {
                 ...team,
-                isRegisteredForEvent: !!registration,
-                linkedEvent: registration ? {
-                    name: registration.eventId?.title,
-                    id: registration.eventId?._id
+                isRegisteredForEvent: isRegisteredAndPublished,
+                linkedEvent: isRegisteredAndPublished ? {
+                    title: registration.eventId?.title, // Use 'title' to match component
+                    _id: registration.eventId?._id,
+                    date: registration.eventId?.createdAt
                 } : null,
             };
         });
     
         res.status(200).json({
-            "leader": leaderTeamsWithStatus,
-            "member": memberTeams
+            success: true,
+            message: "Successfully retrieved your teams.",
+            count: teamsWithStatus.length,
+            data: teamsWithStatus
         });
 
     } catch (error) {

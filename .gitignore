@@ -55,3 +55,6 @@ tests/
 
 #req
 .requirements.txt
+
+seed_mongo.py
+seed_mongo.js

@@ -4,24 +4,18 @@ import {
   submitRegistration,
   getRegistrationStatusByEIDPID,
   markCheckIn,
-  getRegistrationConfig,
-  updateRegistrationConfig,
-} from "../controllers/student/registration.controller.js";
+} from "../../controllers/event_controllers/registration.controller.js";
 
-import { protect } from "../../middleware/auth.middleware.js"; 
+import auth from "../../middleware/auth.middleware.js"; 
 
 const router = express.Router();
+const {authentication, authorizeRoles} = auth;
+router.get("/:eventId/form", authentication, authorizeRoles("student"), getRegistrationForm);
 
-router.get("/:eventId/form", protect, getRegistrationForm);
+router.post("/submit", authentication, authorizeRoles("student"),submitRegistration);
 
-router.post("/submit", protect, submitRegistration);
+router.get("/:eventId/:participantId/status", authentication, authorizeRoles("student"), getRegistrationStatusByEIDPID);
 
-router.get("/:eventId/:participantId/status", protect, getRegistrationStatusByEIDPID);
-
-router.post("/checkin", protect, markCheckIn);
-
-router.get("/:eventId/config", protect, getRegistrationConfig);
-
-router.put("/:eventId/config", protect, updateRegistrationConfig);
+router.post("/checkin", authentication, authorizeRoles("student"), markCheckIn);
 
 export default router;

@@ -9,6 +9,7 @@ import connectDB from './config/database.js';
 import authRouter from './routes/auth.route.js';
 import eventRouter from './routes/organizer_routes/event.route.js';
 import auth from './middleware/auth.middleware.js';
+import eventGeneralRouter from './routes/event_routes/event.general.route.js';
 import profileRouter from './routes/profile.route.js';
 const { authentication, authorizeRoles } = auth;
 import teamRouter from './routes/organizer_routes/event.team.route.js';
@@ -18,6 +19,7 @@ import studentDashboardRouter from './routes/student_routes/student.dashboard.ro
 import sponsorRoutes from "./routes/sponsor_routes/sponsor.route.js";
 import studentTeamRoutes from "./routes/student_routes/student.team.route.js"; 
 import inboxRoute from "./routes/inbox.route.js";
+import registrationRouter from './routes/event_routes/registration.route.js';
 import analyticsRoutes from './routes/organizer_routes/analytics.route.js'; 
 import geocodingRouter from './routes/geocoding.route.js';
 
@@ -43,12 +45,14 @@ app.use('/api/dashboard', eventRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/organizer/teams', teamRouter);
 app.use('/api/event', eventManageRouter);
+app.use('/api/event-show', eventGeneralRouter); // Use the general router for public event listing
 app.use('/api/ai', aiRouter); 
 app.use('/api/student-dashboard', studentDashboardRouter);
 app.use("/api/sponsors", sponsorRoutes);
 app.use('/api/event-manage', eventManageRouter);
 app.use("/api/student/teams", studentTeamRoutes);
 app.use("/api/inbox", inboxRoute);
+app.use('/api/registrations', registrationRouter);
 app.use('/api/analytics', analyticsRoutes); 
 app.use('/api/geocode', geocodingRouter);
 

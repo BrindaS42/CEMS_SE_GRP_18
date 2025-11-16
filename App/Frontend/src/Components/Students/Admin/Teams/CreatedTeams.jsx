@@ -22,6 +22,7 @@ import { EditStudentTeamModal } from './EditStudentTeamModal';
 export function CreatedTeams() {
   const dispatch = useDispatch();
   const { studentTeams, loading } = useSelector((state) => state.student);
+  const { user } = useSelector((state) => state.auth);
   const [deleteTeam, setDeleteTeam] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [teamToEdit, setTeamToEdit] = useState(null);
@@ -31,12 +32,13 @@ export function CreatedTeams() {
   }, [dispatch]);
 
   const teams = useMemo(() => {
-    if (!studentTeams.leader) return [];
-    return studentTeams.leader.filter(team => {
+    if (!studentTeams.data || !user) return [];
+    return studentTeams.data.filter(team => {
+      if (team.leader._id !== user.id) return false;
       const hasPending = team.members.some(m => m.status === 'Pending');
       return !hasPending && !team.isRegisteredForEvent;
     });
-  }, [studentTeams.leader]);
+  }, [studentTeams.data, user]);
 
   const handleEdit = (team) => {
     setTeamToEdit(team);
