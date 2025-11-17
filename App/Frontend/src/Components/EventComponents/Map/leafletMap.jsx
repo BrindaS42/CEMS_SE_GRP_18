@@ -98,11 +98,6 @@ export default function LeafletMap({ eventId }) {
           );
         })}
       </MapContainer>
-
-      {loading && <div style={{ marginTop: 8, color: "#6b7280" }}>Loading map data…</div>}
-      {error && <div style={{ marginTop: 8, color: "#dc2626" }}>{error}</div>}
     </div>
   );
 }
-
-

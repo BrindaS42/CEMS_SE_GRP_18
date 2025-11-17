@@ -20,15 +20,13 @@ import SponsorAdminPanel from './Pages/Sponsor/AdminPanel.page.jsx';
 import OrganizerDashboard from './Pages/Organizer/Dashboard.page.jsx';
 import OrganizerAdminPanel from './Pages/Organizer/AdminPanel.page.jsx';
 import AdminControlPanel from './Pages/Admin/ControlPanel.page.jsx';
-import { socket } from './service/socket.js'
+import { socket } from './service/socket.js';
 import MapWindow from './components/EventComponents/Map/mapWindow.jsx';
 import { EventListingPage } from './Pages/Event/EventListingPage.jsx';
 import { EventDetailsPage } from './Pages/Event/EventDetailsPage.jsx';
 import { SponsorListingPage } from './Pages/SponsorListings/SponsorListingPage.jsx';
 import AdDetailsPage from './Pages/SponsorListings/AdDetailsPage.jsx';
 import { SponsorDetailsPage } from './Pages/SponsorListings/SponsorDetailsPage.jsx';
-import { setSocketConnected, setSocketDisconnected } from './store/socket.slice.js';
-import { addMessage } from './store/event.interaction.slice.js';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -72,13 +70,6 @@ const AppLayout = ({ children }) => {
 // App Routes Component
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
-  const dispatch = useDispatch();
-  useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      dispatch(fetchAuthProfile());
-    }
-  }, [dispatch]);
 
   return (
     <Routes>
@@ -225,38 +216,38 @@ export default function App() {
   const { isAuthenticated } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
 
+  // Check for existing token on app load
   useEffect(() => {
-    
-    if (isAuthenticated) {
-      socket.connect();
-
-      function onConnect() {
-        dispatch(setSocketConnected());
-      }
-
-      function onDisconnect() {
-        dispatch(setSocketDisconnected());
-      }
-
-      function onReceiveMessage(newMessage) {
-        console.log('Received message:', newMessage);
-        dispatch(addMessage(newMessage));
-      }
-
-      socket.on('connect', onConnect);
-      socket.on('disconnect', onDisconnect);
-      socket.on('receive_message', onReceiveMessage);
-
-      return () => {
-        socket.off('connect', onConnect);
-        socket.off('disconnect', onDisconnect);
-        socket.off('receive_message', onReceiveMessage);
-        socket.disconnect();
-      };
-    } else {
-      socket.disconnect();
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      dispatch(fetchAuthProfile());
     }
-  }, [isAuthenticated, dispatch]);
+  }, [dispatch]);
+
+  // ===== SIMPLIFIED: Socket is now auto-connecting from socket.js =====
+  // Just add debug listeners
+  useEffect(() => {
+    console.log('[App.jsx] ✅ App mounted. Socket instance exists.');
+    console.log('[App.jsx] Socket connected?', socket.connected);
+    
+    const handleConnect = () => {
+      console.log('[App.jsx] ✅ Socket connected to server!');
+    };
+
+    const handleDisconnect = () => {
+      console.log('[App.jsx] ❌ Socket disconnected from server');
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      // Don't disconnect here - let socket persist
+    };
+  }, []);
+
   return (
     <AppLayout>
       <AppRoutes />

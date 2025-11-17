@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'motion/react';
@@ -65,36 +65,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  fetchEventDetails,
-  fetchEventAnnouncements,
-  fetchEventSponsors,
-  fetchEventReviews,
-  addEventRating,
-} from '@/store/studentEvents.slice';
-import {
-  getRegistrationForm,
-  submitRegistration,
-  getRegistrationStatus,
-} from '@/store/registration.slice';
+import { fetchEventDetails, addEventRating } from '@/store/studentEvents.slice';
+import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/store/event.interaction.slice';
+import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/store/registration.slice';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { socket } from '@/service/socket';
+import AnnotatedMapView from '@/components/EventComponents/Map/AnnotatedMapView';
 
 export const EventDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const { currentEvent: event, loading, announcements, sponsors, reviews } = useSelector((state) => state.studentEvents);
-  const { form: registrationForm, status: registrationStatus } = useSelector((state) => state.registration);
-
+  const { currentEvent: event, loading } = useSelector((state) => state.studentEvents);
+  const { messages: chatMessages, status: chatStatus } = useSelector((state) => state.eventInteraction) || { messages: [], status: 'idle' };
+  const { status: registrationStatus } = useSelector((state) => state.registration);
+  const announcements = event?.announcements || [];
+  const sponsors = event?.sponsors || [];
+  const reviews = event?.ratings || [];
+  console.log("event:", event);
   const [registering, setRegistering] = useState(false);
   const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
   const [checkInCode, setCheckInCode] = useState('');
-  const [selectedTimelineIndex, setSelectedTimelineIndex] = useState(null);
+  const [selectedTimelineId, setSelectedTimelineId] = useState(null);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
   const [registrationFormData, setRegistrationFormData] = useState({});
+  const [customFieldsData, setCustomFieldsData] = useState({});
   
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(0);
@@ -103,43 +100,87 @@ export const EventDetailsPage = () => {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportText, setReportText] = useState('');
 
+  const chatEndRef = useRef(null);
+
   const isStudentView = user?.role === 'student';
   const isOrganizerView = user?.role === 'organizer';
-  const isEventOrganizer = event?.createdBy?._id === user?.teamId; // Simplified check
+  const isEventOrganizer = useMemo(() => {
+    if (!event || !user || !event.createdBy) return false;
+    const team = event.createdBy;
+    if (team.leader?._id === user.id) return true;
+    return team.members?.some(m => m.user?._id === user.id && m.status === 'Approved');
+  }, [event, user]);
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchEventDetails(id));
-      if (isStudentView) {
-        dispatch(getRegistrationStatus({ eventId: id, participantId: user.id }));
-      }
-      dispatch(fetchEventAnnouncements(id));
-      dispatch(fetchEventSponsors(id));
-      dispatch(fetchEventReviews(id));
-      loadChatMessages();
-    }
-  }, [id, dispatch, isStudentView, user?.id]);
+    // Scroll to the bottom of the chat
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
-  const loadChatMessages = async () => {
-    try {
-      setChatMessages([
-        {
-          _id: '1',
-          sender: { name: 'John Organizer', role: 'organizer' },
-          message: 'Welcome to the event chat! Feel free to ask any questions.',
-          createdAt: new Date(Date.now() - 3600000),
-        },
-        {
-          _id: '2',
-          sender: { name: 'Sarah Student', role: 'student' },
-          message: 'What is the dress code for the event?',
-          createdAt: new Date(Date.now() - 1800000),
-        },
-      ]);
-    } catch (error) {
-      console.error('Failed to load chat messages:', error);
-    }
+  // In EventDetailsPage.jsx - Replace the socket setup useEffect
+
+useEffect(() => {
+  if (!id) return;
+
+  dispatch(fetchEventDetails(id));
+  if (user?.role === 'student' && user.id) {
+    dispatch(getRegistrationStatus({ eventId: id, participantId: user?.id }));
+  }
+  dispatch(fetchAllMessages(id));
+
+  console.log('[EventDetailsPage] 🔌 Socket connected?', socket.connected);
+  console.log('[EventDetailsPage] 🔌 Socket ID:', socket.id);
+
+  // ===== WAIT for socket to be ready =====
+  const setupSocketListeners = () => {
+    console.log(`[EventDetailsPage] ✅ Setting up socket listeners for room: ${id}`);
+
+    // Join room
+    socket.emit('join_room', id);
+    console.log(`[EventDetailsPage] 📤 Emitted join_room for: ${id}`);
+
+    // Setup message listener
+    const handleReceiveMessage = (newMessage) => {
+      console.log('[EventDetailsPage] 📥 ===== RECEIVED MESSAGE =====');
+      console.log('[EventDetailsPage] 📥 Message:', newMessage);
+      console.log('[EventDetailsPage] 📥 EventId match?', newMessage.eventId === id);
+
+      if (newMessage.eventId === id) {
+        console.log('[EventDetailsPage] ✅ Message is for this event, dispatching...');
+        dispatch(addMessage(newMessage));
+      }
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+    console.log(`[EventDetailsPage] ✅ Listener 'receive_message' registered`);
+
+    // Cleanup
+    return () => {
+      console.log(`[EventDetailsPage] 🧹 Cleanup: leaving room ${id}`);
+      socket.emit('leave_room', id);
+      socket.off('receive_message', handleReceiveMessage);
+      dispatch(clearMessages());
+    };
   };
+
+  // If socket is already connected, setup immediately
+  if (socket.connected) {
+    console.log('[EventDetailsPage] 🟢 Socket already connected, setting up now');
+    return setupSocketListeners();
+  } else {
+    // Wait for socket to connect
+    console.log('[EventDetailsPage] 🟡 Socket not connected yet, waiting...');
+    const onConnect = () => {
+      console.log('[EventDetailsPage] 🟢 Socket just connected, setting up now');
+      socket.off('connect', onConnect); // Remove this listener
+      return setupSocketListeners();
+    };
+    socket.on('connect', onConnect);
+
+    return () => {
+      socket.off('connect', onConnect);
+    };
+  }
+}, [id, dispatch, user?.id]); // Add user?.id to dependencies
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -149,7 +190,15 @@ export const EventDetailsPage = () => {
 
     setRegistering(true);
     try {
-      await dispatch(submitRegistration({ eventId: id, ...registrationFormData })).unwrap();
+      const finalRegistrationData = {
+        ...registrationFormData,
+        eventId: id,
+        registrationData: event.config.registrationFields.map(field => ({
+          question: field.title,
+          answer: customFieldsData[field.title] || ''
+        }))
+      };
+      await dispatch(submitRegistration(finalRegistrationData)).unwrap();
       toast.success('Registration successful! Check your inbox for confirmation.');
       dispatch(getRegistrationStatus({ eventId: id, participantId: user.id }));
     } catch (error) {
@@ -171,32 +220,37 @@ export const EventDetailsPage = () => {
     }));
   };
 
+  const handleCustomFieldChange = (fieldTitle, value) => {
+    setCustomFieldsData((prev) => ({
+      ...prev,
+      [fieldTitle]: value,
+    }));
+  };
+
   const handleCheckIn = async () => {
+    if (!checkInCode.trim() || !selectedTimelineId) return;
     try {
+      await dispatch(markCheckIn({ checkInCode, timelineRef: selectedTimelineId })).unwrap();
       toast.success('Checked in successfully!');
       setCheckInDialogOpen(false);
       setCheckInCode('');
-      loadEventDetails();
+      setSelectedTimelineId(null);
+      // Optionally re-fetch data if needed, but for now, UI feedback is enough.
     } catch (error) {
-      toast.error('Invalid check-in code');
+      toast.error(error || 'Invalid check-in code or failed to check in.');
     }
   };
+
+  console.log("chatMessages:", chatMessages);
 
   const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
 
     try {
-      const newMessage = {
-        _id: Date.now().toString(),
-        sender: { name: user?.name || 'You', role: user?.role },
-        message: chatMessage,
-        createdAt: new Date(),
-      };
-      setChatMessages([...chatMessages, newMessage]);
+      await dispatch(sendMessage({ eventId: id, message: chatMessage })).unwrap();
       setChatMessage('');
-      toast.success('Message sent!');
     } catch (error) {
-      toast.error('Failed to send message');
+      toast.error(error || 'Failed to send message');
     }
   };
 
@@ -318,13 +372,14 @@ export const EventDetailsPage = () => {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="w-full grid grid-cols-6 lg:grid-cols-6">
+                <TabsList className="w-full grid grid-cols-7 lg:grid-cols-7">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="announcements">Announcements</TabsTrigger>
                   <TabsTrigger value="chatroom">Chatroom</TabsTrigger>
                   <TabsTrigger value="registration">Register</TabsTrigger>
                   <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
+                  <TabsTrigger value="map">Map</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="p-6 space-y-8">
@@ -342,10 +397,15 @@ export const EventDetailsPage = () => {
                         Sub Events
                       </h2>
                       <div className="grid md:grid-cols-2 gap-4">
-                        {event.subEvents.map((subEvent, idx) => (
-                          <Card key={idx} className="p-4">
-                            <h3 className="font-black mb-2">{subEvent.title}</h3>
-                            <p className="text-sm text-gray-600">{subEvent.description}</p>
+                        {event.subEvents.map((subEventItem, idx) => (
+                          <Card key={idx} className="p-4 space-y-2">
+                            <h3 className="font-black mb-2">{subEventItem.subevent?.title}</h3>
+                            <p className="text-sm text-gray-600">{subEventItem.subevent?.description}</p>
+                            {subEventItem.subevent?.timeline?.[0] && (
+                               <p className="text-xs text-muted-foreground">
+                                Date: {new Date(subEventItem.subevent.timeline[0].date).toLocaleDateString()}
+                               </p>
+                            )}
                           </Card>
                         ))}
                       </div>
@@ -374,8 +434,8 @@ export const EventDetailsPage = () => {
                                 <UserIcon className="w-6 h-6 text-white" />
                               </div>
                               <div>
-                                <h3 className="font-black">{poc.name}</h3>
-                                <p className="text-sm text-gray-500">{poc.designation || 'Organizer'}</p>
+                                <h3 className="font-black">{event.poc.name}</h3>
+                                <p className="text-sm text-gray-500">Organizer</p>
                                </div>
                              </div>
                              <div className="space-y-2 text-sm">
@@ -498,7 +558,7 @@ export const EventDetailsPage = () => {
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-2">
                                   <div>
-                                    <h4 className="font-black">{review.user.name}</h4>
+                                    <h4 className="font-black">{review.by?.profile?.name || 'Anonymous'}</h4>
                                     <div className="flex items-center gap-2">
                                       <div className="flex">
                                         {[1, 2, 3, 4, 5].map((star) => (
@@ -518,7 +578,7 @@ export const EventDetailsPage = () => {
                                     </div>
                                   </div>
                                 </div>
-                                <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                                <p className="text-gray-700 leading-relaxed">{review.review}</p>
                               </div>
                             </div>
                           </Card>
@@ -546,12 +606,12 @@ export const EventDetailsPage = () => {
                               <h4 className="font-semibold">{item.title}</h4>
                               <p className="text-sm text-gray-600">{item.description}</p>
                             </div>
-                            {isEventOrganizer && (
+                            {isEventOrganizer && item.checkInRequired && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
-                                  setSelectedTimelineIndex(idx);
+                                  setSelectedTimelineId(item._id);
                                   setCheckInDialogOpen(true);
                                 }}
                               >
@@ -575,8 +635,24 @@ export const EventDetailsPage = () => {
                     <Megaphone className="w-6 h-6" />
                     Announcements
                   </h2>
-                  {event.announcements && event.announcements.length > 0 ? (
-                    <p>Announcements will be shown here.</p> // Placeholder
+                  {announcements.length > 0 ? (
+                    <div className="space-y-4">
+                      {announcements.map((announcement) => (
+                        <Card key={announcement._id} className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Megaphone className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-500 mb-3">
+                                {new Date(announcement.date).toLocaleDateString()} at {announcement.time}
+                              </p>
+                              <p className="text-gray-700">{announcement.message}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   ) : (
                     <Alert>
                       <AlertDescription>No announcements available yet</AlertDescription>
@@ -594,27 +670,35 @@ export const EventDetailsPage = () => {
                       <p className="text-sm text-gray-500">Connect with other participants</p>
                     </div>
 
-                    <ScrollArea className="flex-1 p-4">
+                    <ScrollArea className="flex-1 p-4 overflow-hidden">
                       <div className="space-y-4">
-                        {chatMessages.map((msg) => (
-                          <div key={msg._id} className="flex items-start gap-3">
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback>{msg.sender.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">{msg.sender.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {msg.sender.role}
-                                </Badge>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(msg.createdAt).toLocaleTimeString()}
-                                </span>
+                        {(chatMessages || []).map((msg) => (
+                          <div
+                            key={msg._id}
+                            className={`flex items-start gap-3 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}
+                          >
+                            {msg.sender?._id !== user.id && (
+                              <Avatar className="w-8 h-8 border-2 border-purple-200">
+                                <AvatarFallback>{msg.sender?.profile?.name?.charAt(0) || '?'}</AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className={`flex-1 max-w-xs md:max-w-md ${msg.sender?._id === user.id ? 'text-right' : ''}`}>
+                              <div className={`flex items-center gap-2 mb-1 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}>
+                                <span className="font-semibold text-sm">{msg.sender?.profile?.name || 'User'}</span>
+                                {msg.sender?.role && (
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {msg.sender.role}
+                                  </Badge>
+                                )}
+                                <span className="text-xs text-gray-500">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                               </div>
-                              <p className="text-sm text-gray-700">{msg.message}</p>
+                              <div className={`p-3 rounded-lg ${msg.sender?._id === user.id ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>
+                                <p className="text-sm">{msg.message}</p>
+                              </div>
                             </div>
                           </div>
                         ))}
+                        <div ref={chatEndRef} />
                       </div>
                     </ScrollArea>
 
@@ -662,17 +746,35 @@ export const EventDetailsPage = () => {
                         <AlertDescription>
                           Only students can register for events
                         </AlertDescription>
-                      </Alert>
-                    ) : registrationStatus?.registrationStatus === 'confirmed' ? (
-                      <Alert className="bg-green-50 border-green-200">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
-                          You are already registered for this event! Check your inbox for confirmation details.
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <form onSubmit={handleRegistrationSubmit} className="space-y-6">
-                        {registrationForm?.registrationConfig?.registrationType === 'Team' && (
+                      </Alert>                    
+                    ) : registrationStatus ? (
+                      <div className="text-center p-4 border border-dashed rounded-lg">
+                        {registrationStatus.registrationStatus === 'confirmed' && (
+                          <>
+                            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold">You are Registered!</h3>
+                            <p className="text-muted-foreground">Your registration is confirmed. Your check-in code will be sent to your inbox.</p>
+                          </>
+                        )}
+                        {registrationStatus.registrationStatus === 'pending' && (
+                          <>
+                            <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold">Registration Pending</h3>
+                            <p className="text-muted-foreground">Your registration is awaiting approval from the organizers.</p>
+                          </>
+                        )}
+                        {registrationStatus.registrationStatus === 'cancelled' && (
+                          <>
+                            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold">Registration Cancelled</h3>
+                            <p className="text-muted-foreground">Your registration for this event has been cancelled.</p>
+                          </>
+                        )}
+                        <p className="text-sm mt-4">Payment Status: <Badge variant="outline">{registrationStatus.paymentStatus}</Badge></p>
+                      </div>
+                    ) : (                      
+                      <form onSubmit={handleRegistrationSubmit} className="space-y-6">                        
+                        {event?.config?.registrationType === 'Team' && (
                           <div className="space-y-2">
                             <Label htmlFor="teamName">Team Name *</Label>
                             <Input
@@ -681,15 +783,15 @@ export const EventDetailsPage = () => {
                               placeholder="Enter your team name"
                               onChange={(e) => handleRegistrationFormChange('teamName', e.target.value)}
                             />
-                            {registrationForm?.registrationConfig?.teamSizeRange && (
+                            {event?.config?.teamSizeRange && (
                               <p className="text-sm text-gray-500">
-                                Team size: {registrationForm.registrationConfig.teamSizeRange.min} - {registrationForm.registrationConfig.teamSizeRange.max} members
+                                Team size: {event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members
                               </p>
                             )}
                           </div>
                         )}
 
-                        {registrationForm?.registrationConfig?.fees > 0 && (
+                        {event?.config?.fees > 0 && (
                           <div className="space-y-4 border-t pt-4">
                             <div className="flex items-center justify-between">
                               <Label>Registration Fee</Label>
@@ -710,40 +812,41 @@ export const EventDetailsPage = () => {
 
                             <div className="space-y-2">
                               <Label htmlFor="paymentProof">Upload Payment Proof *</Label>
-                              <Input
+                              <Input 
                                 id="paymentProof"
-                                type="file"
+                                type="url"
                                 required
-                                accept="image/*"
-                                onChange={(e) => handleRegistrationFormChange('paymentProof', e.target.files?.[0])}
+                                placeholder="https://your-payment-proof-url.com/image.jpg"
+                                onChange={(e) => handleRegistrationFormChange('paymentProof', e.target.value)}
                               />
                             </div>
                           </div>
                         )}
 
-                        {registrationForm?.registrationConfig?.registrationFields?.map((field, idx) => (
+                        {event?.config?.registrationFields?.map((field, idx) => (
                           <div key={idx} className="space-y-2">
                             <Label htmlFor={`field-${idx}`}>
                               {field.title} {field.required && '*'}
                             </Label>
-                            {field.description && (
-                              <p className="text-sm text-gray-500">{field.description}</p>
-                            )}
-                            {field.type === 'text' && (
+                            {field.description && <p className="text-sm text-gray-500">{field.description}</p>}
+                            {field.inputType === 'text' && (
                               <Input
                                 id={`field-${idx}`}
                                 required={field.required}
-                                onChange={(e) => handleRegistrationFormChange(field.title, e.target.value)}
+                                onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
                               />
                             )}
-                            {field.type === 'textarea' && (
+                            {field.inputType === 'textarea' && (
                               <Textarea
                                 id={`field-${idx}`}
                                 required={field.required}
-                                onChange={(e) => handleRegistrationFormChange(field.title, e.target.value)}
+                                onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
                               />
                             )}
-                            {field.type === 'file' && (
+                            {['number', 'date', 'time'].includes(field.inputType) && (
+                              <Input id={`field-${idx}`} type={field.inputType} required={field.required} onChange={(e) => handleCustomFieldChange(field.title, e.target.value)} />
+                            )}
+                            {field.inputType === 'file' && (
                               <Input
                                 id={`field-${idx}`}
                                 type="file"
@@ -800,7 +903,7 @@ export const EventDetailsPage = () => {
                               <div className="flex gap-3">
                                 <Button
                                   variant="outline"
-                                  onClick={() => navigate(`/sponsor-profile/${sponsor._id}`)}
+                                  onClick={() => navigate(`/sponsors/${sponsor._id}`)}
                                 >
                                   <UserIcon className="w-4 h-4 mr-2" />
                                   View Profile
@@ -816,6 +919,16 @@ export const EventDetailsPage = () => {
                       <AlertDescription>No sponsors for this event yet</AlertDescription>
                     </Alert>
                   )}
+                </TabsContent>
+
+                <TabsContent value="map" className="p-6">
+                   <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
+                    <MapPin className="w-6 h-6" />
+                    Event Map
+                  </h2>
+                  <Card className="overflow-hidden">
+                    <AnnotatedMapView eventId={id} />
+                  </Card>
                 </TabsContent>
               </Tabs>
             </Card>
@@ -870,10 +983,9 @@ export const EventDetailsPage = () => {
                 )}
               </div>
 
-              {isStudentView && !isRegistered && (
+              {isStudentView && registrationStatus?.registrationStatus !== 'confirmed' && (
                 <Button
-                  onClick={handleRegister}
-                  disabled={registering || hasClash}
+                  disabled={registering}
                   className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
                   {registering ? 'Registering...' : 'Register Now'}

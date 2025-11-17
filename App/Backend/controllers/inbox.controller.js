@@ -482,7 +482,7 @@ export const approveInboxEntity = async (req, res) => {
       }
     }
 
-    if (inbox.type === "registration_approval") {
+    if (inbox.type === "registration_approval_request") {
       const studentId = inbox.from?._id || inbox.from;
       const eventId = inbox.relatedEvent?._id || inbox.relatedEvent;
 
@@ -490,12 +490,23 @@ export const approveInboxEntity = async (req, res) => {
       if (!registration)
         return res.status(404).json({ message: "No registration found" });
 
-      registration.paymentStatus = "Paid";
-      registration.status = "Approved";
+      registration.paymentStatus = "verified";
+      registration.status = "confirmed";
       await registration.save();
 
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
 
+      const event = await Event.findById(eventId);
+      const checkInCode = registration.checkInCode;
+      await InboxEntity.create({
+        type: "message",
+        from: inbox.to,
+        to: studentId,
+        relatedEvent: eventId,
+        title: `Registration Approved for ${event.title}`,
+        description: `🎉 You have successfully registered for "${event.title}". Your check-in code is: ${checkInCode}`,
+        status: "Sent",
+      });
       return res.status(200).json({
         success: true,
         message: "Registration approved successfully",

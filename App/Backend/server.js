@@ -22,6 +22,7 @@ import inboxRoute from "./routes/inbox.route.js";
 import registrationRouter from './routes/event_routes/registration.route.js';
 import analyticsRoutes from './routes/organizer_routes/analytics.route.js'; 
 import geocodingRouter from './routes/geocoding.route.js';
+import eventInteractionRouter from './routes/event_routes/event.interaction.route.js';
 
 const app = express();
 dotenv.config();
@@ -55,6 +56,7 @@ app.use("/api/inbox", inboxRoute);
 app.use('/api/registrations', registrationRouter);
 app.use('/api/analytics', analyticsRoutes); 
 app.use('/api/geocode', geocodingRouter);
+app.use('/api/event', eventInteractionRouter);
 
 app.get("/", authentication, authorizeRoles("student","organizer", "sponsor", "admin"), (req, res) => {
   res.send("Campus Event Management Backend Running...");

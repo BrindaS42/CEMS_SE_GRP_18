@@ -51,7 +51,15 @@ export const getListOfAllEvents = async (req, res) => {
 
 export const getEventDetailsByID = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.eventId);
+    const event = await Event.findById(req.params.eventId)
+      .populate({
+        path: "createdBy",
+        populate: [{ path: "leader", select: "profile" }, { path: "members.user", select: "profile" }]
+      })
+      .populate({ path: 'subEvents.subevent', select: 'title description timeline' })
+      .populate("ratings.by", "profile")
+      .populate("sponsors", "profile");
+
     if (!event) return res.status(404).json({ success: false, message: "Event not found" });
     res.status(200).json({ success: true, event });
   } catch (error) {
@@ -138,8 +146,7 @@ export const addRatingReviewByEID = async (req, res) => {
 
 export const getListOfRatingReviewByEID = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.eventId).populate("ratings.by", "name");
-    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
+    const event = await Event.findById(req.params.eventId).populate("ratings.by", "profile");
 
     res.status(200).json({ success: true, reviews: event.ratings });
   } catch (error) {

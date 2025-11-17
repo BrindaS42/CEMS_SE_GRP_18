@@ -100,7 +100,7 @@ const studentEventsSlice = createSlice({
       .addCase(fetchPublicEvents.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchPublicEvents.fulfilled, (state, action) => { state.loading = false; state.events = action.payload.data; state.pagination = action.payload.pagination; })
       .addCase(fetchPublicEvents.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
-      .addCase(fetchEventDetails.fulfilled, (state, action) => { state.currentEvent = action.payload })
+      .addCase(fetchEventDetails.fulfilled, (state, action) => { state.loading = false; state.currentEvent = action.payload.event; })
       .addCase(fetchEventAnnouncements.fulfilled, (state, action) => { state.announcements = action.payload })
       .addCase(fetchEventSponsors.fulfilled, (state, action) => { state.sponsors = action.payload.sponsors || [] })
       .addCase(fetchEventReviews.fulfilled, (state, action) => { state.reviews = action.payload.reviews || [] })

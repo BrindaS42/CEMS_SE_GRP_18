@@ -76,6 +76,13 @@ const eventInteractionSlice = createSlice({
       .addCase(sendMessage.pending, (state) => {
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
+        // Optimistically add the sent message to the state for instant UI update.
+        // The socket listener will handle messages from other users.
+        const newMessage = action.payload;
+        const exists = state.messages.find(msg => msg._id === newMessage._id);
+        if (!exists) {
+          state.messages.push(newMessage);
+        }
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.error = action.payload;

@@ -16,6 +16,6 @@ router.post("/submit", authentication, authorizeRoles("student"),submitRegistrat
 
 router.get("/:eventId/:participantId/status", authentication, authorizeRoles("student"), getRegistrationStatusByEIDPID);
 
-router.post("/checkin", authentication, authorizeRoles("student"), markCheckIn);
+router.post("/checkin", authentication, authorizeRoles( "organizer"), markCheckIn);
 
 export default router;
