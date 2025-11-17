@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     passwordForgotTokenExpires: {
       type: Date,
     },
-    
+
     passwordResetTokenExpires: {
       type: Date,
     },
@@ -44,15 +44,15 @@ const userSchema = new mongoose.Schema(
       enum: ["jwt", "google", "github"],
       default: "jwt",
     },
-    email: { 
-      type: String, 
-      required: true, 
-      unique: false 
+    email: {
+      type: String,
+      required: true,
+      unique: false
     },
-    college : { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "College", 
-      required: function() {
+    college: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "College",
+      required: function () {
         return this.role === 'student' || this.role === 'organizer';
       }
     },
@@ -82,18 +82,25 @@ const userSchema = new mongoose.Schema(
 
     resumeUrl: { type: String },
 
-    achievements: [
-      {
-        title: String,
-        description: String,
-        proofUrl: String,
-      },
-    ],
-
     sponsorDetails: {
       firmDescription: String,
       firmLogo: String,
       links: [String],
+      poc: {
+        name: String,
+        contactNo: String,
+        email: String,
+        role: String
+      },
+      banner : String,
+      locations :
+      [{
+        address: String,
+        title: String,
+        description: String,
+        mapLink: String,
+      }]
+
     },
   },
   {

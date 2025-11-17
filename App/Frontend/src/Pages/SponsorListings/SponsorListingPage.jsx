@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllSponsors, fetchSponsorAds } from '@/store/sponsor.slice';
 import { motion } from 'motion/react';
 import { Building2, ExternalLink, Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,127 +9,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { sponsorService } from '@/services/sponsorService';
 import { toast } from 'sonner';
 
 export const SponsorListingPage = () => {
   const navigate = useNavigate();
-  const [sponsors, setSponsors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { sponsors, ads, loading: isLoading } = useSelector((state) => state.sponsor);
+
   const [selectedSponsor, setSelectedSponsor] = useState(null);
   const [showAdsDialog, setShowAdsDialog] = useState(false);
-  const [sponsorAds, setSponsorAds] = useState([]);
   const [loadingAds, setLoadingAds] = useState(false);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
   useEffect(() => {
-    fetchSponsors();
-  }, []);
-
-  const fetchSponsors = async () => {
-    try {
-      // Mock data for demonstration
-      setSponsors([
-        {
-          _id: '1',
-          name: 'TechCorp Solutions',
-          email: 'contact@techcorp.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=400&fit=crop',
-            firmDescription: 'Leading provider of enterprise software solutions, specializing in cloud computing and AI technologies. We partner with educational institutions to foster innovation.',
-            links: ['https://techcorp.com', 'https://careers.techcorp.com'],
-          },
-        },
-        {
-          _id: '2',
-          name: 'InnovateTech',
-          email: 'hello@innovatetech.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=400&fit=crop',
-            firmDescription: 'Innovative tech startup focused on building next-generation mobile applications and web platforms for the education sector.',
-            links: ['https://innovatetech.com'],
-          },
-        },
-        {
-          _id: '3',
-          name: 'DataDrive Analytics',
-          email: 'info@datadrive.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop',
-            firmDescription: 'Data analytics and business intelligence company helping organizations make data-driven decisions through advanced analytics.',
-            links: ['https://datadrive.com', 'https://blog.datadrive.com'],
-          },
-        },
-        {
-          _id: '4',
-          name: 'CloudScale Systems',
-          email: 'contact@cloudscale.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=400&fit=crop',
-            firmDescription: 'Cloud infrastructure and DevOps solutions provider, empowering businesses to scale their operations efficiently and securely.',
-            links: ['https://cloudscale.com'],
-          },
-        },
-        {
-          _id: '5',
-          name: 'CyberShield Security',
-          email: 'hello@cybershield.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=400&fit=crop',
-            firmDescription: 'Cybersecurity firm specializing in threat detection, prevention, and security training for enterprises and educational institutions.',
-            links: ['https://cybershield.com', 'https://training.cybershield.com'],
-          },
-        },
-        {
-          _id: '6',
-          name: 'GreenEnergy Solutions',
-          email: 'info@greenenergy.com',
-          sponsorDetails: {
-            firmLogo: 'https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=400&fit=crop',
-            firmDescription: 'Renewable energy company committed to sustainable solutions, partnering with colleges to promote green technology and environmental awareness.',
-            links: ['https://greenenergy.com'],
-          },
-        },
-      ]);
-    } catch (err) {
-      toast.error('Failed to load sponsors');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    dispatch(fetchAllSponsors());
+  }, [dispatch]);
 
   const handleViewProfile = (sponsorId) => {
     navigate(`/sponsors/${sponsorId}`);
   };
 
   const handleViewAds = async (sponsor) => {
+    setLoadingAds(true);
     setSelectedSponsor(sponsor);
     setShowAdsDialog(true);
-    setLoadingAds(true);
     setCurrentAdIndex(0);
 
     try {
-      // Mock ads data
-      setSponsorAds([
-        {
-          _id: '1',
-          imageUrl: 'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=800&h=400&fit=crop',
-          title: `${sponsor.name} - Innovation Summit 2024`,
-          description: 'Join us at the Innovation Summit',
-        },
-        {
-          _id: '2',
-          imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=400&fit=crop',
-          title: `${sponsor.name} - Career Opportunities`,
-          description: 'Explore exciting career paths with us',
-        },
-        {
-          _id: '3',
-          imageUrl: 'https://images.unsplash.com/photo-1559223607-a43c990aa8f5?w=800&h=400&fit=crop',
-          title: `${sponsor.name} - Workshop Series`,
-          description: 'Hands-on technical workshops',
-        },
-      ]);
+      // Dispatch the thunk to fetch ads for the selected sponsor
+      await dispatch(fetchSponsorAds(sponsor._id)).unwrap();
     } catch (err) {
       toast.error('Failed to load advertisements');
     } finally {
@@ -136,11 +46,11 @@ export const SponsorListingPage = () => {
   };
 
   const nextAd = () => {
-    setCurrentAdIndex((prev) => (prev + 1) % sponsorAds.length);
+    setCurrentAdIndex((prev) => (prev + 1) % ads.length);
   };
 
   const prevAd = () => {
-    setCurrentAdIndex((prev) => (prev - 1 + sponsorAds.length) % sponsorAds.length);
+    setCurrentAdIndex((prev) => (prev - 1 + ads.length) % ads.length);
   };
 
   return (
@@ -205,22 +115,22 @@ export const SponsorListingPage = () => {
                     <CardHeader className="pb-4">
                       <div className="aspect-video w-full rounded-lg overflow-hidden bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mb-4">
                         <img
-                          src={sponsor.sponsorDetails.firmLogo}
+                          src={sponsor.sponsorDetails?.firmLogo}
                           alt={sponsor.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <CardTitle className="flex items-center gap-2">
                         <Building2 className="h-5 w-5 text-emerald-600" />
-                        {sponsor.name}
+                        {sponsor.profile?.name || 'Sponsor Name'}
                       </CardTitle>
                       <CardDescription className="line-clamp-3">
-                        {sponsor.sponsorDetails.firmDescription}
+                        {sponsor.sponsorDetails?.firmDescription}
                       </CardDescription>
                     </CardHeader>
 
                     <CardContent className="flex-1">
-                      {sponsor.sponsorDetails.links && sponsor.sponsorDetails.links.length > 0 && (
+                      {sponsor.sponsorDetails?.links && sponsor.sponsorDetails.links?.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {sponsor.sponsorDetails.links.map((link, idx) => (
                             <Badge key={idx} variant="outline" className="text-xs">
@@ -262,7 +172,7 @@ export const SponsorListingPage = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-emerald-600" />
-              {selectedSponsor?.name} - Advertisements
+              {selectedSponsor?.profile?.name} - Advertisements
             </DialogTitle>
             <DialogDescription>
               Browse through the sponsor's promotional content
@@ -273,7 +183,7 @@ export const SponsorListingPage = () => {
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
             </div>
-          ) : sponsorAds.length > 0 ? (
+          ) : ads.length > 0 ? (
             <div className="relative">
               <div className="overflow-hidden rounded-lg">
                 <motion.div
@@ -284,19 +194,19 @@ export const SponsorListingPage = () => {
                   transition={{ duration: 0.3 }}
                 >
                   <img
-                    src={sponsorAds[currentAdIndex].imageUrl}
-                    alt={sponsorAds[currentAdIndex].title}
+                    src={ads[currentAdIndex].images[0] || ads[currentAdIndex].poster}
+                    alt={ads[currentAdIndex].title}
                     className="w-full h-96 object-cover rounded-lg"
                   />
                   <div className="mt-4">
-                    <h3 className="text-xl mb-2">{sponsorAds[currentAdIndex].title}</h3>
-                    <p className="text-gray-600">{sponsorAds[currentAdIndex].description}</p>
+                    <h3 className="text-xl mb-2">{ads[currentAdIndex].title}</h3>
+                    <p className="text-gray-600">{ads[currentAdIndex].description}</p>
                   </div>
                 </motion.div>
               </div>
 
               {/* Carousel Controls */}
-              {sponsorAds.length > 1 && (
+              {ads.length > 1 && (
                 <>
                   <button
                     onClick={prevAd}
@@ -317,7 +227,7 @@ export const SponsorListingPage = () => {
 
                   {/* Dots Indicator */}
                   <div className="flex justify-center gap-2 mt-4">
-                    {sponsorAds.map((_, idx) => (
+                    {ads.map((_, idx) => (
                       <button
                         key={idx}
                         onClick={() => setCurrentAdIndex(idx)}

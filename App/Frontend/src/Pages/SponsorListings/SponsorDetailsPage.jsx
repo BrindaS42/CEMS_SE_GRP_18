@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'motion/react';
 import {
   Building2,
@@ -22,135 +23,33 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { sponsorService } from '@/services/sponsorService';
+import { fetchSponsorById, fetchSponsorAds, clearSelectedSponsor } from '@/store/sponsor.slice';
 import { toast } from 'sonner';
 
 export const SponsorDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [sponsor, setSponsor] = useState(null);
-  const [ads, setAds] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const dispatch = useDispatch();
+  const { selectedSponsor: sponsor, ads, loading, error } = useSelector((state) => state.sponsor);
 
   useEffect(() => {
     if (id) {
-      fetchSponsorDetails();
-      fetchSponsorAds();
+      dispatch(fetchSponsorById(id));
+      dispatch(fetchSponsorAds(id));
     }
-  }, [id]);
 
-  const fetchSponsorDetails = async () => {
-    try {
-      // Mock sponsor data
-      setSponsor({
-        _id: id,
-        name: 'TechCorp Solutions',
-        email: 'contact@techcorp.com',
-        phone: '+1 234 567 8900',
-        website: 'https://techcorp.com',
-        sponsorDetails: {
-          firmLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=800&h=600&fit=crop',
-          firmDescription: 'Leading provider of enterprise software solutions, specializing in cloud computing, AI technologies, and digital transformation. We partner with educational institutions to foster innovation and prepare students for the future of technology. With over 20 years of experience, we have helped thousands of organizations achieve their digital goals.',
-          aboutUs: 'Founded in 2000, TechCorp Solutions has been at the forefront of technological innovation. Our mission is to empower businesses and educational institutions with cutting-edge solutions that drive growth and efficiency. We believe in the power of technology to transform lives and create opportunities.',
-          links: ['https://techcorp.com', 'https://careers.techcorp.com', 'https://blog.techcorp.com'],
-          products: [
-            {
-              name: 'Cloud Platform Pro',
-              description: 'Enterprise-grade cloud infrastructure solution',
-              image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop',
-              price: '₹50,000/month',
-            },
-            {
-              name: 'AI Analytics Suite',
-              description: 'Advanced analytics powered by artificial intelligence',
-              image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-              price: '₹75,000/month',
-            },
-            {
-              name: 'DevOps Toolchain',
-              description: 'Complete DevOps automation and CI/CD pipeline',
-              image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=400&h=300&fit=crop',
-              price: '₹40,000/month',
-            },
-          ],
-          stallLocation: 'Main Campus, Building A, Ground Floor, Stall #12',
-          businessAddress: '123 Tech Park, Silicon Valley, San Francisco, CA 94025, USA',
-          pocName: 'John Smith',
-          pocEmail: 'john.smith@techcorp.com',
-          pocPhone: '+1 234 567 8901',
-        },
-      });
-    } catch (error) {
-      console.error('Failed to fetch sponsor details:', error);
-      toast.error('Failed to load sponsor details');
-    } finally {
-      setLoading(false);
+    // Cleanup function to clear data when the component unmounts
+    return () => {
+      dispatch(clearSelectedSponsor());
+    };
+  }, [id, dispatch]);
+
+  console.log('Sponsor Details:', sponsor);
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
     }
-  };
-
-  const fetchSponsorAds = async () => {
-    try {
-      // Mock ads data based on SponsorAd schema
-      setAds([
-        {
-          _id: '1',
-          title: 'Summer Internship Program 2024',
-          description: 'Join our exclusive internship program and work on cutting-edge projects with industry experts',
-          images: [
-            'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=1200&h=600&fit=crop',
-          ],
-          videos: ['https://www.youtube.com/embed/dQw4w9WgXcQ'],
-          address: 'Stall #12, Main Campus Building A',
-          contact: '+1 234 567 8900',
-          poster: 'https://images.unsplash.com/photo-1557426272-fc759fdf7a8d?w=1200&h=600&fit=crop',
-          views: 1234,
-          likes: 89,
-          status: 'Published',
-        },
-        {
-          _id: '2',
-          title: 'Tech Workshop Series',
-          description: 'Free workshops on AI, Cloud Computing, and Web Development for all students',
-          images: [
-            'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop',
-          ],
-          videos: [],
-          address: 'Stall #12, Main Campus Building A',
-          contact: '+1 234 567 8900',
-          poster: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=600&fit=crop',
-          views: 892,
-          likes: 67,
-          status: 'Published',
-        },
-        {
-          _id: '3',
-          title: 'Campus Recruitment Drive',
-          description: 'We are hiring! Multiple openings for freshers and experienced professionals',
-          images: [
-            'https://images.unsplash.com/photo-1559223607-a43c990aa8f5?w=1200&h=600&fit=crop',
-          ],
-          videos: [],
-          address: 'Stall #12, Main Campus Building A',
-          contact: '+1 234 567 8900',
-          poster: 'https://images.unsplash.com/photo-1559223607-a43c990aa8f5?w=1200&h=600&fit=crop',
-          views: 2156,
-          likes: 143,
-          status: 'Published',
-        },
-      ]);
-    } catch (error) {
-      console.error('Failed to fetch ads:', error);
-    }
-  };
-
-  const nextAd = () => {
-    setCurrentAdIndex((prev) => (prev + 1) % ads.length);
-  };
-
-  const prevAd = () => {
-    setCurrentAdIndex((prev) => (prev - 1 + ads.length) % ads.length);
-  };
+  }, [error]);
 
   if (loading) {
     return (
@@ -206,15 +105,15 @@ export const SponsorDetailsPage = () => {
           className="relative h-96 rounded-3xl overflow-hidden mb-8 shadow-2xl"
         >
           <img
-            src={sponsor.sponsorDetails.firmLogo}
-            alt={sponsor.name}
+            src={sponsor.sponsorDetails?.banner || sponsor.sponsorDetails?.firmLogo}
+            alt={sponsor.profile?.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-24 h-24 bg-white rounded-xl p-2">
-                <Building2 className="w-full h-full text-emerald-600" />
+                <img src={sponsor.sponsorDetails?.firmLogo} alt={sponsor.profile?.name} className="w-full h-full object-contain" />
               </div>
               <div className="flex-1">
                 <h1 className="text-4xl md:text-6xl font-black mb-2">{sponsor.name}</h1>
@@ -237,10 +136,10 @@ export const SponsorDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700 leading-relaxed mb-4">
-                  {sponsor.sponsorDetails.firmDescription}
+                  {sponsor.sponsorDetails?.firmDescription || 'No description provided.'}
                 </p>
                 <p className="text-gray-700 leading-relaxed">
-                  {sponsor.sponsorDetails.aboutUs}
+                  {/* The 'aboutUs' field is not in the user model, you might want to add it or remove this line */}
                 </p>
               </CardContent>
             </Card>
@@ -256,7 +155,7 @@ export const SponsorDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {ads.map((ad) => (
+                  {ads && ads.map((ad) => (
                     <Card key={ad._id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                       <img
                         src={ad.images[0] || ad.poster}
@@ -290,26 +189,30 @@ export const SponsorDetailsPage = () => {
               </CardContent>
             </Card>
 
-            {/* Locations */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-emerald-600" />
-                  Locations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Stall Location (Campus)</h4>
-                  <p className="text-gray-600">{sponsor.sponsorDetails.stallLocation}</p>
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="font-semibold mb-2">Business Office</h4>
-                  <p className="text-gray-600">{sponsor.sponsorDetails.businessAddress}</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Locations - Updated to use the locations array */}
+            {sponsor.sponsorDetails?.locations && sponsor.sponsorDetails.locations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    Our Locations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {sponsor.sponsorDetails.locations.map((loc, index) => (
+                    <div key={index}>
+                      <h4 className="font-semibold mb-1">{loc.title}</h4>
+                      <p className="text-gray-600 text-sm mb-2">{loc.address}</p>
+                      {loc.description && <p className="text-gray-500 text-xs mb-2">{loc.description}</p>}
+                      {loc.mapLink && (
+                        <a href={loc.mapLink} target="_blank" rel="noopener noreferrer" className="text-emerald-600 text-sm font-semibold hover:underline">View on Map</a>
+                      )}
+                      {index < sponsor.sponsorDetails.locations.length - 1 && <Separator className="mt-6" />}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -328,8 +231,8 @@ export const SponsorDetailsPage = () => {
                         <Building2 className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="font-semibold">{sponsor.sponsorDetails.pocName}</p>
-                        <p className="text-xs text-gray-500">Account Manager</p>
+                        <p className="font-semibold">{sponsor.sponsorDetails?.poc?.name || 'N/A'}</p>
+                        <p className="text-xs text-gray-500">{sponsor.sponsorDetails?.poc?.role || "sponsor"}</p>
                       </div>
                     </div>
 
@@ -339,7 +242,7 @@ export const SponsorDetailsPage = () => {
                       <Mail className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs text-gray-500 mb-1">Email</p>
-                        <p className="font-medium text-sm break-all">{sponsor.sponsorDetails.pocEmail}</p>
+                        <p className="font-medium text-sm break-all">{sponsor.sponsorDetails?.poc?.email || sponsor.email}</p>
                       </div>
                     </div>
 
@@ -347,17 +250,17 @@ export const SponsorDetailsPage = () => {
                       <Phone className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs text-gray-500 mb-1">Phone</p>
-                        <p className="font-medium text-sm">{sponsor.sponsorDetails.pocPhone}</p>
+                        <p className="font-medium text-sm">{sponsor.sponsorDetails?.poc?.contactNo || sponsor.profile?.contactNo || 'N/A'}</p>
                       </div>
                     </div>
 
-                    {sponsor.website && (
+                    {sponsor.sponsorDetails?.links?.[0] && (
                       <div className="flex items-start gap-3">
                         <Globe className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Website</p>
                           <a
-                            href={sponsor.website}
+                            href={sponsor.sponsorDetails.links[0]}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-medium text-sm text-emerald-600 hover:underline flex items-center gap-1"
@@ -371,21 +274,18 @@ export const SponsorDetailsPage = () => {
                   </div>
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Contact Sponsor
-                </Button>
+                
               </CardContent>
             </Card>
 
             {/* Quick Links */}
-            {sponsor.sponsorDetails.links && sponsor.sponsorDetails.links.length > 0 && (
+            {sponsor.sponsorDetails?.links && sponsor.sponsorDetails.links.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Quick Links</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {sponsor.sponsorDetails.links.map((link, idx) => (
+                  {sponsor.sponsorDetails?.links.map((link, idx) => (
                     <a
                       key={idx}
                       href={link}

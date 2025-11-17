@@ -207,7 +207,7 @@ export const updateAuthProfile = createAsyncThunk(
   async (profileData, { rejectWithValue }) => {
     try {
       const response = await axios.put(`${API_BASE}/profile`, profileData);
-      return response.data?.profile || response.data;
+      return response.data; // Return the full user object from the backend
     } catch (error) {
       const message = error?.response?.data?.error || 'Failed to update profile';
       return rejectWithValue(message);
@@ -488,8 +488,10 @@ const authSlice = createSlice({
       })
       .addCase(updateAuthProfile.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.user = action.payload;
-        state.profile = action.payload?.profile || action.payload;
+        // The payload is the full updated user object.
+        // Merge its profile into the existing state to preserve root-level fields.
+        state.user = { ...state.user, ...action.payload };
+        state.profile = action.payload?.profile || state.profile;
       })
       .addCase(updateAuthProfile.rejected, (state, action) => {
         state.status = 'failed';

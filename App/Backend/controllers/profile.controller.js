@@ -24,12 +24,29 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const incomingProfile = req.body || {};
+    const { sponsorDetails, ...profileFields } = req.body || {};
 
-    // Replace entire profile subdocument with incoming fields
+    // Create a dynamic $set object to merge fields
+    const updateFields = {};
+
+    // Merge top-level profile fields
+    for (const key in profileFields) {
+      if (Object.prototype.hasOwnProperty.call(profileFields, key)) {
+        updateFields[`profile.${key}`] = profileFields[key];
+      }
+    }
+
+    // Merge sponsorDetails fields if they exist
+    if (sponsorDetails && typeof sponsorDetails === 'object') {
+      for (const key in sponsorDetails) {
+        if (Object.prototype.hasOwnProperty.call(sponsorDetails, key)) {
+          updateFields[`sponsorDetails.${key}`] = sponsorDetails[key];
+        }
+      }
+    }
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { $set: { profile: incomingProfile } },
+      { $set: updateFields },
       { new: true, runValidators: true }
     ); 
 

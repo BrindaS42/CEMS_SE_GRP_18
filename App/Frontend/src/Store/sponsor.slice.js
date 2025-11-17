@@ -22,8 +22,18 @@ export const fetchSponsorAds = createAsyncThunk('sponsor/fetchAds', async (spons
   }
 })
 
+export const fetchSponsorById = createAsyncThunk('sponsor/fetchById', async (sponsorId, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`${API_BASE}/sponsors/${sponsorId}`)
+    return res.data
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to load sponsor details')
+  }
+})
+
 const initialState = {
   sponsors: [],
+  selectedSponsor: null,
   ads: [],
   loading: false,
   error: null,
@@ -32,14 +42,27 @@ const initialState = {
 const sponsorSlice = createSlice({
   name: 'sponsor',
   initialState,
-  reducers: {},
+  reducers: {
+    clearSelectedSponsor: (state) => {
+      state.selectedSponsor = null;
+      state.ads = [];
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAllSponsors.pending, (state) => { state.loading = true; state.error = null })
       .addCase(fetchAllSponsors.fulfilled, (state, action) => { state.loading = false; state.sponsors = action.payload })
       .addCase(fetchAllSponsors.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(fetchSponsorAds.fulfilled, (state, action) => { state.ads = action.payload })
+      // Add cases for fetching a single sponsor
+      .addCase(fetchSponsorById.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchSponsorById.fulfilled, (state, action) => {
+        state.loading = false;
+        state.selectedSponsor = action.payload;
+      })
+      .addCase(fetchSponsorById.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
   }
 })
 
-export default sponsorSlice.reducer
+export const { clearSelectedSponsor } = sponsorSlice.actions;
+export default sponsorSlice.reducer;

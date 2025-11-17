@@ -17,6 +17,7 @@ import {
   Trophy,
   FileText,
   Camera,
+  Building,
   Link as LinkIcon,
   Briefcase,
   Flag,
@@ -82,14 +83,18 @@ export const ProfilePage = () => {
 
   // Profile is now loaded with auth, sync to local state when it changes
   useEffect(() => {
-    if (profile) {
-      setProfileData(profile);
+    if (user) {
+      // Combine profile and sponsorDetails from the main user object
+      setProfileData({
+        ...user.profile,
+        sponsorDetails: user.sponsorDetails || {},
+      });
     }
-  }, [profile]);
+  }, [user]);
 
   const handleSaveProfile = async () => {
     setLoading(true);
-    try {
+    try { 
       await dispatch(updateAuthProfile(profileData)).unwrap();
       toast.success('Profile updated successfully!');
       setIsEditing(false);
@@ -165,8 +170,8 @@ export const ProfilePage = () => {
   };
 
   const getInitials = () => {
-    if (profileData.name) {
-      return profileData.name
+    if (profileData?.name) {
+      return profileData?.name
         .split(' ')
         .map(n => n[0])
         .join('')
@@ -186,6 +191,14 @@ export const ProfilePage = () => {
   const handleReport = (reason) => {
     toast.success(`User reported for: ${reason}`);
     // In a real app, this would send a report to the backend
+  };
+
+  const ensureAbsoluteUrl = (url) => {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `https://${url}`;
   };
 
   return (
@@ -214,7 +227,7 @@ export const ProfilePage = () => {
                 {/* Profile Picture */}
                 <div className="relative">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                    <AvatarImage src={profileData.profilePic} alt={profileData.name} />
+                    <AvatarImage src={profileData?.profilePic} alt={profileData?.name} />
                     <AvatarFallback className={`text-3xl bg-gradient-to-br ${getRoleColor()} text-white`}>
                       {getInitials()}
                     </AvatarFallback>
@@ -244,7 +257,7 @@ export const ProfilePage = () => {
                         <Label htmlFor="name">Full Name</Label>
                         <Input
                           id="name"
-                          value={profileData.name || ''}
+                          value={profileData?.name || ''}
                           onChange={(e) =>
                             setProfileData({ ...profileData, name: e.target.value })
                           }
@@ -255,7 +268,7 @@ export const ProfilePage = () => {
                   ) : (
                     <>
                       <h1 className="text-3xl md:text-4xl font-black mb-2">
-                        {profileData.name  || 'Anonymous User'}
+                        {profileData?.name  || 'Anonymous User'}
                       </h1>
                       <Badge className={`bg-gradient-to-r ${getRoleColor()} text-white border-0 mb-4`}>
                         {user?.role?.toUpperCase()}
@@ -314,7 +327,7 @@ export const ProfilePage = () => {
                           variant="outline"
                           onClick={() => {
                             setIsEditing(false);
-                            setProfileData(profile || {});
+                            setProfileData({ ...user.profile, sponsorDetails: user.sponsorDetails || {} });
                           }}
                         >
                           <X className="w-4 h-4 mr-2" />
@@ -369,7 +382,7 @@ export const ProfilePage = () => {
                       <Input
                         id="phone"
                         type="tel"
-                        value={profileData.contactNo || ''}
+                        value={profileData?.contactNo || ''}
                         onChange={(e) =>
                           setProfileData({ ...profileData, contactNo: e.target.value })
                         }
@@ -377,7 +390,7 @@ export const ProfilePage = () => {
                       />
                     ) : (
                       <p className="text-gray-700">{profileData.contactNo || 'Not provided'}</p>
-                    )}
+                    )} 
                   </div>
 
                   <div>
@@ -389,14 +402,14 @@ export const ProfilePage = () => {
                       <Input
                         id="dob"
                         type="date"
-                        value={profileData.dob || ''}
+                        value={profileData?.dob ? new Date(profileData.dob).toISOString().split('T')[0] : ''}
                         onChange={(e) =>
                           setProfileData({ ...profileData, dob: e.target.value })
                         }
                       />
                     ) : (
                       <p className="text-gray-700">
-                        {profileData.dob
+                        {profileData?.dob
                           ? new Date(profileData.dob).toLocaleDateString()
                           : 'Not provided'}
                       </p>
@@ -411,14 +424,14 @@ export const ProfilePage = () => {
                     {isEditing ? (
                       <Input
                         id="address"
-                        value={profileData.address || ''}
+                        value={profileData?.address || ''}
                         onChange={(e) =>
                           setProfileData({ ...profileData, address: e.target.value })
                         }
                         placeholder="Enter address"
                       />
                     ) : (
-                      <p className="text-gray-700">{profileData.address || 'Not provided'}</p>
+                      <p className="text-gray-700">{profileData?.address || 'Not provided'}</p>
                     )}
                   </div>
 
@@ -430,15 +443,15 @@ export const ProfilePage = () => {
                     {isEditing ? (
                       <Input
                         id="linkedin"
-                        value={profileData.linkedin || ''}
+                        value={profileData?.linkedin || ''}
                         onChange={(e) =>
                           setProfileData({ ...profileData, linkedin: e.target.value })
                         }
                         placeholder="LinkedIn URL"
                       />
-                    ) : profileData.linkedin ? (
+                    ) : profileData?.linkedin ? (
                       <a
-                        href={profileData.linkedin}
+                        href={ensureAbsoluteUrl(profileData.linkedin)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline flex items-center gap-1"
@@ -458,15 +471,15 @@ export const ProfilePage = () => {
                     {isEditing ? (
                       <Input
                         id="github"
-                        value={profileData.github || ''}
+                        value={profileData?.github || ''}
                         onChange={(e) =>
                           setProfileData({ ...profileData, github: e.target.value })
                         }
                         placeholder="GitHub URL"
                       />
-                    ) : profileData.github ? (
+                    ) : profileData?.github ? (
                       <a
-                        href={profileData.github}
+                        href={ensureAbsoluteUrl(profileData.github)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:underline flex items-center gap-1"
@@ -479,6 +492,195 @@ export const ProfilePage = () => {
                   </div>
                 </div>
 
+                {/* Sponsor-specific fields */}
+                {isSponsorView && (
+                  <div className="mt-8 pt-8 border-t">
+                    <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                      <Building className="w-5 h-5" />
+                      Sponsor Details
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <Label htmlFor="firmDescription">Firm Description</Label>
+                        {isEditing ? (
+                          <Textarea
+                            id="firmDescription"
+                            value={profileData?.sponsorDetails?.firmDescription || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, firmDescription: e.target.value } })}
+                            placeholder="Describe your firm"
+                          />
+                        ) : (
+                          <p className="text-gray-700">{profileData.sponsorDetails?.firmDescription || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="firmLogo">Firm Logo URL</Label>
+                        {isEditing ? (
+                          <Input
+                            id="firmLogo"
+                            value={profileData?.sponsorDetails?.firmLogo || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, firmLogo: e.target.value } })}
+                            placeholder="URL for your firm's logo"
+                          />
+                        ) : profileData?.sponsorDetails?.firmLogo ? (
+                          <div className="w-24 h-24 rounded-lg overflow-hidden border bg-gray-50">
+                            <img
+                              src={profileData.sponsorDetails.firmLogo}
+                              alt="Firm Logo"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-gray-700">Not provided</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="pocName">Point of Contact Name</Label>
+                        {isEditing ? (
+                          <Input
+                            id="pocName"
+                            value={profileData?.sponsorDetails?.poc?.name || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, name: e.target.value } } })}
+                            placeholder="e.g., Jane Doe"
+                          />
+                        ) : (
+                          <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.name || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="pocEmail">Point of Contact Email</Label>
+                        {isEditing ? (
+                          <Input
+                            id="pocEmail"
+                            type="email"
+                            value={profileData?.sponsorDetails?.poc?.email || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, email: e.target.value } } })}
+                            placeholder="e.g., jane.doe@company.com"
+                          />
+                        ) : (
+                          <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.email || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="pocContactNo">Point of Contact Phone</Label>
+                        {isEditing ? (
+                          <Input
+                            id="pocContactNo"
+                            type="tel"
+                            value={profileData?.sponsorDetails?.poc?.contactNo || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, contactNo: e.target.value } } })}
+                            placeholder="e.g., +91 1234567890"
+                          />
+                        ) : (
+                          <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.contactNo || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="pocRole">Point of Contact Role</Label>
+                        {isEditing ? (
+                          <Input
+                            id="pocRole"
+                            value={profileData?.sponsorDetails?.poc?.role || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, role: e.target.value } } })}
+                            placeholder="e.g., Marketing Manager"
+                          />
+                        ) : (
+                          <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.role || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label htmlFor="banner">Banner Image URL</Label>
+                        {isEditing ? (
+                          <Input id="banner" value={profileData?.sponsorDetails?.banner || ''} onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, banner: e.target.value } })} placeholder="URL for a large banner image" />
+                        ) : (
+                          <p className="text-gray-700 truncate">{profileData?.sponsorDetails?.banner || 'Not provided'}</p>
+                        )}
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label htmlFor="links">Website & Social Links</Label>
+                        {isEditing ? (
+                          <Textarea
+                            id="links"
+                            value={profileData?.sponsorDetails?.links?.join('\n') || ''}
+                            onChange={(e) => setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, links: e.target.value.split('\n') } })}
+                            placeholder="Enter each URL on a new line"
+                          />
+                        ) : profileData?.sponsorDetails?.links && profileData.sponsorDetails.links.filter(l => l.trim()).length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {profileData.sponsorDetails.links.map((link, idx) => (
+                              link.trim() && (
+                                <a key={idx} href={ensureAbsoluteUrl(link)} target="_blank" rel="noopener noreferrer">
+                                  <Badge variant="outline" className="cursor-pointer hover:bg-gray-100">
+                                    <LinkIcon className="w-3 h-3 mr-1.5" />
+                                    Link {idx + 1}
+                                  </Badge>
+                                </a>
+                              )
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-700">Not provided</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Dynamic Locations Section */}
+                    {isEditing && (
+                      <div className="mt-6 pt-6 border-t">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-semibold">Locations</h4>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            const newLocations = [...(profileData.sponsorDetails?.locations || []), { title: '', address: '', description: '', mapLink: '' }];
+                            setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
+                          }}>
+                            <Plus className="w-4 h-4 mr-2" /> Add Location
+                          </Button>
+                        </div>
+                        <div className="space-y-4">
+                          {(profileData.sponsorDetails?.locations || []).map((loc, index) => (
+                            <div key={index} className="p-4 border rounded-lg relative">
+                              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => {
+                                const newLocations = profileData.sponsorDetails.locations.filter((_, i) => i !== index);
+                                setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
+                              }}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor={`loc-title-${index}`}>Title</Label>
+                                  <Input id={`loc-title-${index}`} value={loc.title} placeholder="e.g., Main Office" onChange={e => {
+                                    const newLocations = [...profileData.sponsorDetails.locations];
+                                    newLocations[index].title = e.target.value;
+                                    setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
+                                  }} />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`loc-address-${index}`}>Address</Label>
+                                  <Input id={`loc-address-${index}`} value={loc.address} placeholder="Full Address" onChange={e => {
+                                    const newLocations = [...profileData.sponsorDetails.locations];
+                                    newLocations[index].address = e.target.value;
+                                    setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
+                                  }} />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <Label htmlFor={`loc-map-${index}`}>Map Link</Label>
+                                  <Input id={`loc-map-${index}`} value={loc.mapLink} placeholder="Google Maps URL" onChange={e => {
+                                    const newLocations = [...profileData.sponsorDetails.locations];
+                                    newLocations[index].mapLink = e.target.value;
+                                    setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
+                                  }} />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+
+
                 {/* Resume Section - Students Only */}
                 {isStudentView && (
                   <div className="mt-8 pt-8 border-t">
@@ -486,10 +688,10 @@ export const ProfilePage = () => {
                       <FileText className="w-4 h-4" />
                       Resume
                     </Label>
-                    {profileData.resume ? (
+                    {profileData?.resume ? (
                       <div className="flex items-center gap-3">
                         <Button variant="outline" asChild>
-                          <a href={profileData.resume} target="_blank" rel="noopener noreferrer">
+                          <a href={profileData?.resume} target="_blank" rel="noopener noreferrer">
                             View Resume
                           </a>
                         </Button>
@@ -535,9 +737,9 @@ export const ProfilePage = () => {
                   )}
                 </div>
 
-                {profileData.pastAchievements && profileData.pastAchievements.length > 0 ? (
+                {profileData?.pastAchievements && profileData.pastAchievements.length > 0 ? (
                   <div className="space-y-4">
-                    {profileData.pastAchievements.map((achievement, index) => (
+                    {profileData?.pastAchievements.map((achievement, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 10 }}
@@ -597,9 +799,9 @@ export const ProfilePage = () => {
               <Card className="p-8">
                 <h2 className="text-2xl font-black mb-6">Areas of Interest</h2>
 
-                {profileData.areasOfInterest && profileData.areasOfInterest.length > 0 ? (
+                {profileData?.areasOfInterest && profileData.areasOfInterest.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
-                    {profileData.areasOfInterest.map((interest, index) => (
+                    {profileData?.areasOfInterest.map((interest, index) => (
                       <Badge
                         key={index}
                         variant="outline"
