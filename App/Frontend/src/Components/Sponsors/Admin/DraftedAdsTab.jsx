@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 
 // Proptype shape for SponsorAd
 const sponsorAdShape = PropTypes.shape({
-  id: PropTypes.number.isRequired,
+  _id: PropTypes.string.isRequired,
   sponsorId: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
@@ -34,12 +34,12 @@ const sponsorAdShape = PropTypes.shape({
   publishedAt: PropTypes.string,
 });
 
-export function DraftedAdsTab({ ads, onUpdateAd, onDeleteAd }) {
+export function DraftedAdsTab({ ads, onUpdateAd, onDeleteAd, onPublishAd }) {
   const [editingAd, setEditingAd] = useState(null);
   const [deletingAdId, setDeletingAdId] = useState(null);
 
   const handlePublish = (ad) => {
-    onUpdateAd({ ...ad, status: 'Published', publishedAt: new Date().toISOString() }, 'publish');
+    onPublishAd(ad._id);
     toast.success('Ad published successfully');
   };
 
@@ -70,7 +70,7 @@ export function DraftedAdsTab({ ads, onUpdateAd, onDeleteAd }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {ads.map((ad, index) => (
           <Card 
-            key={ad.id} 
+            key={ad._id} 
             className="p-4 hover:shadow-lg transition-shadow animate-fade-in-up"
             style={{ animationDelay: `${index * 50}ms` }}
           >
@@ -114,7 +114,7 @@ export function DraftedAdsTab({ ads, onUpdateAd, onDeleteAd }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setDeletingAdId(ad.id)}
+                  onClick={() => setDeletingAdId(ad._id)}
                   className="gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -144,7 +144,7 @@ export function DraftedAdsTab({ ads, onUpdateAd, onDeleteAd }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red hover:bg-red-dark">
+            <AlertDialogAction onClick={handleDelete} className="bg-red hover:bg-red-dark text-black">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -158,4 +158,5 @@ DraftedAdsTab.propTypes = {
   ads: PropTypes.arrayOf(sponsorAdShape).isRequired,
   onUpdateAd: PropTypes.func.isRequired,
   onDeleteAd: PropTypes.func.isRequired,
+  onPublishAd: PropTypes.func.isRequired,
 };

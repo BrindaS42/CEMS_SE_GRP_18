@@ -31,7 +31,7 @@ export function ViewLogModal({ open, onClose, event }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-screen-lg overflow-scroll" >
         <DialogHeader>
           <DialogTitle>Registration Logs for &quot;{event?.title}&quot;</DialogTitle>
           <DialogDescription>

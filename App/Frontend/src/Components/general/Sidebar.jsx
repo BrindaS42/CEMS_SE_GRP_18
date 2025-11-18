@@ -72,7 +72,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate 
 
     if (currentRole === 'sponsor') {
       return [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/sponsor/dashboard', id: 'dashboard', iconType: 'dashboard' },
         { icon: Wrench, label: 'Admin Panel', href: '/sponsor/admin', id: 'admin', iconType: 'admin' },
         { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
         { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },

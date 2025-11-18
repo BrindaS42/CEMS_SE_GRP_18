@@ -13,6 +13,7 @@ import eventInteractionReducer from './event.interaction.slice.js';
 import socketReducer from './socket.slice.js';
 import collegeReducer from './college.slice.js';
 import adminReducer from './admin.slice.js';
+import sponsorAdsReducer from './sponsorAds.slice.js';
 
 const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ const store = configureStore({
     socket: socketReducer,
     college: collegeReducer,
     admin: adminReducer,
+    sponsorAds: sponsorAdsReducer,
   },
 });
 

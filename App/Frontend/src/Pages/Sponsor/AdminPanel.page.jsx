@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Sidebar } from '../../components/general/Sidebar';
 import { Button } from '../../components/ui/button';
@@ -7,6 +8,13 @@ import { SegmentedControl } from '../../components/ui/segmented-control';
 import { CreateAdModal } from '../../components/Sponsors/Admin/CreateAdModal';
 import { DraftedAdsTab } from '../../components/Sponsors/Admin/DraftedAdsTab';
 import { PublishedAdsTab } from '../../components/Sponsors/Admin/PublishedAdsTab';
+import {
+  fetchSponsorAds,
+  createSponsorAd,
+  updateSponsorAd,
+  deleteSponsorAd,
+  publishSponsorAd,
+} from '../../store/sponsorAds.slice.js';
 
 // Re-using SponsorAd shape for prop validation
 const sponsorAdPropType = PropTypes.shape({
@@ -30,27 +38,52 @@ export default function AdminPanel({
   onNavigate, 
   isSidebarCollapsed, 
   onToggleSidebar,
-  openCreateAdModal = false,
-  ads,
-  onUpdateAd,
-  onDeleteAd,
+  openCreateAdModal: initialOpenCreateAdModal = false,
 }) {
+  const dispatch = useDispatch();
+  const { ads, status } = useSelector((state) => state.sponsorAds);
+  const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('drafted');
-  const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(openCreateAdModal);
+  const [isCreateAdModalOpen, setIsCreateAdModalOpen] = useState(initialOpenCreateAdModal);
 
   useEffect(() => {
-    if (openCreateAdModal) {
+    dispatch(fetchSponsorAds());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (initialOpenCreateAdModal) {
       setIsCreateAdModalOpen(true);
     }
-  }, [openCreateAdModal]);
+  }, [initialOpenCreateAdModal]);
 
   const handleCreateAd = () => {
     setIsCreateAdModalOpen(true);
   };
 
+  const handleSaveAd = (adData, action) => {
+    if (action === 'publish') {
+      if (adData._id) {
+        // If it's an existing draft, update it and then publish
+        dispatch(updateSponsorAd({ id: adData._id, adData })).then(() => {
+          dispatch(publishSponsorAd(adData._id));
+        });
+      } else {
+        // If it's a new ad, create it and then publish
+        dispatch(createSponsorAd({ ...adData, sponsorId: user.id })).then((result) => {
+          if (result.payload) dispatch(publishSponsorAd(result.payload._id));
+        });
+      }
+    } else { // 'save' action
+      if (adData._id) { // It's an update to a draft
+        dispatch(updateSponsorAd({ id: adData._id, adData }));
+      } else { // It's creating a new draft
+        dispatch(createSponsorAd({ ...adData, sponsorId: user.id }));
+      }
+    }
+  };
+
   const draftedAds = ads.filter(ad => ad.status === 'Drafted');
   const publishedAds = ads.filter(ad => ad.status === 'Published');
-
   return (
     <div className="flex h-screen bg-background pt-16">
       {/* Sidebar */}
@@ -90,14 +123,15 @@ export default function AdminPanel({
               {activeTab === 'drafted' && (
                 <DraftedAdsTab 
                   ads={draftedAds}
-                  onUpdateAd={onUpdateAd}
-                  onDeleteAd={onDeleteAd}
+                  onUpdateAd={handleSaveAd}
+                  onDeleteAd={(adId) => dispatch(deleteSponsorAd(adId))}
+                  onPublishAd={(adId) => dispatch(publishSponsorAd(adId))}
                 />
               )}
               {activeTab === 'published' && (
                 <PublishedAdsTab 
                   ads={publishedAds}
-                  onUpdateAd={onUpdateAd}
+                  onUpdateAd={handleSaveAd}
                 />
               )}
             </div>
@@ -109,7 +143,7 @@ export default function AdminPanel({
       <CreateAdModal 
         open={isCreateAdModalOpen}
         onClose={() => setIsCreateAdModalOpen(false)}
-        onSave={onUpdateAd}
+        onSave={handleSaveAd}
       />
     </div>
   );
@@ -119,8 +153,5 @@ AdminPanel.propTypes = {
   onNavigate: PropTypes.func,
   isSidebarCollapsed: PropTypes.bool.isRequired,
   onToggleSidebar: PropTypes.func.isRequired,
-  openCreateAdModal: PropTypes.bool,
-  ads: PropTypes.arrayOf(sponsorAdPropType).isRequired,
-  onUpdateAd: PropTypes.func.isRequired,
-  onDeleteAd: PropTypes.func.isRequired,
+  openCreateAdModal: PropTypes.bool
 };

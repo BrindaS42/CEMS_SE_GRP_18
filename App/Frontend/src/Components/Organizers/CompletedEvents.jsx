@@ -10,9 +10,9 @@ import {
 import { Star, Users, UserCheck, TrendingUp, Download, FileText, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import PropTypes from 'prop-types';
-import { ViewLogModal } from './Admin/ViewLogModal';
-import { ViewAttendanceModal } from './Admin/ViewAttendanceModal';
-import { ViewReviewModal } from './Admin/ViewReviewModal';
+import { ViewLogModal } from './Dashboard/ViewLogModal';
+import { ViewAttendanceModal } from './Dashboard/ViewAttendanceModal';
+import { ViewReviewModal } from './Dashboard/ViewReviewModal';
 
 const COLORS = ['#2D3E7E', '#FDB913', '#FF9F1C', '#F24333', '#6B8CAE'];
 
@@ -88,68 +88,9 @@ export function CompletedEvents({ events = [] }) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  {/* Enrolled Students */}
-                  <div>
-                    <h4 className="flex items-center gap-2 mb-3 text-gray-700">
-                      <Users className="w-4 h-4" />
-                      Enrolled Students ({(event.registrations || []).length})
-                    </h4>
-                    <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto">
-                      <ul className="space-y-2 text-sm">
-                        {(event.registrations || []).slice(0, 10).map((reg) => (
-                          <li key={reg._id} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-primary rounded-full"></div>
-                            {reg.studentId?.profile?.name || 'Unknown Student'}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Attended Students */}
-                  <div>
-                    <h4 className="flex items-center gap-2 mb-3 text-gray-700">
-                      <UserCheck className="w-4 h-4" />
-                      Attended Students ({(event.registrations || []).filter(r => r.checkIns?.some(c => c.status === 'present')).length})
-                    </h4>
-                    <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto">
-                      <ul className="space-y-2 text-sm">
-                        {(event.registrations || []).filter(r => r.checkIns?.some(c => c.status === 'present')).slice(0, 10).map((reg) => (
-                          <li key={reg._id} className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-accent rounded-full"></div>
-                            {reg.studentId?.profile?.name || 'Unknown Student'}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Reviews */}
-                  <div>
-                    <h4 className="flex items-center gap-2 mb-3 text-gray-700">
-                      <Star className="w-4 h-4" />
-                      Reviews ({(event.ratings || []).length})
-                    </h4>
-                    <div className="bg-muted rounded-lg p-4 max-h-48 overflow-y-auto space-y-3">
-                      {(event.ratings || []).slice(0, 5).map((review) => (
-                        <div key={review._id} className="border-b border-border pb-2 last:border-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm">{review.by?.profile?.name || 'Anonymous'}</span>
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: review.rating }).map((_, i) => (
-                                <Star key={i} className="w-3 h-3 text-secondary fill-secondary" />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground">{review.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 justify-center">
                   {/* Ratings Chart */}
-                  <div>
+                  <div className="md:col-span-2">
                     <h4 className="flex items-center gap-2 mb-3 text-gray-700">
                       <TrendingUp className="w-4 h-4" />
                       Ratings Distribution

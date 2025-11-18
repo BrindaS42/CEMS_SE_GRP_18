@@ -11,11 +11,9 @@ import ChangePasswordPage from './Pages/Authentication/ChangePasswordPage.jsx';
 import { CollegeRegistrationPage } from './Pages/Authentication/CollegeRegistrationPage.jsx';
 import { InboxPage } from './Pages/InboxPage.jsx';
 import { ProfilePage } from './Pages/ProfilePage.jsx';
-import { SettingsPage } from './Pages/SettingsPage.jsx';
 import { fetchAuthProfile } from './store/auth.slice.js';
 import StudentDashboard from './Pages/Student/Dashboard.page.jsx';
 import StudentAdminPanel from './Pages/Student/AdminPanel.page.jsx';
-import SponsorDashboard from './Pages/Sponsor/Dashboard.page.jsx';
 import SponsorAdminPanel from './Pages/Sponsor/AdminPanel.page.jsx';
 import OrganizerDashboard from './Pages/Organizer/Dashboard.page.jsx';
 import OrganizerAdminPanel from './Pages/Organizer/AdminPanel.page.jsx';
@@ -121,14 +119,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
 
       {/* Student Routes */}
       <Route
@@ -167,14 +157,6 @@ const AppRoutes = () => {
       />
 
       {/* Sponsor Routes */}
-      <Route
-        path="/sponsor/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['sponsor']}>
-            <SponsorDashboard />
-          </ProtectedRoute>
-        }
-      />
       <Route
         path="/sponsor/admin"
         element={

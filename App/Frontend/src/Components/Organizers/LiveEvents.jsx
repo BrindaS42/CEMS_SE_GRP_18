@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Calendar, Users, CheckCircle, Eye, FileText, UserCheck } from 'lucide-react';
-import { ViewLogModal } from './Admin/ViewLogModal';
-import { ViewAttendanceModal } from './Admin/ViewAttendanceModal';
-import { ViewReviewModal } from './Admin/ViewReviewModal';
+import { ViewLogModal } from './Dashboard/ViewLogModal';
+import { ViewAttendanceModal } from './Dashboard/ViewAttendanceModal';
+import { ViewReviewModal } from './Dashboard/ViewReviewModal';
 
 export function LiveEvents({ events, onViewEvent }) {
   const [selectedEvent, setSelectedEvent] = useState(null);

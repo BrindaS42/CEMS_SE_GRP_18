@@ -5,6 +5,9 @@ import InboxEntity from "../../models/inbox.model.js";
 import { populateEventDetails } from "./organizer.dashboard.controller.js";
 import { pythonClient } from "../../services/ai.service.js";
 
+const eventFieldsToSelect =
+  "title description status venue mode timeline registrations ratings announcements";
+
 const getEventPayload = (body) => {
   const {
     title,
@@ -225,12 +228,12 @@ export const publishEvent = async (req, res) => {
     }
 
     // Notify the AI service to add the event to its index
-    try {
-      await pythonClient.post(`/recommend/add/${event._id}`);
-    } catch (aiError) {
-      console.error(`AI Service: Failed to index published event ${event._id}`, aiError.message);
-      // This is a non-critical error, so we don't fail the whole request.
-    }
+    // try {
+    //   await pythonClient.post(`/recommend/add/${event._id}`);
+    // } catch (aiError) {
+    //   console.error(`AI Service: Failed to index published event ${event._id}`, aiError.message);
+    //   // This is a non-critical error, so we don't fail the whole request.
+    // }
     res.status(200).json({ message, event });
 
   } catch (err) {
@@ -296,12 +299,12 @@ export const completeEvent = async (req, res) => {
     await event.save();
 
     // Notify the AI service to remove the event from its index
-    try {
-      await pythonClient.delete(`/recommend/delete/${event._id}`);
-    } catch (aiError) {
-      console.error(`AI Service: Failed to de-index completed event ${event._id}`, aiError.message);
-      // Non-critical error.
-    }
+    // try {
+    //   await pythonClient.delete(`/recommend/delete/${event._id}`);
+    // } catch (aiError) {
+    //   console.error(`AI Service: Failed to de-index completed event ${event._id}`, aiError.message);
+    //   // Non-critical error.
+    // }
 
     // Repopulate to send back consistent data
     const updatedEvent = await Event.findById(id).select(eventFieldsToSelect).populate(populateEventDetails).populate({ path: 'announcements.author', select: 'profile.name email _id' });

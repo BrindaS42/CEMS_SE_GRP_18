@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,65 +19,40 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchAdById, clearSelectedAd, incrementAdView, toggleAdLike } from '@/store/sponsor.slice';
 
 const AdDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [ad, setAd] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { selectedAd: ad, loading } = useSelector((state) => state.sponsor);
+
   const [liked, setLiked] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
-    loadAdDetails();
-  }, [id]);
-
-  const loadAdDetails = async () => {
-    setLoading(true);
-    try {
-      const mockAd = {
-        _id: id || '1',
-        sponsorId: {
-          _id: 'sponsor1',
-          username: 'TechCorp',
-          email: 'contact@techcorp.com',
-          logo: 'https://via.placeholder.com/100',
-        },
-        title: 'Premium Tech Gadgets - Festival Special Offer',
-        description: 'Discover our latest collection of cutting-edge technology products. From smartphones to laptops, smartwatches to accessories - we have everything you need at amazing festival prices. Visit our stall for exclusive deals and live demonstrations!',
-        images: [
-          'https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=800',
-          'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800',
-          'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800',
-        ],
-        videos: [
-          'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        ],
-        address: 'Stall No. 15, Main Exhibition Area, College Ground',
-        actualAddress: '123 Tech Street, Innovation District, City - 400001',
-        contact: '+91 98765 43210',
-        poster: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800',
-        status: 'Published',
-        views: 1243,
-        likes: 87,
-        createdAt: new Date().toISOString(),
-      };
-
-      setAd(mockAd);
-    } catch (error) {
-      console.error('Failed to load ad details:', error);
-      toast.error('Failed to load advertisement details');
-    } finally {
-      setLoading(false);
+    if (id) {
+      dispatch(fetchAdById(id)).then(() => {
+        // Once the ad is fetched, increment its view count.
+        dispatch(incrementAdView(id));
+      });
     }
-  };
+    // Cleanup on unmount
+    return () => {
+      dispatch(clearSelectedAd());
+    };
+  }, [id, dispatch]);
 
   const handleLike = () => {
-    setLiked(!liked);
-    if (ad) {
-      setAd({ ...ad, likes: liked ? ad.likes - 1 : ad.likes + 1 });
+    if (!isAuthenticated) {
+      toast.error('Please log in to like this ad.');
+      return;
     }
-    toast.success(liked ? 'Removed from favorites' : 'Added to favorites');
+    const newLikedState = !liked;
+    setLiked(!liked);
+    dispatch(toggleAdLike({ adId: ad._id, liked: newLikedState }));
+    toast.success(newLikedState ? 'Added to favorites' : 'Removed from favorites');
   };
 
   if (loading) {
@@ -124,7 +100,7 @@ const AdDetailsPage = () => {
             >
               <Card className="overflow-hidden">
                 <div className="relative aspect-video bg-gray-100">
-                  <img
+                  <img 
                     src={ad.images[selectedImage] || ad.poster}
                     alt={ad.title}
                     className="w-full h-full object-cover"
@@ -242,19 +218,20 @@ const AdDetailsPage = () => {
             >
               <Card className="p-6">
                 <h3 className="font-semibold mb-4">Sponsored By</h3>
-                <div className="flex items-center gap-3 mb-4">
-                  {ad.sponsorId.logo && (
+                {ad.sponsorId && (
+                  <div className="flex items-center gap-3 mb-4">
+                  {ad.sponsorId.sponsorDetails?.firmLogo && (
                     <img
-                      src={ad.sponsorId.logo}
-                      alt={ad.sponsorId.username}
+                      src={ad.sponsorId.sponsorDetails.firmLogo}
+                      alt={ad.sponsorId.profile?.name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                   )}
                   <div>
-                    <p className="font-semibold">{ad.sponsorId.username}</p>
+                    <p className="font-semibold">{ad.sponsorId.profile?.name}</p>
                     <p className="text-sm text-gray-500">{ad.sponsorId.email}</p>
                   </div>
-                </div>
+                </div>)}
                 <Button
                   className="w-full"
                   onClick={() => navigate(`/sponsors/${ad.sponsorId._id}`)}

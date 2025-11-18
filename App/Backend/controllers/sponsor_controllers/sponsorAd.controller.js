@@ -1,10 +1,10 @@
-import SponsorAd from "../../models/SponsorAd.js";
+import SponsorAd from "../../models/sponsorad.model.js";
 
 // CREATE AD (Draft by default)
 export const createSponsorAd = async (req, res) => {
   try {
     const ad = await SponsorAd.create({
-      sponsorId: req.user._id,
+      sponsorId: req.user.id,
       title: req.body.title,
       description: req.body.description,
       images: req.body.images || [],
@@ -24,7 +24,7 @@ export const createSponsorAd = async (req, res) => {
 // GET MY ADS
 export const getSponsorAds = async (req, res) => {
   try {
-    const ads = await SponsorAd.find({ sponsorId: req.user._id });
+    const ads = await SponsorAd.find({ sponsorId: req.user.id });
     res.status(200).json(ads);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -35,7 +35,7 @@ export const getSponsorAds = async (req, res) => {
 export const updateSponsorAd = async (req, res) => {
   try {
     const ad = await SponsorAd.findOneAndUpdate(
-      { _id: req.params.id, sponsorId: req.user._id },
+      { _id: req.params.id, sponsorId: req.user.id },
       req.body,
       { new: true }
     );
@@ -53,7 +53,7 @@ export const deleteSponsorAd = async (req, res) => {
   try {
     const ad = await SponsorAd.findOneAndDelete({
       _id: req.params.id,
-      sponsorId: req.user._id,
+      sponsorId: req.user.id,
     });
 
     if (!ad) return res.status(404).json({ message: "Ad not found or unauthorized" });
@@ -69,7 +69,7 @@ export const publishSponsorAd = async (req, res) => {
   try {
     const ad = await SponsorAd.findOne({
       _id: req.params.id,
-      sponsorId: req.user._id,
+      sponsorId: req.user.id,
     });
 
     if (!ad) return res.status(404).json({ message: "Ad not found or unauthorized" });

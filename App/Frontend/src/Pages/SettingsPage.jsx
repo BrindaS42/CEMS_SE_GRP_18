@@ -35,7 +35,6 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
-// import { useAuth } from '../context/AuthContext';
 import {Sidebar} from '../components/general/Sidebar';
 import { toast } from 'sonner';
 

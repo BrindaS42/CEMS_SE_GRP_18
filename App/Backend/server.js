@@ -23,18 +23,9 @@ import registrationRouter from './routes/event_routes/registration.route.js';
 import analyticsRoutes from './routes/organizer_routes/analytics.route.js'; 
 import geocodingRouter from './routes/geocoding.route.js';
 import eventInteractionRouter from './routes/event_routes/event.interaction.route.js';
-<<<<<<< HEAD
 import searchRouter from './routes/search.route.js';
-=======
-import sponsorAdsRoutes from "./routes/sponsor_controllers/sponsor_ads.routes.js";
-
-app.use("/api/sponsor/ads", sponsorAdsRoutes);
-
-import sponsorDashboardRoutes from "./routes/sponsor_controllers/sponsor_dashboard.routes.js";
-
-app.use("/api/sponsor/dashboard", sponsorDashboardRoutes);
->>>>>>> feature/sponsor/admin
-
+import sponsorAdsRoutes from "./routes/sponsor_routes/sponsor_ads.route.js";
+import sponsorDashboardRoutes from "./routes/sponsor_routes/sponsor_dashboard.routes.js";
 import adminRoute from "./routes/admin.route.js";
 import collegeRouter from './routes/college.route.js';
 const app = express();
@@ -72,6 +63,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/geocode', geocodingRouter);
 app.use('/api/event', eventInteractionRouter);
 app.use("/api/admin", adminRoute);
+app.use("/api/sponsor/ads", sponsorAdsRoutes);
+app.use("/api/sponsor/dashboard", sponsorDashboardRoutes);
 app.use('/api/colleges', collegeRouter);
 app.get("/", authentication, authorizeRoles("student","organizer", "sponsor", "admin"), (req, res) => {
   res.send("Campus Event Management Backend Running...");

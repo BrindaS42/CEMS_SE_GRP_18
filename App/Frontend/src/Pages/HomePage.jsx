@@ -171,7 +171,7 @@ export const HomePage = () => {
                     className="text-lg px-8 py-6 rounded-2xl border-2 border-purple-600 hover:bg-purple-50"
                     asChild
                   >
-                    <Link to="/dashboard">
+                    <Link to={`/${user?.role}/dashboard`}>
                       Go to Dashboard <ArrowRight className="ml-2 w-5 h-5" />
                     </Link>
                   </Button>

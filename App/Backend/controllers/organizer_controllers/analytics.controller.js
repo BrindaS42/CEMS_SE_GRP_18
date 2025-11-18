@@ -37,6 +37,7 @@ export const getDashboardStats = async (req, res) => {
         // Placeholder for attendance until check-in is fully implemented
         const avgAttendance = 89; // Mock data for now
 
+        console.log(`Dashboard Stats - Events: ${totalEvents}, Registrations: ${totalRegistrations}, Avg Attendance: ${avgAttendance}, Avg Rating: ${avgRating}`);
         res.status(200).json({
             totalEvents,
             totalRegistrations,

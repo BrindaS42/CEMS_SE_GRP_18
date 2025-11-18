@@ -1,4 +1,4 @@
-import SponsorAd from "../../models/SponsorAd.model.js";
+import SponsorAd from "../../models/sponsorad.model.js";
 
 // -------------------------------
 // GET DRAFT ADS

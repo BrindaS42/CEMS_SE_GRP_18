@@ -122,7 +122,7 @@ export function CreateAdModal({ ad, open, onClose, onSave }) {
     const contact = [phone.trim(), email.trim()].filter(Boolean).join(', ');
 
     const adData = {
-      ...(ad?.id && { id: ad.id }),
+      ...(ad?._id && { _id: ad._id }),
       title: title.trim(),
       description: description.trim(),
       images,
@@ -130,7 +130,6 @@ export function CreateAdModal({ ad, open, onClose, onSave }) {
       address: address.trim(),
       contact,
       poster: poster.trim(),
-      status: action === 'save' ? 'Drafted' : 'Published',
     };
 
     onSave(adData, action);
@@ -145,7 +144,7 @@ export function CreateAdModal({ ad, open, onClose, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-x-auto w-full min-w-0">
         <DialogHeader>
           <DialogTitle>{ad ? 'Edit Ad' : 'Create New Ad'}</DialogTitle>
           <DialogDescription>
@@ -276,7 +275,7 @@ export function CreateAdModal({ ad, open, onClose, onSave }) {
                   {videos.map((video, index) => (
                     <div key={`video-${index}`} className="flex items-center gap-2 p-2 bg-muted rounded-lg">
                       <VideoIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span className="flex-1 truncate text-foreground">{video}</span>
+                      <span className="flex-1 truncate text-foreground min-w-0">{video}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveVideo(index)}

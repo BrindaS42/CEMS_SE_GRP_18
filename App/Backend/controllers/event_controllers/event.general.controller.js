@@ -1,5 +1,6 @@
 import Event from "../../models/event.model.js";
 import Registration from "../../models/registration.model.js";
+import SponsorAd from "../../models/sponsorad.model.js";
 
 
 export const getListOfAllEvents = async (req, res) => {
@@ -58,9 +59,39 @@ export const getEventDetailsByID = async (req, res) => {
       })
       .populate({ path: 'subEvents.subevent', select: 'title description timeline' })
       .populate("ratings.by", "profile")
-      .populate("sponsors", "profile");
+      .populate({
+        path: 'sponsors.sponsor',
+        select: 'profile sponsorDetails email'
+      })
+      .lean(); // Use .lean() for performance and to allow modification
 
-    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
+    if (!event) {
+      return res.status(404).json({ success: false, message: "Event not found" });
+    }
+
+    // Manually fetch and attach ads for each approved sponsor
+    if (event.sponsors && event.sponsors.length > 0) {
+      const approvedSponsorIds = event.sponsors
+        .filter(s => s.status === 'Approved' && s.sponsor)
+        .map(s => s.sponsor._id);
+
+      const ads = await SponsorAd.find({
+        sponsorId: { $in: approvedSponsorIds },
+        status: 'Published'
+      }).select('sponsorId poster title').lean();
+
+      const adsBySponsor = ads.reduce((acc, ad) => {
+        const sponsorId = ad.sponsorId.toString();
+        if (!acc[sponsorId]) acc[sponsorId] = [];
+        acc[sponsorId].push(ad);
+        return acc;
+      }, {});
+
+      event.sponsors.forEach(s => {
+        if (s.sponsor) s.sponsor.ads = adsBySponsor[s.sponsor._id.toString()] || [];
+      });
+    }
+
     res.status(200).json({ success: true, event });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch event details", error: error.message });

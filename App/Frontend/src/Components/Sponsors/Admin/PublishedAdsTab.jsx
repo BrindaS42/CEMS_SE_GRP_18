@@ -8,7 +8,7 @@ import { CreateAdModal } from './CreateAdModal';
 
 // Proptype shape for SponsorAd
 const sponsorAdShape = PropTypes.shape({
-  id: PropTypes.number.isRequired,
+  _id: PropTypes.string.isRequired,
   sponsorId: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
@@ -47,7 +47,7 @@ export function PublishedAdsTab({ ads, onUpdateAd }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {ads.map((ad, index) => (
           <Card 
-            key={ad.id} 
+            key={ad._id} 
             className="overflow-hidden hover:shadow-lg transition-shadow animate-fade-in-up cursor-pointer"
             style={{ animationDelay: `${index * 50}ms` }}
             onClick={() => setViewingAd(ad)}

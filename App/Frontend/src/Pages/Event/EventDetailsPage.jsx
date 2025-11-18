@@ -72,6 +72,7 @@ import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/store/
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { socket } from '@/service/socket';
+import SponsorAdCarousel from '@/components/EventComponents/SponsorAdCarousel';
 import AnnotatedMapView from '@/components/EventComponents/Map/AnnotatedMapView';
 
 export const EventDetailsPage = () => {
@@ -880,32 +881,32 @@ useEffect(() => {
                   {sponsors.length > 0 ? (
                     <div className="space-y-4">
                       {sponsors.map((sponsor) => (
-                        <Card key={sponsor._id} className="p-6">
+                        <Card key={sponsor.sponsor?._id} className="p-6">
                           <div className="flex items-start gap-4">
                             <img
-                              src={sponsor.profile?.firmLogo}
-                              alt={sponsor.profile?.name}
+                              src={sponsor.sponsor?.profile?.firmLogo}
+                              alt={sponsor.sponsor?.profile?.name}
                               className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
                             />
                             <div className="flex-1">
-                              <h3 className="font-black text-xl mb-2">{sponsor.profile?.name}</h3>
-                              <p className="text-gray-600 mb-3">{sponsor.profile?.firmDescription}</p>
+                              <h3 className="font-black text-xl mb-2">{sponsor.sponsor?.profile?.name}</h3>
+                              <p className="text-gray-600 mb-3">{sponsor.sponsor?.profile?.firmDescription}</p>
                               
                               <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
                                 <div className="flex items-center gap-1">
                                   <MapPin className="w-4 h-4" />
-                                  {sponsor.sponsorDetails?.stallLocation || 'N/A'}
+                                  {sponsor.sponsor?.sponsorDetails?.stallLocation || 'N/A'}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Mail className="w-4 h-4" />
-                                  {sponsor.email}
+                                  {sponsor.sponsor?.email}
                                 </div>
                               </div>
 
                               <div className="flex gap-3">
                                 <Button
                                   variant="outline"
-                                  onClick={() => navigate(`/sponsors/${sponsor._id}`)}
+                                  onClick={() => navigate(`/sponsors/${sponsor.sponsor?._id}`)}
                                 >
                                   <UserIcon className="w-4 h-4 mr-2" />
                                   View Profile
@@ -995,6 +996,8 @@ useEffect(() => {
               )}
 
             </Card>
+
+            <SponsorAdCarousel sponsors={sponsors} />
 
             {event.createdBy && (
               <Card className="p-6">
