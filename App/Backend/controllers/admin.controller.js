@@ -30,7 +30,7 @@ export const handleCollegeRegistration = async (req, res) => {
     try {
         const { collegeId } = req.params;
         const { status } = req.body;
-        const adminId = req.user._id;
+        const adminId = req.user.id;
 
         if (!['Approved', 'Rejected'].includes(status)) {
             return res.status(400).json({ message: "Invalid status provided. Must be 'Approved' or 'Rejected'." });
@@ -84,7 +84,7 @@ export const getAllEventsForAdmin = async (req, res) => {
 export const getAllUsersForAdmin = async (req, res) => {
     try {
         // Fetch all users except the admin making the request
-        const users = await User.find({ _id: { $ne: req.user._id } }).populate('college', 'name').sort({ createdAt: -1 });
+        const users = await User.find({ _id: { $ne: req.user.id } }).populate('college', 'name').sort({ createdAt: -1 });
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching all users for admin:", error);
@@ -118,7 +118,7 @@ export const getAllAdsForAdmin = async (req, res) => {
 export const suspendCollegeAndEntities = async (req, res) => {
     try {
         const { collegeId } = req.params;
-        const adminId = req.user._id;
+        const adminId = req.user.id;
 
         // 1. Suspension of College (Only runs if status is 'Approved')
         const suspendedCollege = await College.findOneAndUpdate(
@@ -192,7 +192,7 @@ export const suspendCollegeAndEntities = async (req, res) => {
 export const unsuspendCollegeAndEntities = async (req, res) => {
     try {
         const { collegeId } = req.params;
-        const adminId = req.user._id;
+        const adminId = req.user.id;
 
         // 1. Un-suspension of College (Only runs if status is 'Suspended')
         const unsuspendedCollege = await College.findOneAndUpdate(
@@ -248,7 +248,7 @@ export const toggleSuspension = async (req, res) => {
     try {
         const { modelType, id } = req.params;
         const { targetStatus } = req.body; 
-        const adminId = req.user._id;
+        const adminId = req.user.id;
 
         const SponsorAd = model('SponsorAd'); 
         const InboxEntity = model('InboxEntity'); 
@@ -326,7 +326,7 @@ export const createReport = async (req, res) => {
     try {
         const { modelType, id } = req.params;
         const { reason } = req.body; 
-        const reporterId = req.user._id; 
+        const reporterId = req.user.id; 
 
         if (!reason) {
             return res.status(400).json({ message: "A reason for the report is required." });
@@ -386,7 +386,7 @@ export const createReport = async (req, res) => {
             relatedEvent: modelType === 'event' ? reportedEntity._id : undefined,
             // ... (other related fields can be added here) ...
         });
-
+        console.log("New Report:", newReport);
         await newReport.save();
 
         res.status(201).json({

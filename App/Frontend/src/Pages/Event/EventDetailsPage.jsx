@@ -66,6 +66,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { fetchEventDetails, addEventRating } from '@/store/studentEvents.slice';
+import { createReport } from '@/store/admin.slice';
 import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/store/event.interaction.slice';
 import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/store/registration.slice';
 import { toast } from 'sonner';
@@ -284,11 +285,12 @@ useEffect(() => {
     if (!reportText.trim()) return;
 
     try {
+      await dispatch(createReport({ modelType: 'event', id, reason: reportText })).unwrap();
       toast.success('Report submitted successfully. We will review it shortly.');
       setReportDialogOpen(false);
       setReportText('');
     } catch (error) {
-      toast.error('Failed to submit report');
+      toast.error(error || 'Failed to submit report');
     }
   };
 

@@ -25,6 +25,7 @@ import MapWindow from './components/EventComponents/Map/mapWindow.jsx';
 import { EventListingPage } from './Pages/Event/EventListingPage.jsx';
 import { EventDetailsPage } from './Pages/Event/EventDetailsPage.jsx';
 import { SponsorListingPage } from './Pages/SponsorListings/SponsorListingPage.jsx';
+import { SearchResultsPage } from './Pages/SearchResultsPage.jsx';
 import AdDetailsPage from './Pages/SponsorListings/AdDetailsPage.jsx';
 import { SponsorDetailsPage } from './Pages/SponsorListings/SponsorDetailsPage.jsx';
 
@@ -80,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/sponsors" element={<SponsorListingPage />} />
       <Route path="/sponsors/:id" element={<SponsorDetailsPage />} />
       <Route path="/ads/:id" element={<AdDetailsPage />} />
+      <Route path="/search" element={<SearchResultsPage />} />
       <Route path="/register-college" element={<CollegeRegistrationPage />} />
 
       {/* Auth Routes */}
@@ -105,6 +107,14 @@ const AppRoutes = () => {
       />
       <Route
         path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:id"
         element={
           <ProtectedRoute>
             <ProfilePage />

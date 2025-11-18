@@ -1,4 +1,27 @@
 import User from "../models/user.model.js";
+import mongoose from "mongoose";
+
+export const getUserProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user ID' });
+    }
+
+    // Select only the fields that are safe to be public
+    const user = await User.findById(id).select('profile role email sponsorDetails college').populate('college', 'name');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    console.error('Error fetching user profile by ID:', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
 
 export const getUserProfile = async (req, res) => {
   try {

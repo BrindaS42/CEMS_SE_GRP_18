@@ -8,6 +8,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export const fetchArrivals = createAsyncThunk('inbox/fetchArrivals', async (_, { rejectWithValue }) => {
   try {
     const res = await axios.get(`${API_BASE}/inbox/arrivals`);
+    console.log("inbox controller",res.data.data);
     return res.data.data;
   } catch (err) {
     return rejectWithValue(err?.response?.data?.error || 'Failed to load arrivals');

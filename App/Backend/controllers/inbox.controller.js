@@ -150,8 +150,16 @@ export const getListOfDrafts = async (req, res) => {
     const userId = req.user?.id;
 
     const drafts = await InboxEntity.find({ from: userId, status: "Draft" })
-      .populate("from", "email profile.name")
-      .populate("to", "email profile.name")
+      .populate({
+        path: "from",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
+      .populate({
+        path: "to",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -275,8 +283,16 @@ export const getListOfSents = async (req, res) => {
       from: userId,
       status: { $in: ["Sent", "Approved", "Rejected", "Pending"] },
     })
-      .populate("from", "email profile.name")
-      .populate("to", "email profile.name")
+      .populate({
+        path: "from",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
+      .populate({
+        path: "to",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",
@@ -304,8 +320,16 @@ export const getListOfArrivals = async (req, res) => {
     // Find all inbox entities where the 'to' array contains the user's ID.
     // Using { to: userId } works, but { to: { $in: [userId] } } is more explicit for arrays.
     const arrivalMessages = await InboxEntity.find({ to: { $in: [userId] } })
-      .populate("from", "email profile.name")
-      .populate("to", "email profile.name")
+      .populate({
+        path: "from",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
+      .populate({
+        path: "to",
+        select: "email profile.name",
+        transform: doc => doc || { profile: { name: '[Deleted User]' } }
+      })
       .populate("relatedEvent", "name description")
       .populate({
         path: "relatedTeam",

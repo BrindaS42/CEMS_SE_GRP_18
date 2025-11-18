@@ -14,15 +14,18 @@ import {
   Briefcase,
   Tag,
 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Input } from '../../components/ui/input';
-import { Skeleton } from '../../components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Separator } from '../../components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import axios from 'axios';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const SearchResultsPage = () => {
   const navigate = useNavigate();
@@ -50,118 +53,18 @@ export const SearchResultsPage = () => {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const mockEvents = [
-        {
-          _id: '1',
-          name: 'TechFest 2024',
-          description: 'Annual technical festival featuring workshops, competitions, and guest lectures',
-          category: 'Technical',
-          date: new Date('2024-03-15'),
-          location: 'Main Auditorium',
-          registrationFee: 500,
-          maxParticipants: 500,
-          image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop',
-        },
-        {
-          _id: '2',
-          name: 'Cultural Night',
-          description: 'Celebrate diversity with music, dance, and cultural performances',
-          category: 'Cultural',
-          date: new Date('2024-03-20'),
-          location: 'Open Ground',
-          registrationFee: 200,
-          maxParticipants: 1000,
-          image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop',
-        },
-      ].filter(e => 
-        e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const mockUsers = [
-        {
-          _id: 'user1',
-          username: 'john_doe',
-          email: 'john@example.com',
-          role: 'student',
-          profile: {
-            name: 'John Doe',
-            profilePic: '',
-            areasOfInterest: ['Web Development', 'AI/ML', 'Blockchain'],
-          },
-        },
-        {
-          _id: 'user2',
-          username: 'jane_smith',
-          email: 'jane@example.com',
-          role: 'student',
-          profile: {
-            name: 'Jane Smith',
-            profilePic: '',
-            areasOfInterest: ['Data Science', 'Cloud Computing'],
-          },
-        },
-      ].filter(u =>
-        u.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const mockSponsors = [
-        {
-          _id: 'sponsor1',
-          name: 'TechCorp Solutions',
-          email: 'contact@techcorp.com',
-          role: 'sponsor',
-          profile: {
-            firmLogo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=400&h=400&fit=crop',
-            firmDescription: 'Leading provider of enterprise software solutions',
-          },
-          sponsorDetails: {
-            stallLocation: 'Main Campus, Building A',
-          },
-        },
-      ].filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.profile.firmDescription.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const mockOrganizers = [
-        {
-          _id: 'org1',
-          username: 'event_coordinator',
-          email: 'coordinator@college.edu',
-          role: 'organizer',
-          profile: {
-            name: 'Event Coordinator',
-            profilePic: '',
-            areasOfInterest: ['Event Management', 'Planning'],
-          },
-        },
-      ].filter(o =>
-        o.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.username.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
+      const response = await axios.get(`${API_BASE}/search?q=${encodeURIComponent(searchTerm)}`, { withCredentials: true });
       setResults({
-        events: mockEvents,
-        users: mockUsers,
-        sponsors: mockSponsors,
-        organizers: mockOrganizers,
+        events: response.data.events || [],
+        users: response.data.users || [],
+        sponsors: response.data.sponsors || [],
+        organizers: response.data.organizers || [],
       });
     } catch (error) {
       console.error('Search failed:', error);
       toast.error('Failed to perform search');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -180,29 +83,33 @@ export const SearchResultsPage = () => {
       transition={{ duration: 0.2 }}
     >
       <Card className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden" onClick={() => navigate(`/events/${event._id}`)}>
-        <img
-          src={event.image}
-          alt={event.name}
-          className="w-full h-48 object-cover"
-        />
+        {event.posterUrl && (
+          <img
+            src={event.posterUrl}
+            alt={event.title}
+            className="w-full h-48 object-cover"
+          />
+        )}
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-3">
-            <h3 className="text-xl font-black flex-1">{event.name}</h3>
-            <Badge>{event.category}</Badge>
+            <h3 className="text-xl font-black flex-1">{event.title}</h3>
+            {event.categoryTags?.[0] && <Badge>{event.categoryTags[0]}</Badge>}
           </div>
           <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
           <div className="space-y-2 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span>{new Date(event.date).toLocaleDateString()}</span>
-            </div>
+            {event.timeline?.[0]?.date && (
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>{new Date(event.timeline[0].date).toLocaleDateString()}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
-              <span>{event.location}</span>
+              <span>{event.venue || 'TBD'}</span>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              <span>₹{event.registrationFee}</span>
+              <span>{event.config?.isFree ? 'Free' : `₹${event.config?.fees || 0}`}</span>
             </div>
           </div>
         </CardContent>
@@ -222,20 +129,20 @@ export const SearchResultsPage = () => {
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={user.profile.profilePic} />
+              <AvatarImage src={user.profile?.profilePic} />
               <AvatarFallback>
-                {user.profile.name?.charAt(0).toUpperCase() || user.username.charAt(0).toUpperCase()}
+                {user.profile?.name?.charAt(0).toUpperCase() || user.email.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="text-xl font-black mb-1">{user.profile.name || user.username}</h3>
-              <p className="text-sm text-gray-500 mb-2">@{user.username}</p>
+              <h3 className="text-xl font-black mb-1">{user.profile?.name || user.email}</h3>
+              <p className="text-sm text-gray-500 mb-2">{user.email}</p>
               <Badge variant="outline" className="capitalize">
                 {user.role}
               </Badge>
-              {user.profile.areasOfInterest && user.profile.areasOfInterest.length > 0 && (
+              {user.profile?.areasOfInterest && user.profile.areasOfInterest.length > 0 && (
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  {user.profile.areasOfInterest.slice(0, 3).map((interest, idx) => (
+                  {user.profile?.areasOfInterest.slice(0, 3).map((interest, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">
                       {interest}
                     </Badge>
@@ -260,17 +167,19 @@ export const SearchResultsPage = () => {
       <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate(`/sponsors/${sponsor._id}`)}>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <img
-              src={sponsor.profile.firmLogo}
-              alt={sponsor.name}
-              className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-            />
+            {sponsor.sponsorDetails?.firmLogo && (
+              <img
+                src={sponsor.sponsorDetails.firmLogo}
+                alt={sponsor.profile?.name}
+                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+              />
+            )}
             <div className="flex-1">
-              <h3 className="text-xl font-black mb-2">{sponsor.name}</h3>
-              <p className="text-gray-600 mb-3 text-sm">{sponsor.profile.firmDescription}</p>
+              <h3 className="text-xl font-black mb-2">{sponsor.profile?.name}</h3>
+              <p className="text-gray-600 mb-3 text-sm">{sponsor.sponsorDetails?.firmDescription}</p>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <MapPin className="w-4 h-4" />
-                <span className="line-clamp-1">{sponsor.sponsorDetails.stallLocation}</span>
+                <span className="line-clamp-1">{sponsor.sponsorDetails?.locations?.[0]?.address || 'Online'}</span>
               </div>
             </div>
           </div>
@@ -286,25 +195,6 @@ export const SearchResultsPage = () => {
           <h1 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Search Results
           </h1>
-          <form onSubmit={handleSearch} className="relative max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Search for events, users, sponsors..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-12 h-12 text-lg"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </form>
           {query && (
             <p className="text-gray-600 mt-4">
               Showing results for <span className="font-semibold">"{query}"</span> -{' '}

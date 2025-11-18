@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import auth from '../middleware/auth.middleware.js';
-import { getUserProfile, updateUserProfile, getAllStudents, getAllOrganizers, getAllSponsors, getAllAdmins } from '../controllers/profile.controller.js';
+import { getUserProfile, updateUserProfile, getAllStudents, getAllOrganizers, getAllSponsors, getAllAdmins, getUserProfileById } from '../controllers/profile.controller.js';
 
 const { authentication, authorizeRoles } = auth;
 const router = Router();
@@ -12,6 +12,7 @@ router.get('/students', getAllStudents);
 router.get('/organizers', getAllOrganizers);
 router.get('/sponsors', getAllSponsors);
 router.get('/admins', getAllAdmins);
+router.get('/:id', getUserProfileById);
 
 export default router;
 

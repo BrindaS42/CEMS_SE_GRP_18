@@ -120,6 +120,18 @@ export const toggleEntitySuspension = createAsyncThunk(
   }
 );
 
+export const createReport = createAsyncThunk(
+  'admin/createReport',
+  async ({ modelType, id, reason }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_BASE}/admin/report/${modelType}/${id}`, { reason });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.message || `Failed to file report`);
+    }
+  }
+);
+
 
 const initialState = {
   colleges: [],
