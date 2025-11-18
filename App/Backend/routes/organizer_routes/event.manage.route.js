@@ -10,7 +10,7 @@ import {
 } from "../../controllers/organizer_controllers/event.manage.controller.js";
 import { saveEventLocation, getEventLocation } from "../../controllers/event_controllers/map_annotator.controller.js"
 import authMiddleware from '../../middleware/auth.middleware.js'; 
-const { authentication, authorizeRoles } = authMiddleware;
+const { authentication, authorizeRoles, checkSuspension } = authMiddleware;
 
 import { 
     fetchCompletedEvents,
@@ -33,13 +33,13 @@ router.route('/events/:eventId/ratings').get(authentication, authorizeRoles('org
 router.route('/teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams);         
 router.route('/my-teams').get(authentication, authorizeRoles('organizer'), getOrganizerTeams); 
 router.route('/events/:eventId/announcements')
-    .post(authentication, authorizeRoles('organizer'), addAnnouncement);  
+    .post(authentication, authorizeRoles('organizer'), checkSuspension, addAnnouncement);  
 router.route('/events/:eventId/announcements/:announcementId')
-    .put(authentication, authorizeRoles('organizer'), editAnnouncement) 
-    .delete(authentication, authorizeRoles('organizer'), deleteAnnouncement);
+    .put(authentication, authorizeRoles('organizer'), checkSuspension,editAnnouncement) 
+    .delete(authentication, authorizeRoles('organizer'), checkSuspension, deleteAnnouncement);
 router.post("/save", saveEvent);
-router.post("/publish", publishEvent);
-router.put("/edit/:id", editEvent);
+router.post("/publish", authentication, authorizeRoles('organizer'), checkSuspension, publishEvent);
+router.put("/edit/:id",authentication, authorizeRoles('organizer'), checkSuspension, editEvent);
 router.put("/complete/:id", authentication, authorizeRoles('organizer'), completeEvent);
 router.delete("/delete/:id", deleteEvent);
 router.get("/:id", getEventById);

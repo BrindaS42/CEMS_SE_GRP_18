@@ -24,6 +24,8 @@ import analyticsRoutes from './routes/organizer_routes/analytics.route.js';
 import geocodingRouter from './routes/geocoding.route.js';
 import eventInteractionRouter from './routes/event_routes/event.interaction.route.js';
 
+import adminRoute from "./routes/admin.route.js";
+import collegeRouter from './routes/college.route.js';
 const app = express();
 dotenv.config();
 
@@ -57,7 +59,8 @@ app.use('/api/registrations', registrationRouter);
 app.use('/api/analytics', analyticsRoutes); 
 app.use('/api/geocode', geocodingRouter);
 app.use('/api/event', eventInteractionRouter);
-
+app.use("/api/admin", adminRoute);
+app.use('/api/colleges', collegeRouter);
 app.get("/", authentication, authorizeRoles("student","organizer", "sponsor", "admin"), (req, res) => {
   res.send("Campus Event Management Backend Running...");
 });

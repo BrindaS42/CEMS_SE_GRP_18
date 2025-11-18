@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'motion/react';
 import { Building2, Mail, Phone, User, MapPin, Globe, FileText, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -7,12 +8,13 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { collegeService } from '../../services/collegeService';
+import { registerCollege, resetCollegeStatus } from '../../store/college.slice';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
 export const CollegeRegistrationPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
+  const { status: isLoading, error } = useSelector((state) => state.college);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     // College Info
@@ -32,6 +34,13 @@ export const CollegeRegistrationPage = () => {
     pincode: '',
   });
 
+  useEffect(() => {
+    // Reset status when component unmounts
+    return () => {
+      dispatch(resetCollegeStatus());
+    };
+  }, [dispatch]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -41,8 +50,7 @@ export const CollegeRegistrationPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+
     try {
       const collegeData = {
         name: formData.name,
@@ -50,7 +58,7 @@ export const CollegeRegistrationPage = () => {
         website: formData.website,
         description: formData.description,
         poc: {
-          pocName: formData.pocName,
+          name: formData.pocName, // Corrected to match model
           contactEmail: formData.contactEmail,
           contactNumber: formData.contactNumber,
         },
@@ -63,13 +71,11 @@ export const CollegeRegistrationPage = () => {
         },
       };
 
-      await collegeService.registerCollege(collegeData);
+      await dispatch(registerCollege(collegeData)).unwrap();
       setSubmitted(true);
       toast.success('College registration submitted successfully!');
     } catch (err) {
-      toast.error(err.message || 'Failed to register college');
-    } finally {
-      setIsLoading(false);
+      toast.error(err || 'Failed to register college');
     }
   };
 
@@ -339,9 +345,9 @@ export const CollegeRegistrationPage = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-lg py-6"
-                  disabled={isLoading}
+                  disabled={isLoading === 'loading'}
                 >
-                  {isLoading ? (
+                  {isLoading === 'loading' ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Submitting...

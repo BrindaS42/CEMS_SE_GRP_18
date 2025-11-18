@@ -1,18 +1,27 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Star, Users, UserCheck, TrendingUp, Download } from 'lucide-react';
+import { Star, Users, UserCheck, TrendingUp, Download, FileText, Eye } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import PropTypes from 'prop-types';
+import { ViewLogModal } from './Admin/ViewLogModal';
+import { ViewAttendanceModal } from './Admin/ViewAttendanceModal';
+import { ViewReviewModal } from './Admin/ViewReviewModal';
 
 const COLORS = ['#2D3E7E', '#FDB913', '#FF9F1C', '#F24333', '#6B8CAE'];
 
 export function CompletedEvents({ events = [] }) {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
   const handleExportSheet = (eventId) => {
     console.log('Export sheet for event:', eventId);
     // Implement CSV/Excel export logic for this event
@@ -37,6 +46,7 @@ export function CompletedEvents({ events = [] }) {
 
   return (
     <div className="space-y-4">
+      {/* Modals */}
       {events.map((event) => {
         const ratingDistribution = getRatingDistribution(event.ratings);
         return (
@@ -63,15 +73,16 @@ export function CompletedEvents({ events = [] }) {
                       <Star className="w-4 h-4 text-secondary fill-secondary" />
                       <span>{event.ratings?.length > 0 ? (event.ratings.reduce((acc, r) => acc + r.rating, 0) / event.ratings.length).toFixed(1) : 'N/A'}/5</span>
                     </div>
-                    <div 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleExportSheet(event._id);
-                      }} 
-                      className="flex items-center gap-2 px-3 py-1.5 text-xs border border-border rounded-md hover:bg-muted hover:text-foreground dark:hover:bg-[var(--muted-hover)] cursor-pointer transition-colors"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span className="hidden sm:inline">Export</span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setLogModalOpen(true); }}>
+                        <FileText className="w-4 h-4 mr-2" /> View Logs
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setAttendanceModalOpen(true); }}>
+                        <UserCheck className="w-4 h-4 mr-2" /> Attendees
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setReviewModalOpen(true); }}>
+                        <Eye className="w-4 h-4 mr-2" /> View Reviews
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -166,6 +177,22 @@ export function CompletedEvents({ events = [] }) {
         </Card>
       );
     })}
+
+    <ViewLogModal 
+      open={logModalOpen}
+      onClose={() => setLogModalOpen(false)}
+      event={selectedEvent}
+    />
+    <ViewAttendanceModal 
+      open={attendanceModalOpen}
+      onClose={() => setAttendanceModalOpen(false)}
+      event={selectedEvent}
+    />
+    <ViewReviewModal
+      open={reviewModalOpen}
+      onClose={() => setReviewModalOpen(false)}
+      event={selectedEvent}
+    />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import Event from "../../models/event.model.js";
-import OrganizerTeam from "../../models/organizerTeam.model.js";
+import Team from "../../models/organizerTeam.model.js";
 import User from "../../models/user.model.js";
 import InboxEntity from "../../models/inbox.model.js";
 import { populateEventDetails } from "./organizer.dashboard.controller.js";
@@ -19,7 +19,8 @@ const getEventPayload = (body) => {
     timeline,
     createdBy,
     config,
-    poc
+    poc,
+    sponsors
   } = body;
 
   const newEventData = {
@@ -33,9 +34,11 @@ const getEventPayload = (body) => {
     poc: poc || { name: pocName, contact: pocPhone },
     venue,
     timeline,
-    config
+    config,
+    // Ensure sponsors are mapped to the correct schema structure
+    sponsors: Array.isArray(sponsors) ? sponsors.map(s => ({ sponsor: s.sponsor || s._id, status: s.status || 'Pending' })) : []
   };
-
+  console.log('Event Payload:', newEventData);
   return newEventData;
 };
 
@@ -46,7 +49,7 @@ async function sendSubEventInvites(mainEvent) {
   }
 
   // Get the leader of the main event's team to set as the 'from' user in the invite
-  const mainTeam = await OrganizerTeam.findById(mainEvent.createdBy).select('leader').lean();
+  const mainTeam = await Team.findById(mainEvent.createdBy).select('leader').lean();
   if (!mainTeam || !mainTeam.leader) {
     console.error(`Could not find leader for main event's team: ${mainEvent.createdBy}`);
     return;
@@ -97,13 +100,61 @@ async function sendSubEventInvites(mainEvent) {
   }
 }
 
+async function sendSponsorshipInvites(mainEvent) {
+  if (!mainEvent.sponsors || mainEvent.sponsors.length === 0) {
+    return;
+  }
+
+  const mainTeam = await Team.findById(mainEvent.createdBy).select('leader').lean();
+  if (!mainTeam || !mainTeam.leader) {
+    console.error(`Could not find leader for main event's team: ${mainEvent.createdBy}`);
+    return;
+  }
+  const fromUserId = mainTeam.leader;
+
+  for (const spon of mainEvent.sponsors) {
+    try {
+      // The 'spon' object can be just the ID or an object { sponsor: ID }.
+      // This handles both cases, whether the event object is populated or not.
+      const sponsorId = spon.sponsor ? spon.sponsor.toString() : spon._id.toString();
+      if (!sponsorId) continue;
+
+      // Check for existing pending invite to prevent duplicates
+      const existingInvite = await InboxEntity.findOne({
+        relatedEvent: mainEvent._id,
+        to: sponsorId,
+        type: 'sponsorship_request',
+        status: { $in: ['Pending', 'Approved', 'Rejected'] }
+      });
+
+      if (!existingInvite) {
+        console.log(`Creating sponsorship invitation for sponsor ${sponsorId}`);
+        await InboxEntity.create({
+          type: 'sponsorship_request',
+          title: `Sponsorship Request for "${mainEvent.title}"`,
+          description: `You have been invited to sponsor the event: "${mainEvent.title}". Please review and respond.`,
+          from: fromUserId,
+          to: [sponsorId],
+          status: 'Pending',
+          relatedEvent: mainEvent._id,
+        });
+              console.log(`Processed sponsorship invitation for sponsor ${sponsorId}`);
+
+      }
+      console.log('Existing invite check:', existingInvite);
+    } catch (err) {
+      console.error(`Failed to process sponsorship invitation for sponsor:`, err);
+    }
+  }
+}
+
 export const saveEvent = async (req, res) => {
   try {
     const eventPayload = getEventPayload(req.body);
 
     // Fetch and inject the college from the team leader
     if (eventPayload.createdBy) {
-      const team = await OrganizerTeam.findById(eventPayload.createdBy).populate('leader');
+      const team = await Team.findById(eventPayload.createdBy).populate('leader');
       if (team && team.leader && team.leader.college) {
         eventPayload.college = team.leader.college;
       } else {
@@ -116,6 +167,8 @@ export const saveEvent = async (req, res) => {
 
     if (req.body._id) {
       event = await Event.findByIdAndUpdate(req.body._id, eventPayload, { new: true, runValidators: true }).populate(populateEventDetails);
+          console.log('Updated Event:', event);
+
       if (!event) {
         return res.status(404).json({ message: "Draft not found to update." });
       }
@@ -129,6 +182,7 @@ export const saveEvent = async (req, res) => {
 
     // After saving, send out invitations for any new sub-events
     await sendSubEventInvites(event);
+    await sendSponsorshipInvites(event);
 
     res.status(200).json({ message, event });
   } catch (err) {
@@ -145,7 +199,7 @@ export const publishEvent = async (req, res) => {
 
     // Fetch and inject the college from the team leader
     if (eventPayload.createdBy) {
-      const team = await OrganizerTeam.findById(eventPayload.createdBy).populate('leader');
+      const team = await Team.findById(eventPayload.createdBy).populate('leader');
       if (team && team.leader && team.leader.college) {
         eventPayload.college = team.leader.college;
       } else {
@@ -178,6 +232,7 @@ export const publishEvent = async (req, res) => {
       // This is a non-critical error, so we don't fail the whole request.
     }
     res.status(200).json({ message, event });
+
   } catch (err) {
     console.error(err);
     res
@@ -212,7 +267,6 @@ export const editEvent = async (req, res) => {
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
-
     res.status(200).json({ message: "Event updated successfully", event });
   } catch (err) {
     console.error(err);
@@ -276,7 +330,7 @@ export const deleteEvent = async (req, res) => {
 export const getPotentialSubEvents = async (req, res) => {
   try {
     const { teamId } = req.params;
-    const team = await OrganizerTeam.findById(teamId).populate({
+    const team = await Team.findById(teamId).populate({
       path: 'leader',
       select: 'college' // Explicitly select the college field
     });

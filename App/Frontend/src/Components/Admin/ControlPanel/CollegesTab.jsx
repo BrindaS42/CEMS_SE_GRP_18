@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Check, X, Ban, ShieldAlert } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ const getCollegeBadgeVariant = (status) => {
   switch (status) {
     case 'Pending':
       return 'secondary';
-    case 'Registered':
+    case 'Approved':
       return 'default';
     case 'Suspended':
       return 'destructive';
@@ -26,13 +27,14 @@ const getCollegeBadgeVariant = (status) => {
 };
 
 export function CollegesTab({ 
+  isLoading,
   colleges, 
   onAcceptCollege, 
   onRejectCollege, 
   onSuspendCollege,
   onUnsuspendCollege 
 }) {
-  const [activeSubTab, setActiveSubTab] = useState('Registered');
+  const [activeSubTab, setActiveSubTab] = useState('Pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -40,14 +42,14 @@ export function CollegesTab({
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [unsuspendModalOpen, setUnsuspendModalOpen] = useState(false);
 
-  const subTabs = ['Pending', 'Registered', 'Suspended'];
+  const subTabs = ['Pending', 'Approved', 'Suspended'];
 
   const filteredColleges = colleges
     .filter(college => college.status === activeSubTab)
     .filter(college => 
       searchQuery === '' || 
       college.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      college.pocEmail.toLowerCase().includes(searchQuery.toLowerCase())
+      (college.poc?.contactEmail || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleView = (college) => {
@@ -56,7 +58,7 @@ export function CollegesTab({
   };
 
   const handleAccept = (college) => {
-    onAcceptCollege(college.id);
+    onAcceptCollege(college._id);
   };
 
   const handleReject = (college) => {
@@ -65,7 +67,7 @@ export function CollegesTab({
   };
 
   const handleSuspend = (college) => {
-    setSelectedCollege(college);
+    setSelectedCollege(college); 
     setSuspendModalOpen(true);
   };
 
@@ -80,8 +82,8 @@ export function CollegesTab({
       <div className="flex items-center justify-between">
         <SegmentedControl
           options={[
-            { value: 'Pending', label: 'Pending' },
-            { value: 'Registered', label: 'Registered' },
+            { value: 'Pending', label: 'Pending' }, 
+            { value: 'Approved', label: 'Approved' },
             { value: 'Suspended', label: 'Suspended' },
           ]}
           value={activeSubTab}
@@ -115,14 +117,25 @@ export function CollegesTab({
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="grid gap-4"
           >
-            {filteredColleges.length === 0 ? (
+            {isLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 border p-6 rounded-lg">
+                  <Skeleton className="h-16 w-16 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              ))
+            ) : filteredColleges.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 No {activeSubTab.toLowerCase()} colleges found
               </div>
             ) : (
               filteredColleges.map((college) => (
                 <motion.div
-                  key={college.id}
+                  key={college._id}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -145,10 +158,10 @@ export function CollegesTab({
                   {/* College Info */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{college.name}</h3>
-                    <p className="text-sm text-muted-foreground">POC: {college.pocName}</p>
+                    <p className="text-sm text-muted-foreground">POC: {college.poc?.name || 'N/A'}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="text-sm text-muted-foreground">
-                        Registered: {new Date(college.registrationDate).toLocaleDateString()}
+                        Applied: {new Date(college.createdAt).toLocaleDateString()}
                       </span>
                       <Badge 
                         variant={getCollegeBadgeVariant(college.status)}
@@ -184,7 +197,7 @@ export function CollegesTab({
                       </>
                     )}
 
-                    {activeSubTab === 'Registered' && (
+                    {activeSubTab === 'Approved' && (
                       <button
                         onClick={() => handleSuspend(college)}
                         className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact"
@@ -216,8 +229,8 @@ export function CollegesTab({
             open={viewModalOpen}
             onOpenChange={setViewModalOpen}
             college={selectedCollege}
-            onAccept={() => {
-              onAcceptCollege(selectedCollege.id);
+            onAccept={() => { 
+              onAcceptCollege(selectedCollege._id);
               setViewModalOpen(false);
             }}
             onReject={() => {
@@ -229,7 +242,7 @@ export function CollegesTab({
               setSuspendModalOpen(true);
             }}
             onUnsuspend={() => {
-              onUnsuspendCollege(selectedCollege.id);
+              onUnsuspendCollege(selectedCollege._id);
               setViewModalOpen(false);
             }}
           />
@@ -238,7 +251,7 @@ export function CollegesTab({
             onOpenChange={setRejectModalOpen}
             college={selectedCollege}
             onConfirm={(reason) => {
-              onRejectCollege(selectedCollege.id, reason);
+              onRejectCollege(selectedCollege._id, reason);
               setRejectModalOpen(false);
             }}
           />
@@ -247,7 +260,7 @@ export function CollegesTab({
             onOpenChange={setSuspendModalOpen}
             college={selectedCollege}
             onConfirm={(reason) => {
-              onSuspendCollege(selectedCollege.id, reason);
+              onSuspendCollege(selectedCollege._id, reason);
               setSuspendModalOpen(false);
             }}
           />
@@ -256,7 +269,7 @@ export function CollegesTab({
             onOpenChange={setUnsuspendModalOpen}
             college={selectedCollege}
             onConfirm={() => {
-              onUnsuspendCollege(selectedCollege.id);
+              onUnsuspendCollege(selectedCollege._id);
               setUnsuspendModalOpen(false);
             }}
           />
@@ -267,16 +280,17 @@ export function CollegesTab({
 }
 
 CollegesTab.propTypes = {
+  isLoading: PropTypes.bool.isRequired,
   colleges: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     logo: PropTypes.string,
-    registrationDate: PropTypes.string.isRequired,
-    status: PropTypes.oneOf(['Pending', 'Registered', 'Suspended']).isRequired,
-    pocName: PropTypes.string.isRequired,
-    pocEmail: PropTypes.string.isRequired,
-    pocPhone: PropTypes.string.isRequired,
-    address: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
+    status: PropTypes.oneOf(['Pending', 'Approved', 'Suspended', 'Rejected']).isRequired,
+    poc: PropTypes.shape({
+      name: PropTypes.string,
+      contactEmail: PropTypes.string,
+    }),
     website: PropTypes.string,
     description: PropTypes.string,
   })).isRequired,

@@ -3,8 +3,7 @@ import Event from "../../models/event.model.js";
 import InboxEntity from "../../models/inbox.model.js";
 import crypto from "crypto";
 import StudentTeam from "../../models/studentTeam.model.js";
-
-import OrganizerTeam from "../../models/organizerTeam.model.js";
+import Team from "../../models/organizerTeam.model.js";
 
 const notify = async ({ type, from, to, eventId, title, description, role }) => {
   try {
@@ -92,11 +91,11 @@ export const submitRegistration = async (req, res) => {
       status = "pending";
 
       // Find the organizer team to notify the leader and members
-      const organizerTeam = await OrganizerTeam.findById(event.createdBy).lean();
+      const Team = await Team.findById(event.createdBy).lean();
       let notificationRecipients = [];
-      if (organizerTeam) {
-        notificationRecipients.push(organizerTeam.leader);
-        organizerTeam.members.forEach(member => notificationRecipients.push(member.member));
+      if (Team) {
+        notificationRecipients.push(Team.leader);
+        Team.members.forEach(member => notificationRecipients.push(member.member));
       }
       console.log("notificationRecipients", notificationRecipients);
       await notify({

@@ -12,13 +12,13 @@ import {
   updateTeam 
 } from "../../controllers/organizer_controllers/event.team.controller.js";
 
-const { authentication, authorizeRoles } = auth;
+const { authentication, authorizeRoles, checkSuspension } = auth;
 
 const router = Router();
 
 router.use(authentication, authorizeRoles("organizer", "admin"));
 
-router.post("/create", createTeamForEvent);
+router.post("/create",checkSuspension, createTeamForEvent);
 
 router.get("/list", getTeamList);
 
@@ -26,14 +26,14 @@ router.get("/users", getAllUserDetails);
 
 router.get("/invitations", getUserInvitations);
 
-router.post("/invitations/respond", respondToInvitation);
+router.post("/invitations/respond",checkSuspension, respondToInvitation);
 
 router.get("/:teamId", getTeamDetails);
 
-router.post("/:teamId/invite", inviteMemberToTeam);
+router.post("/:teamId/invite",checkSuspension, inviteMemberToTeam);
 
-router.delete("/:teamId", removeTeam);
+router.delete("/:teamId",checkSuspension, removeTeam);
 
-router.patch("/:teamId", updateTeam);
+router.patch("/:teamId",checkSuspension, updateTeam);
 
 export default router;

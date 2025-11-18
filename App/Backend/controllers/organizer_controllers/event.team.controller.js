@@ -52,7 +52,7 @@ export const createTeamForEvent = async (req, res) => {
           to: member.user,
           status: "Pending",
           relatedTeam: team._id,
-          relatedTeamModel: "OrganizerTeam",
+          relatedTeamModel: "Team",
           role: member.role,
         });
       }
@@ -257,7 +257,7 @@ export const inviteMemberToTeam = async (req, res) => {
       to: userToInvite._id,
       status: "Pending",
       relatedTeam: teamId,
-      relatedTeamModel: "OrganizerTeam",
+      relatedTeamModel: "Team",
       role: role || "volunteer",
     });
 
@@ -408,7 +408,7 @@ export const updateTeam = async (req, res) => {
           to: userToInvite._id,
           status: "Pending",
           relatedTeam: teamId,
-          relatedTeamModel: "OrganizerTeam",
+          relatedTeamModel: "Team",
           role: newRole,
         });
 

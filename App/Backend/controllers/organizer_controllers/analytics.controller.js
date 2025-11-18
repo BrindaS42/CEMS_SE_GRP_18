@@ -1,10 +1,10 @@
 import Event from "../../models/event.model.js";
-import organizerTeam from "../../models/organizerTeam.model.js";
+import Team from "../../models/organizerTeam.model.js";
 import Registration from "../../models/registration.model.js";
 
 // Helper to get team IDs for the current user
 async function getUserTeamIds(userId) {
-    const teams = await organizerTeam.find({
+    const teams = await Team.find({
       $or: [{ leader: userId }, { "members.user": userId, "members.status": "Approved" }],
     }).select("_id").lean();
     return teams.map((t) => t._id);

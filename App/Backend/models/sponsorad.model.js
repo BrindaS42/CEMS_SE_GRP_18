@@ -10,7 +10,7 @@ const SponsorAdSchema = new mongoose.Schema({
     contact: String,
     poster: String,
 
-    status: { type: String, enum: ["Drafted", "Published"], default: "Drafted" },
+    status: { type: String, enum: ["Drafted", "Published", "Suspended", "Expired"], default: "Drafted" },
     views: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
 }, { timestamps: true });

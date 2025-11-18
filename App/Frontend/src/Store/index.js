@@ -10,7 +10,9 @@ import aiReducer from './ai.slice.js';
 import studentEventsReducer from './studentEvents.slice.js';
 import inboxReducer from './inbox.slice.js';
 import eventInteractionReducer from './event.interaction.slice.js';
-import socketReducrer from './socket.slice.js';
+import socketReducer from './socket.slice.js';
+import collegeReducer from './college.slice.js';
+import adminReducer from './admin.slice.js';
 
 const store = configureStore({
   reducer: {
@@ -25,7 +27,9 @@ const store = configureStore({
     studentEvents: studentEventsReducer,
     inbox: inboxReducer,
     eventInteraction: eventInteractionReducer,
-    socket: socketReducrer,
+    socket: socketReducer,
+    college: collegeReducer,
+    admin: adminReducer,
   },
 });
 

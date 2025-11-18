@@ -301,7 +301,9 @@ export const getListOfArrivals = async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    const arrivalMessages = await InboxEntity.find({ to: userId })
+    // Find all inbox entities where the 'to' array contains the user's ID.
+    // Using { to: userId } works, but { to: { $in: [userId] } } is more explicit for arrays.
+    const arrivalMessages = await InboxEntity.find({ to: { $in: [userId] } })
       .populate("from", "email profile.name")
       .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
@@ -335,8 +337,7 @@ export const approveInboxEntity = async (req, res) => {
 
     if (
       inbox.type === "message" ||
-      inbox.type === "announcement" ||
-      inbox.type === "sponsorship_request"
+      inbox.type === "announcement" 
     ) {
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
       return res.status(200).json({
@@ -390,35 +391,35 @@ export const approveInboxEntity = async (req, res) => {
       });
     }
 
-    if (inbox.type === "mou_approval_request") {
-      const sponsorId = inbox.to;
+    if (inbox.type === "sponsorship_request") {
+      const sponsorId = inbox.to[0]; // The sponsor is the first recipient
       const eventId = inbox.relatedEvent;
 
       const event = await Event.findById(eventId);
       if (!event) {
         return res
           .status(404)
-          .json({ message: "Event not found for MoU request" });
+          .json({ message: "Event not found for sponsorship request" });
       }
 
-      if (!Array.isArray(event.sponsors)) event.sponsors = [];
-      const exists = event.sponsors.some(
-        (s) => s.toString() === sponsorId.toString()
-      );
-      if (!exists) event.sponsors.push(sponsorId);
+      // Find the sponsor in the event's sponsors array and update their status
+      const sponsorIndex = event.sponsors.findIndex(s => s.sponsor.toString() === sponsorId.toString());
+
+      if (sponsorIndex !== -1) {
+        event.sponsors[sponsorIndex].status = "Approved";
+      } else {
+        // Fallback: if sponsor isn't in the list, add them. This shouldn't happen in a normal flow.
+        event.sponsors.push({ sponsor: sponsorId, status: "Approved" });
+      }
 
       await event.save();
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
 
       return res.status(200).json({
         success: true,
-        message: "MoU request approved successfully",
-        data: {
-          eventId: event._id,
-          eventTitle: event.title,
-          sponsorId,
-          sponsorsList: event.sponsors,
-        },
+        message: "Sponsorship request approved successfully",
+        // Return the full event object so the frontend can update its state
+        event: event,
       });
     }
 

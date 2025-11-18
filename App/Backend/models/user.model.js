@@ -57,6 +57,8 @@ const userSchema = new mongoose.Schema(
       }
     },
     passwordHash: { type: String },
+       status : { type: String, enum: ["active", "suspended"], default: "active" },
+
 
     profile: {
       name: { type: String, required: true },
@@ -106,6 +108,7 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+  
 );
 
 userSchema.index({ email: 1, role: 1 }, { unique: true });

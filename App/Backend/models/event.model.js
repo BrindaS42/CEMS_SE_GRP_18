@@ -42,7 +42,7 @@ const EventSchema = new mongoose.Schema({
   subEvents:
     [{
       subevent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
-      status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" }
+      status: { type: String, enum: ["Pending", "Approved", "Rejected", "suspended"], default: "Pending" }
     }],
   gallery: [{ type: String }], // image URLs
   config: {
@@ -74,7 +74,7 @@ const EventSchema = new mongoose.Schema({
   },
 
   registrations: [{ type: mongoose.Schema.Types.ObjectId, ref: "Registration" }],
-  sponsors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  sponsors: [{sponsor: {type: mongoose.Schema.Types.ObjectId, ref: "User"}, status: {type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending"}}],
   announcements: [
     {
       date: Date,
@@ -101,7 +101,7 @@ const EventSchema = new mongoose.Schema({
     },
   ],
 
-  status: { type: String, enum: ["draft", "published", "completed"], default: "draft" },
+  status: { type: String, enum: ["draft", "published", "completed", "suspended"], default: "draft" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Team" },
 }, {
   timestamps: true

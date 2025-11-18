@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Ban, Check, Image as ImageIcon } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,9 +14,9 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 // Helper function to refactor nested ternary
 const getAdBadgeVariant = (status) => {
   switch (status) {
-    case 'Registered':
+    case 'Published':
       return 'default';
-    case 'Suspended':
+    case 'suspended':
       return 'destructive';
     case 'Expired':
       return 'secondary';
@@ -24,22 +25,22 @@ const getAdBadgeVariant = (status) => {
   }
 };
 
-export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
-  const [activeSubTab, setActiveSubTab] = useState('Registered');
+export function AdsTab({ isLoading, ads, onSuspendAd, onUnsuspendAd }) {
+  const [activeSubTab, setActiveSubTab] = useState('Published');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAd, setSelectedAd] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [unsuspendModalOpen, setUnsuspendModalOpen] = useState(false);
 
-  const subTabs = ['Registered', 'Suspended', 'Expired'];
+  const subTabs = ['Published', 'Suspended', 'Drafted', 'Expired'];
 
   const filteredAds = ads
     .filter(ad => ad.status === activeSubTab)
     .filter(ad => 
       searchQuery === '' || 
       ad.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ad.firmName.toLowerCase().includes(searchQuery.toLowerCase())
+      (ad.sponsorId?.profile?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleView = (ad) => {
@@ -63,8 +64,9 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
       <div className="flex items-center justify-between">
         <SegmentedControl
           options={[
-            { value: 'Registered', label: 'Registered' },
+            { value: 'Published', label: 'Published' },
             { value: 'Suspended', label: 'Suspended' },
+            { value: 'Drafted', label: 'Drafted' },
             { value: 'Expired', label: 'Expired' },
           ]}
           value={activeSubTab}
@@ -98,14 +100,24 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="grid gap-4"
           >
-            {filteredAds.length === 0 ? (
+            {isLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 border p-6 rounded-lg">
+                  <Skeleton className="h-24 w-24 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : filteredAds.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 No {activeSubTab.toLowerCase()} ads found
               </div>
             ) : (
               filteredAds.map((ad) => (
                 <motion.div
-                  key={ad.id}
+                  key={ad._id}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -127,13 +139,13 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
 
                   {/* Ad Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{ad.title}</h3>
-                    <p className="text-sm text-muted-foreground">{ad.firmName}</p>
+                    <h3 className="font-medium truncate">{ad.title}</h3> 
+                    <p className="text-sm text-muted-foreground">By: {ad.sponsorId?.profile?.name || 'Unknown Sponsor'}</p>
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
                       <span className="text-sm text-muted-foreground">
-                        Published: {new Date(ad.publishedDate).toLocaleDateString()}
+                        Created: {new Date(ad.createdAt).toLocaleDateString()}
                       </span>
-                      {ad.views !== undefined && (
+                      {ad.status === 'Published' && ad.views !== undefined && (
                         <span className="text-sm text-muted-foreground">
                           Views: {ad.views}
                         </span>
@@ -155,7 +167,7 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {activeSubTab === 'Registered' && (
+                    {activeSubTab === 'Published' && (
                       <button
                         onClick={() => handleSuspend(ad)}
                         className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact"
@@ -192,7 +204,7 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
               setSuspendModalOpen(true);
             }}
             onUnsuspend={() => {
-              onUnsuspendAd(selectedAd.id);
+              onUnsuspendAd(selectedAd._id);
               setViewModalOpen(false);
             }}
           />
@@ -201,7 +213,7 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
             onOpenChange={setSuspendModalOpen}
             ad={selectedAd}
             onConfirm={(reason) => {
-              onSuspendAd(selectedAd.id, reason);
+              onSuspendAd(selectedAd._id, reason);
               setSuspendModalOpen(false);
             }}
           />
@@ -210,7 +222,7 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
             onOpenChange={setUnsuspendModalOpen}
             ad={selectedAd}
             onConfirm={() => {
-              onUnsuspendAd(selectedAd.id);
+              onUnsuspendAd(selectedAd._id);
               setUnsuspendModalOpen(false);
             }}
           />
@@ -221,16 +233,17 @@ export function AdsTab({ ads, onSuspendAd, onUnsuspendAd }) {
 }
 
 AdsTab.propTypes = {
+  isLoading: PropTypes.bool.isRequired,
   ads: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    firmName: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    sponsorId: PropTypes.shape({
+      profile: PropTypes.shape({ name: PropTypes.string })
+    }),
     poster: PropTypes.string,
-    status: PropTypes.oneOf(['Registered', 'Suspended', 'Expired']).isRequired,
-    publishedDate: PropTypes.string.isRequired,
-    contact: PropTypes.string.isRequired,
-    address: PropTypes.string.isRequired,
+    status: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
     views: PropTypes.number,
   })).isRequired,
   onSuspendAd: PropTypes.func.isRequired,

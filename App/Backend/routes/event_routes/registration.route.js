@@ -9,13 +9,15 @@ import {
 import auth from "../../middleware/auth.middleware.js"; 
 
 const router = express.Router();
-const {authentication, authorizeRoles} = auth;
-router.get("/:eventId/form", authentication, authorizeRoles("student"), getRegistrationForm);
+const {authentication, authorizeRoles, checkSuspension} = auth;
+router.use(authentication, checkSuspension);
 
-router.post("/submit", authentication, authorizeRoles("student"),submitRegistration);
+router.get("/:eventId/form", authorizeRoles("student"), getRegistrationForm);
 
-router.get("/:eventId/:participantId/status", authentication, authorizeRoles("student"), getRegistrationStatusByEIDPID);
+router.post("/submit", authorizeRoles("student"),submitRegistration);
 
-router.post("/checkin", authentication, authorizeRoles( "organizer"), markCheckIn);
+router.get("/:eventId/:participantId/status", authorizeRoles("student"), getRegistrationStatusByEIDPID);
+
+router.post("/checkin", authorizeRoles( "organizer"), markCheckIn);
 
 export default router;

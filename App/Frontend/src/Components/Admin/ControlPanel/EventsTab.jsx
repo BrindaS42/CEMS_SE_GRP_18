@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Ban, Check, Calendar, MapPin } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,9 +14,9 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 // Helper function to refactor nested ternary
 const getEventBadgeVariant = (status) => {
   switch (status) {
-    case 'Published':
+    case 'published':
       return 'default';
-    case 'Suspended':
+    case 'suspended':
       return 'destructive';
     case 'Completed':
       return 'secondary';
@@ -24,7 +25,7 @@ const getEventBadgeVariant = (status) => {
   }
 };
 
-export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
+export function EventsTab({ isLoading, events, onSuspendEvent, onUnsuspendEvent }) {
   const [activeSubTab, setActiveSubTab] = useState('Published');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -32,14 +33,14 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [unsuspendModalOpen, setUnsuspendModalOpen] = useState(false);
 
-  const subTabs = ['Published', 'Suspended', 'Completed'];
+  const subTabs = ['published', 'suspended', 'completed'];
 
   const filteredEvents = events
-    .filter(event => event.status === activeSubTab)
+    .filter(event => event.status.toLowerCase() === activeSubTab.toLowerCase())
     .filter(event => 
       searchQuery === '' || 
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.organizerTeam.toLowerCase().includes(searchQuery.toLowerCase())
+      (event.createdBy?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleView = (event) => {
@@ -98,14 +99,25 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="grid gap-4"
           >
-            {filteredEvents.length === 0 ? (
+            {isLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center space-x-4 border p-6 rounded-lg">
+                  <Skeleton className="h-20 w-20 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : filteredEvents.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 No {activeSubTab.toLowerCase()} events found
               </div>
             ) : (
               filteredEvents.map((event) => (
                 <motion.div
-                  key={event.id}
+                  key={event._id}
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -118,8 +130,8 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
                 >
                   {/* Event Poster */}
                   <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {event.poster ? (
-                      <img src={event.poster} alt={event.title} className="w-full h-full object-cover" />
+                    {event.posterUrl ? (
+                      <img src={event.posterUrl} alt={event.title} className="w-full h-full object-cover" />
                     ) : (
                       <Calendar className="w-8 h-8 text-muted-foreground" />
                     )}
@@ -132,14 +144,14 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {new Date(event.date).toLocaleDateString()}
+                        {new Date(event.timeline[0]?.date || event.createdAt).toLocaleDateString()}
                       </span>
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {event.venue}
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        {event.venue || 'N/A'}
                       </span>
                       <span className="text-sm text-muted-foreground">
-                        By: {event.organizerTeam}
+                        By: {event.createdBy?.name || 'Unknown'}
                       </span>
                       <Badge 
                         variant={getEventBadgeVariant(event.status)}
@@ -158,7 +170,7 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
                       <Eye className="w-4 h-4" />
                     </button>
                     
-                    {activeSubTab === 'Published' && (
+                    {activeSubTab.toLowerCase() === 'published' && (
                       <button
                         onClick={() => handleSuspend(event)}
                         className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact"
@@ -167,7 +179,7 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
                       </button>
                     )}
 
-                    {activeSubTab === 'Suspended' && (
+                    {activeSubTab.toLowerCase() === 'suspended' && (
                       <button
                         onClick={() => handleUnsuspend(event)}
                         className="px-3 py-1.5 rounded-md bg-success text-success-foreground hover:bg-success-hover transition-colors micro-interact"
@@ -195,7 +207,7 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
               setSuspendModalOpen(true);
             }}
             onUnsuspend={() => {
-              onUnsuspendEvent(selectedEvent.id);
+              onUnsuspendEvent(selectedEvent._id);
               setViewModalOpen(false);
             }}
           />
@@ -204,7 +216,7 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
             onOpenChange={setSuspendModalOpen}
             event={selectedEvent}
             onConfirm={(reason) => {
-              onSuspendEvent(selectedEvent.id, reason);
+              onSuspendEvent(selectedEvent._id, reason);
               setSuspendModalOpen(false);
             }}
           />
@@ -213,7 +225,7 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
             onOpenChange={setUnsuspendModalOpen}
             event={selectedEvent}
             onConfirm={() => {
-              onUnsuspendEvent(selectedEvent.id);
+              onUnsuspendEvent(selectedEvent._id);
               setUnsuspendModalOpen(false);
             }}
           />
@@ -224,18 +236,16 @@ export function EventsTab({ events, onSuspendEvent, onUnsuspendEvent }) {
 }
 
 EventsTab.propTypes = {
+  isLoading: PropTypes.bool.isRequired,
   events: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    _id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired,
-    venue: PropTypes.string.isRequired,
-    organizerTeam: PropTypes.string.isRequired,
-    organizerEmail: PropTypes.string.isRequired,
-    poster: PropTypes.string,
-    status: PropTypes.oneOf(['Published', 'Suspended', 'Completed']).isRequired,
-    registrations: PropTypes.number.isRequired,
-    categoryTags: PropTypes.arrayOf(PropTypes.string).isRequired,
+    description: PropTypes.string,
+    timeline: PropTypes.arrayOf(PropTypes.shape({ date: PropTypes.string })),
+    venue: PropTypes.string,
+    createdBy: PropTypes.shape({ name: PropTypes.string }),
+    posterUrl: PropTypes.string,
+    status: PropTypes.string.isRequired,
   })).isRequired,
   onSuspendEvent: PropTypes.func.isRequired,
   onUnsuspendEvent: PropTypes.func.isRequired,

@@ -15,7 +15,7 @@ export function ViewCollegeModal({
   // Refactored nested ternary to a helper function/variable
   const getBadgeVariant = (status) => {
     if (status === 'Pending') return 'secondary';
-    if (status === 'Registered') return 'default';
+    if (status === 'Approved') return 'default';
     return 'destructive'; // For 'Suspended' or any other status
   };
   const badgeVariant = getBadgeVariant(college.status);
@@ -59,7 +59,7 @@ export function ViewCollegeModal({
                   Reject
                 </button>
               )}
-              {college.status === 'Registered' && onSuspend && (
+              {college.status === 'Approved' && onSuspend && (
                 <button
                   onClick={onSuspend}
                   className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact flex items-center gap-2"
@@ -94,7 +94,7 @@ export function ViewCollegeModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-sm text-muted-foreground">Registration Date</span>
-                <p>{new Date(college.registrationDate).toLocaleDateString()}</p>
+                <p>{new Date(college.createdAt).toLocaleDateString()}</p>
               </div>
               <div>
                 <span className="text-sm text-muted-foreground">Status</span>
@@ -109,24 +109,28 @@ export function ViewCollegeModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-sm text-muted-foreground">Name</span>
-                <p>{college.pocName}</p>
+                <p>{college.poc?.name || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-sm text-muted-foreground">Email</span>
-                <p>{college.pocEmail}</p>
+                <p>{college.poc?.contactEmail || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-sm text-muted-foreground">Phone</span>
-                <p>{college.pocPhone}</p>
+                <p>{college.poc?.contactNumber || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Address */}
-          <div>
-            <h4 className="font-medium mb-3">Address</h4>
-            <p className="text-sm">{college.address}</p>
-          </div>
+          {college.address && (
+            <div>
+              <h4 className="font-medium mb-3">Address</h4>
+              <p className="text-sm">
+                {`${college.address.localAddress || ''}, ${college.address.city || ''}, ${college.address.state || ''} - ${college.address.pincode || ''}, ${college.address.country || ''}`}
+              </p>
+            </div>
+          )}
 
           {/* Website */}
           {college.website && (
@@ -163,11 +167,16 @@ ViewCollegeModal.propTypes = {
     logo: PropTypes.string,
     name: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
-    registrationDate: PropTypes.string.isRequired,
-    pocName: PropTypes.string.isRequired,
-    pocEmail: PropTypes.string.isRequired,
-    pocPhone: PropTypes.string.isRequired,
-    address: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
+    poc: PropTypes.shape({
+      name: PropTypes.string,
+      contactEmail: PropTypes.string,
+      contactNumber: PropTypes.string,
+    }),
+    address: PropTypes.shape({
+      localAddress: PropTypes.string,
+      city: PropTypes.string,
+    }),
     website: PropTypes.string,
     description: PropTypes.string,
   }).isRequired,

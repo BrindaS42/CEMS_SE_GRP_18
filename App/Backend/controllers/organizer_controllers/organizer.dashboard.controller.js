@@ -1,9 +1,9 @@
 import Event from "../../models/event.model.js";
-import organizerTeam from "../../models/organizerTeam.model.js";
+import Team from "../../models/organizerTeam.model.js";
 import Registration from "../../models/registration.model.js";
 // Helper: get team ids for a user (leader or member)
 async function getUserTeamIds(userId) {
-  const teams = await organizerTeam.find({
+  const teams = await Team.find({
     $or: [{ leader: userId }, { "members.user": userId }],
   })
     .select("_id")
@@ -39,7 +39,7 @@ export const populateEventDetails = [
 ];
 
 // Define the fields to select from the Event model to ensure consistency
-const eventFieldsToSelect = 'title description posterUrl categoryTags timeline subEvents status createdBy poc venue gallery config announcements ratings';
+const eventFieldsToSelect = 'title description posterUrl categoryTags timeline subEvents status createdBy poc venue gallery config announcements ratings sponsors';
 
 export async function getEventsForUser(req, res) {
   try {
@@ -134,23 +134,18 @@ export const getRegisteredStudentsByEID = async (req, res) => {
       eventId: eventId,
     })
       .populate({
-        path: "studentId",
+        path: "userId",
         select: "profile.name profile.contactNo email",
       })
       .populate({
-        path: "studentTeamId",
-        select: "name leader",
+        path: "teamName", // This refers to StudentTeam model
+        select: "teamName leader",
       })
       .select("-checkInCode")
       .lean();
 
     if (!registrations || registrations.length === 0) {
-      return res
-        .status(200)
-        .json({
-          message: "No registrations found for this event.",
-          registrations: [],
-        });
+      return res.status(200).json([]); // Always return an array
     }
 
     res.status(200).json(registrations);
@@ -167,28 +162,43 @@ export const getAttendeesByEID = async (req, res) => {
   try {
     const { eventId } = req.params;
 
-    const attendees = await Registration.find({
-      eventId: eventId,
+    const event = await Event.findById(eventId).select('timeline').lean();
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
-      checkIns: {
-        $elemMatch: {
-          status: "present",
-        },
-      },
-    })
-      .populate("studentId", "name email contactNo profilePic")
-      .select("studentId registrationType checkIns")
+    const attendeesByTimeline = await Promise.all(event.timeline.map(async (timelineEntry) => {
+      const attendees = await Registration.find({
+        eventId: eventId,
+        'checkIns.timelineRef': timelineEntry._id,
+        'checkIns.status': 'present'
+      })
+      .populate({
+        path: 'userId',
+        select: 'profile.name email'
+      })
+      .select('userId checkIns')
       .lean();
 
-    if (!attendees || attendees.length === 0) {
+      return {
+        timeline: {
+          _id: timelineEntry._id,
+          title: timelineEntry.title,
+          date: timelineEntry.date,
+        },
+        attendees: attendees,
+      };
+    }));
+
+    if (!attendeesByTimeline || attendeesByTimeline.length === 0) {
       return res
         .status(200)
         .json({ message: "No attendees recorded yet.", attendees: [] });
     }
 
-    res.status(200).json(attendees);
+    res.status(200).json(attendeesByTimeline);
   } catch (error) {
-    console.error("Error fetching attendees:", error);
+    console.error("Error fetching timeline-wise attendees:", error);
     res.status(500).json({
       message: "Server error while fetching attendees.",
       error: error.message,

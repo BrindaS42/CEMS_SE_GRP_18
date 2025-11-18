@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calender';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { fetchTeamList } from '@/store/team.slice';
 import { updateEventDraft, fetchPotentialSubEvents } from '@/store/event.slice';
+import { fetchAllSponsors } from '@/store/auth.slice';
 import { uploadToCloudinary } from '@/service/cloudinary';
 
 // Category options
@@ -35,8 +36,7 @@ const CATEGORY_OPTIONS = [
 export function EditEventModal({ open, onClose, event }) {
   const dispatch = useDispatch();
   const { teamList } = useSelector((state) => state.team);
-  const { potentialSubEvents } = useSelector((state) => state.events);
-  const { user } = useSelector((state) => state.auth);
+  const { potentialSubEvents } = useSelector((state) => state.events);  const { user, allSponsors } = useSelector((state) => state.auth);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -72,6 +72,9 @@ export function EditEventModal({ open, onClose, event }) {
   const [subEventSearch, setSubEventSearch] = useState('');
   const [selectedSubEvents, setSelectedSubEvents] = useState([]);
   const [timelineDatePickerOpen, setTimelineDatePickerOpen] = useState(false);
+  const [selectedSponsors, setSelectedSponsors] = useState([]);
+  const [sponsorSearchOpen, setSponsorSearchOpen] = useState(false);
+  const [sponsorSearch, setSponsorSearch] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const leaderTeams = useMemo(() => {
@@ -83,6 +86,7 @@ export function EditEventModal({ open, onClose, event }) {
   useEffect(() => {
     if (open) {
       dispatch(fetchTeamList());
+      dispatch(fetchAllSponsors());
     }
   }, [open, dispatch]);
 
@@ -142,6 +146,13 @@ export function EditEventModal({ open, onClose, event }) {
         status: se.status, // The status from the parent event's subEvents array
       }));
       setSelectedSubEvents(loadedSubEvents);
+
+      // Load sponsors
+      const loadedSponsors = (event.sponsors || []).map(s => ({
+        ...s.sponsor, // The populated sponsor user details
+        status: s.status,
+      }));
+      setSelectedSponsors(loadedSponsors);
     }
   }, [open, event, teamList]);
 
@@ -167,6 +178,7 @@ export function EditEventModal({ open, onClose, event }) {
       setTimeline([]);
       setRegistrationType('Individual');
       setSelectedSubEvents([]);
+      setSelectedSponsors([]);
     }
   }, [open]);
 
@@ -257,6 +269,24 @@ export function EditEventModal({ open, onClose, event }) {
 
   const removeSubEvent = (eventId) => {
     setSelectedSubEvents(prev => prev.filter(e => e._id !== eventId));
+  };
+
+  const addSponsor = (sponsor) => {
+    if (!selectedSponsors.find(s => s._id === sponsor._id)) {
+      setSelectedSponsors(prev => [...prev, { ...sponsor, status: 'Pending' }]);
+      toast.success(`Sponsor "${sponsor.profile.name}" added`);
+    }
+    setSponsorSearchOpen(false);
+    setSponsorSearch('');
+  };
+
+  const removeSponsor = (sponsorId) => {
+    setSelectedSponsors(prev => prev.filter(s => s._id !== sponsorId));
+  };
+
+  const getFilteredSponsors = () => {
+    if (!sponsorSearch) return allSponsors || [];
+    return (allSponsors || []).filter(s => s.profile.name.toLowerCase().includes(sponsorSearch.toLowerCase()));
   };
 
   const getFilteredSubEvents = () => {
@@ -368,8 +398,18 @@ export function EditEventModal({ open, onClose, event }) {
       subEvents: selectedSubEvents.map(se => ({
         subevent: se._id,
       })),
+
+      
+      // Map selected sponsors back to the format the backend expects
+      sponsors: selectedSponsors.map(s => ({
+        // The sponsor object might be nested (s.sponsor) or direct (s)
+        // This ensures we correctly grab the ID in either case.
+        sponsor: s.id,
+      })),
       status: event.status,
     };
+    console.log('Selected Sponsors:', selectedSponsors);
+    console.log('Event Data:', eventData);
 
     dispatch(updateEventDraft(eventData));
     setIsSubmitting(false);
@@ -688,6 +728,60 @@ export function EditEventModal({ open, onClose, event }) {
                   <Badge key={sub._id} variant="outline" className="gap-2 pr-1">
                     <span>{sub.title} ({sub.status})</span>
                     <Button size="sm" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground" onClick={() => removeSubEvent(sub._id)}><X className="w-3 h-3" /></Button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-border" />
+
+          {/* Sponsors Section */}
+          <div className="space-y-3">
+            <div>
+              <Label>Sponsors</Label>
+              <p className="text-sm text-muted-foreground">Manage event sponsors. New invitations will be sent for newly added sponsors.</p>
+            </div>
+
+            <Popover open={sponsorSearchOpen} onOpenChange={setSponsorSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Search and add sponsors
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput
+                    placeholder="Search sponsors by name..."
+                    value={sponsorSearch}
+                    onValueChange={setSponsorSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No sponsors found.</CommandEmpty>
+                    <CommandGroup>
+                      {getFilteredSponsors().map((sponsor) => (
+                        <CommandItem
+                          key={sponsor._id}
+                          value={sponsor.profile.name}
+                          onSelect={() => addSponsor(sponsor)}
+                          disabled={selectedSponsors.some(s => s._id === sponsor._id)}
+                        >
+                          {sponsor.profile.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {selectedSponsors.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedSponsors.map(s => (
+                  <Badge key={s._id} variant="outline" className="gap-2 pr-1">
+                    <span>{s.profile?.name} ({s.status})</span>
+                    <Button size="sm" variant="ghost" className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground" onClick={() => removeSponsor(s._id)}><X className="w-3 h-3" /></Button>
                   </Badge>
                 ))}
               </div>

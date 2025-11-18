@@ -1,12 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { X, Ban, Check, MapPin, Phone, Eye } from 'lucide-react';
+import { X, Ban, Check, MapPin, Phone, Eye, Calendar } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) {
   // --- FIX: Logic extracted from nested ternary ---
   const getBadgeVariant = (status) => {
-    if (status === 'Registered') return 'default';
+    if (status === 'Published') return 'default';
     if (status === 'Suspended') return 'destructive';
     return 'secondary';
   };
@@ -20,7 +20,7 @@ export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) 
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle>{ad.title}</DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">{ad.firmName}</p>
+              <p className="text-sm text-muted-foreground mt-1">By: {ad.sponsorId?.profile?.name || 'Unknown Sponsor'}</p>
               <Badge 
                 variant={badgeVariant} // Use the extracted variable
                 className="mt-2"
@@ -29,7 +29,7 @@ export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) 
               </Badge>
             </div>
             <div className="flex items-center gap-2">
-              {ad.status === 'Registered' && onSuspend && (
+              {ad.status === 'Published' && onSuspend && (
                 <button
                   onClick={onSuspend}
                   className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact flex items-center gap-2"
@@ -63,7 +63,7 @@ export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) 
 
           <div>
             <h4 className="font-medium mb-3">Description</h4>
-            <p className="text-sm text-muted-foreground">{ad.description}</p>
+            <p className="text-sm text-muted-foreground">{ad.description || 'No description provided.'}</p>
           </div>
 
           <div>
@@ -73,14 +73,14 @@ export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) 
                 <Phone className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-sm text-muted-foreground">Contact</span>
-                  <p className="text-sm">{ad.contact}</p>
+                  <p className="text-sm">{ad.contact || 'Not provided'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-sm text-muted-foreground">Address</span>
-                  <p className="text-sm">{ad.address}</p>
+                  <p className="text-sm">{ad.address || 'Not provided'}</p>
                 </div>
               </div>
             </div>
@@ -96,9 +96,12 @@ export function ViewAdModal({ open, onOpenChange, ad, onSuspend, onUnsuspend }) 
                   <p>{ad.views || 0}</p>
                 </div>
               </div>
-              <div>
-                <span className="text-sm text-muted-foreground">Published Date</span>
-                <p>{new Date(ad.publishedDate).toLocaleDateString()}</p>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <span className="text-sm text-muted-foreground">Created Date</span>
+                  <p>{new Date(ad.createdAt).toLocaleDateString()}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -113,14 +116,16 @@ ViewAdModal.propTypes = {
   onOpenChange: PropTypes.func.isRequired,
   ad: PropTypes.shape({
     title: PropTypes.string.isRequired,
-    firmName: PropTypes.string.isRequired,
-    status: PropTypes.oneOf(['Registered', 'Suspended']).isRequired,
+    sponsorId: PropTypes.shape({
+      profile: PropTypes.shape({ name: PropTypes.string })
+    }),
+    status: PropTypes.oneOf(['Drafted', 'Published', 'Suspended', 'Expired']).isRequired,
     poster: PropTypes.string,
-    description: PropTypes.string.isRequired,
-    contact: PropTypes.string.isRequired,
-    address: PropTypes.string.isRequired,
+    description: PropTypes.string,
+    contact: PropTypes.string,
+    address: PropTypes.string,
     views: PropTypes.number,
-    publishedDate: PropTypes.string.isRequired,
+    createdAt: PropTypes.string.isRequired,
   }).isRequired,
   onSuspend: PropTypes.func,
   onUnsuspend: PropTypes.func,

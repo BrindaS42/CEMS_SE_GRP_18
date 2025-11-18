@@ -14,10 +14,6 @@ const CollegeSchema = new mongoose.Schema(
             unique: true, // e.g., "NIT-SRT", "SVNIT", "IITB"
             uppercase: true,
         },
-        logo: {
-            type: String, // Cloudinary or CDN URL
-            default: "",
-        },
         poc: {
             pocName: { type: String },
             contactEmail: { type: String },
@@ -34,7 +30,7 @@ const CollegeSchema = new mongoose.Schema(
         website: {
             type: String,
         },
-        status: { type: String, enum: ["Pending", "Approved", "Rejected"], default: "Pending" },
+        status: { type: String, enum: ["Pending", "Approved", "Rejected", "Suspended"], default: "Pending" },
         approvedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User", // System Admin who approved this college
@@ -44,11 +40,7 @@ const CollegeSchema = new mongoose.Schema(
         description: {
             type: String,
         },
-        tags: [
-            {
-                type: String,
-            },
-        ],
+        
     },
     { timestamps: true }
 );

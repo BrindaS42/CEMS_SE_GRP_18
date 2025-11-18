@@ -82,8 +82,15 @@ export function DraftedEventsTab({
 
     // Check for pending sub-events
     const hasPending = event.subEvents.some(se => se.status === 'Pending');
+    const hasPendingSponsors = event.sponsors?.some(s => s.status === 'Pending');
+
     if (hasPending) {
       toast.error('Some sub-events are still pending. Please wait for responses.');
+      return;
+    }
+
+    if (hasPendingSponsors) {
+      toast.error('Some sponsor invitations are still pending. Please wait for responses.');
       return;
     }
 
@@ -147,12 +154,14 @@ export function DraftedEventsTab({
   const canPublish = (event) => {
     const permissions = getUserPermissions(event);
     if (!permissions.canPublish) return false;
-
-    return !event.subEvents.some(se => se.status === 'Pending');
+ 
+    const hasPendingSubEvents = event.subEvents.some(se => se.status === 'Pending');
+    const hasPendingSponsors = event.sponsors?.some(s => s.status === 'Pending');
+    return !hasPendingSubEvents && !hasPendingSponsors;
   };
 
   // Helper function to get tooltip content for Publish button
-  const getPublishTooltipContent = (userCanEdit, userCanPublish) => {
+  const getPublishTooltipContent = (event, userCanEdit, userCanPublish) => {
     if (userCanPublish) return null; // No tooltip if enabled
     if (!userCanEdit) return 'Only team leaders can publish';
     const permissions = getUserPermissions(event);
@@ -160,7 +169,10 @@ export function DraftedEventsTab({
       return 'Only team leaders can publish';
     }
 
-    return 'Cannot publish while sub-event invitations are pending';
+    if (event.subEvents?.some(se => se.status === 'Pending')) {
+      return 'Cannot publish while sub-event invitations are pending';
+    }
+    return 'Cannot publish while sponsor invitations are pending';
   };
 
   if (events.length === 0) {
@@ -180,7 +192,7 @@ export function DraftedEventsTab({
           const permissions = getUserPermissions(event);
           const isPublishable = canPublish(event);
           const mainTimeline = event.timeline[0];
-          const publishTooltip = getPublishTooltipContent(permissions.canEdit, isPublishable);
+          const publishTooltip = getPublishTooltipContent(event, permissions.canEdit, isPublishable);
           console.log('Render Drafted Event:', event, 'Permissions:', permissions, 'IsPublishable:', isPublishable);
           return (
             <Card 
@@ -280,6 +292,21 @@ export function DraftedEventsTab({
                     </div>
                   </div>
                 )}
+
+                {/* Sponsors status */}
+                {event.sponsors?.length > 0 && (
+                  <div className="pt-2 border-t border-border flex-shrink-0">
+                    <p className="text-xs text-muted-foreground mb-1">Sponsors: {event.sponsors.length}</p>
+                    <div className="flex gap-1 text-xs flex-wrap">
+                      {event.sponsors.filter(s => s.status === 'Pending').length > 0 && (
+                        <Badge variant="outline" className="text-warning border-warning/50 bg-warning/10 text-xs gap-1">
+                          <span>🕓</span> {event.sponsors.filter(s => s.status === 'Pending').length} Pending
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
 
                 {/* Access control notice */}
                 {!permissions.canEdit && (
@@ -503,6 +530,9 @@ const eventShape = PropTypes.shape({
   subEvents: PropTypes.arrayOf(PropTypes.shape({
     status: PropTypes.string.isRequired,
   })).isRequired,
+  sponsors: PropTypes.arrayOf(PropTypes.shape({
+    status: PropTypes.string.isRequired,
+  })),
 });
 
 DraftedEventsTab.propTypes = {

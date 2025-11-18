@@ -1,20 +1,17 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Calendar, Users, CheckCircle, Download, Eye, FileText } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Eye, FileText, UserCheck } from 'lucide-react';
+import { ViewLogModal } from './Admin/ViewLogModal';
+import { ViewAttendanceModal } from './Admin/ViewAttendanceModal';
+import { ViewReviewModal } from './Admin/ViewReviewModal';
 
 export function LiveEvents({ events, onViewEvent }) {
-  const handleViewLogs = (eventId, e) => {
-    e.stopPropagation();
-    console.log('View logs for event:', eventId);
-    // Navigate to event logs page
-  };
-
-  const handleExportSheet = (eventId, e) => {
-    e.stopPropagation();
-    console.log('Export sheet for event:', eventId);
-    // Implement CSV/Excel export logic for this event
-  };
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   if (events.length === 0) {
     return (
@@ -27,13 +24,14 @@ export function LiveEvents({ events, onViewEvent }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-stagger-container>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-stagger-container>
       {events.map((event, index) => {
         const mainTimeline = event.timeline[0];
 
         return (
           <Card 
-            key={event.id} 
+            key={event._id} 
             className={`card-interact cursor-pointer border-accent/50 animate-fade-in-up stagger-${Math.min(index + 1, 6)}`}
             onClick={() => onViewEvent(event.id)}
           >
@@ -79,47 +77,48 @@ export function LiveEvents({ events, onViewEvent }) {
 
               {/* Action buttons - responsive layout */}
               <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border">
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <Button 
-                    onClick={(e) => handleViewLogs(event.id, e)} 
-                    className="flex-1 h-9 btn-interact"
+                    onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setLogModalOpen(true); }}
                     variant="outline"
                     size="sm"
+                    className="gap-2"
                   >
-                    View Logs
+                    <FileText className="w-4 h-4" /> View Logs
                   </Button>
                   <Button 
-                    onClick={(e) => handleExportSheet(event.id, e)} 
-                    className="flex-1 gap-2 h-9 btn-interact"
+                    onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setAttendanceModalOpen(true); }}
                     variant="outline"
                     size="sm"
+                    className="gap-2"
                   >
-                    <Download className="w-3 h-3" />
-                    Export
+                    <UserCheck className="w-4 h-4" /> Attendees
+                  </Button>
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); setReviewModalOpen(true); }}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Eye className="w-4 h-4" /> Reviews
                   </Button>
                 </div>
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewEvent(event.id);
-                  }}
-                  className="w-full gap-2 btn-interact"
-                  variant="default"
-                >
-                  <Eye className="w-4 h-4" />
-                  View
-                </Button>
               </div>
             </CardContent>
           </Card>
         );
       })}
-    </div>
+      </div>
+
+      <ViewLogModal open={logModalOpen} onClose={() => setLogModalOpen(false)} event={selectedEvent} />
+      <ViewAttendanceModal open={attendanceModalOpen} onClose={() => setAttendanceModalOpen(false)} event={selectedEvent} />
+      <ViewReviewModal open={reviewModalOpen} onClose={() => setReviewModalOpen(false)} event={selectedEvent} />
+    </>
   );
 }
 
 const eventShape = PropTypes.shape({
-  id: PropTypes.number.isRequired,
+  _id: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   status: PropTypes.string.isRequired,
   teamName: PropTypes.string.isRequired,

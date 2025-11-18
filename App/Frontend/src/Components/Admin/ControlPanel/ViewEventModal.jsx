@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { X, Ban, Check, Calendar, MapPin, Users } from 'lucide-react';
+import { X, Ban, Check, Calendar, MapPin, Users, Building } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 export function ViewEventModal({
@@ -13,9 +13,9 @@ export function ViewEventModal({
   // --- FIX 1: Logic extracted from nested ternary ---
   const getEventBadgeVariant = (status) => {
     switch (status) {
-      case 'Published':
+      case 'published':
         return 'default';
-      case 'Suspended':
+      case 'suspended':
         return 'destructive';
       default:
         return 'secondary';
@@ -36,10 +36,10 @@ export function ViewEventModal({
                 className="mt-1"
               >
                 {event.status}
-              </Badge>
+              </Badge> 
             </div>
             <div className="flex items-center gap-2">
-              {event.status === 'Published' && onSuspend && (
+              {event.status === 'published' && onSuspend && (
                 <button
                   onClick={onSuspend}
                   className="px-3 py-1.5 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive-hover transition-colors micro-interact flex items-center gap-2"
@@ -48,7 +48,7 @@ export function ViewEventModal({
                   Suspend
                 </button>
               )}
-              {event.status === 'Suspended' && onUnsuspend && (
+              {event.status === 'suspended' && onUnsuspend && (
                 <button
                   onClick={onUnsuspend}
                   className="px-3 py-1.5 rounded-md bg-success text-success-foreground hover:bg-success-hover transition-colors micro-interact flex items-center gap-2"
@@ -69,9 +69,9 @@ export function ViewEventModal({
 
         <div className="space-y-6 mt-6">
           {/* Event Poster */}
-          {event.poster && (
+          {event.posterUrl && (
             <div className="w-full h-64 rounded-lg overflow-hidden bg-muted">
-              <img src={event.poster} alt={event.title} className="w-full h-full object-cover" />
+              <img src={event.posterUrl} alt={event.title} className="w-full h-full object-cover" />
             </div>
           )}
 
@@ -83,7 +83,7 @@ export function ViewEventModal({
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-sm text-muted-foreground">Date</span>
-                  <p>{new Date(event.date).toLocaleDateString()}</p>
+                  <p>{event.timeline?.[0]?.date ? new Date(event.timeline[0].date).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -91,14 +91,21 @@ export function ViewEventModal({
                 <div>
                   <span className="text-sm text-muted-foreground">Venue</span>
                   <p>{event.venue}</p>
-                </div>
+                </div> 
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <span className="text-sm text-muted-foreground">Registrations</span>
-                  <p>{event.registrations}</p>
+                  <p>{event.registrations?.length || 0}</p>
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <span className="text-sm text-muted-foreground">College</span>
+                  <p>{event.college?.name || 'N/A'}</p>
+                </div> 
               </div>
             </div>
           </div>
@@ -106,21 +113,15 @@ export function ViewEventModal({
           {/* Description */}
           <div>
             <h4 className="font-medium mb-3">Description</h4>
-            <p className="text-sm text-muted-foreground">{event.description}</p>
+            <p className="text-sm text-muted-foreground">{event.description || 'No description provided.'}</p>
           </div>
 
           {/* Organizer Information */}
           <div>
             <h4 className="font-medium mb-3">Organizer Information</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm text-muted-foreground">Team Name</span>
-                <p>{event.organizerTeam}</p>
-              </div>
-              <div>
-                <span className="text-sm text-muted-foreground">Contact Email</span>
-                <p>{event.organizerEmail}</p>
-              </div>
+            <div>
+              <span className="text-sm text-muted-foreground">Organized By</span>
+              <p>{event.createdBy?.name || 'Unknown'}</p>
             </div>
           </div>
 
@@ -148,15 +149,19 @@ ViewEventModal.propTypes = {
   onOpenChange: PropTypes.func.isRequired,
   event: PropTypes.shape({
     title: PropTypes.string.isRequired,
-    status: PropTypes.oneOf(['Published', 'Suspended', 'Pending']).isRequired,
-    poster: PropTypes.string,
-    date: PropTypes.string.isRequired,
-    venue: PropTypes.string.isRequired,
-    registrations: PropTypes.number.isRequired,
-    description: PropTypes.string.isRequired,
-    organizerTeam: PropTypes.string.isRequired,
-    organizerEmail: PropTypes.string.isRequired,
-    categoryTags: PropTypes.arrayOf(PropTypes.string).isRequired,
+    status: PropTypes.oneOf(['draft', 'published', 'completed', 'suspended']).isRequired,
+    posterUrl: PropTypes.string,
+    timeline: PropTypes.arrayOf(PropTypes.shape({ date: PropTypes.string })),
+    venue: PropTypes.string,
+    registrations: PropTypes.array,
+    description: PropTypes.string,
+    createdBy: PropTypes.shape({
+      name: PropTypes.string,
+    }),
+    college: PropTypes.shape({
+      name: PropTypes.string,
+    }),
+    categoryTags: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   onSuspend: PropTypes.func,
   onUnsuspend: PropTypes.func,

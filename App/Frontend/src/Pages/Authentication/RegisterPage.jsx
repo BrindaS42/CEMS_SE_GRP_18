@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select.jsx';
-import { registerUser, clearError } from '../../store/auth.slice.js';
-import { collegeService } from '../../services/collegeService';
+import { registerUser, clearError } from '../../store/auth.slice.js'; 
+import { fetchAllApprovedColleges } from '../../store/college.slice.js';
 import { toast } from 'sonner';
 
 // Helper to safely format many possible error shapes
@@ -54,11 +54,10 @@ export const RegisterPage = () => {
   // Defensive selector: avoid destructuring from undefined
   const authSlice = useSelector((state) => (state && state.auth) ? state.auth : {});
   const { status, error, isAuthenticated } = authSlice;
+  const { list: colleges, status: collegeStatus } = useSelector((state) => state.college || { list: [], status: 'idle' });
   const isLoading = status === 'loading';
 
   const [selectedRole, setSelectedRole] = useState('student');
-  const [colleges, setColleges] = useState([]);
-  const [loadingColleges, setLoadingColleges] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -74,9 +73,8 @@ export const RegisterPage = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    fetchColleges();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    dispatch(fetchAllApprovedColleges());
+  }, [dispatch]);
 
   useEffect(() => {
     // clear any previous errors when role changes
@@ -86,35 +84,6 @@ export const RegisterPage = () => {
       setFormData((prev) => ({ ...prev, college: '' }));
     }
   }, [selectedRole, dispatch]);
-
-  const fetchColleges = async () => {
-    try {
-      const response = await collegeService.getAllColleges?.();
-      if (response && response.data && Array.isArray(response.data)) {
-        // setColleges(response.data);
-        setColleges([
-          { _id: '67364b428d7a12613481231a', name: 'National Institute of Technology, Surat', code: 'NIT-SRT' },
-          { _id: '67364b428d7a12613481231b', name: 'Sardar Vallabhbhai National Institute of Technology', code: 'SVNIT' },
-          { _id: '67364b428d7a12613481231c', name: 'Indian Institute of Technology, Bombay', code: 'IITB' },
-          { _id: '67364b428d7a12613481231d', name: 'Delhi Technological University', code: 'DTU' },
-          { _id: '67364b428d7a12613481231e', name: 'Birla Institute of Technology and Science', code: 'BITS' },
-        ]);
-      } else {
-        setColleges([
-          { _id: '67364b428d7a12613481231a', name: 'National Institute of Technology, Surat', code: 'NIT-SRT' },
-          { _id: '67364b428d7a12613481231b', name: 'Sardar Vallabhbhai National Institute of Technology', code: 'SVNIT' },
-          { _id: '67364b428d7a12613481231c', name: 'Indian Institute of Technology, Bombay', code: 'IITB' },
-          { _id: '67364b428d7a12613481231d', name: 'Delhi Technological University', code: 'DTU' },
-          { _id: '67364b428d7a12613481231e', name: 'Birla Institute of Technology and Science', code: 'BITS' },
-        ]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch colleges:', err);
-      toast.error('Failed to load colleges');
-    } finally {
-      setLoadingColleges(false);
-    }
-  };
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -299,7 +268,7 @@ export const RegisterPage = () => {
                       <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400 z-10" />
                       <Select value={formData.college} onValueChange={handleCollegeChange}>
                         <SelectTrigger className="pl-10">
-                          <SelectValue placeholder={loadingColleges ? "Loading colleges..." : "Select your college"} />
+                          <SelectValue placeholder={collegeStatus === 'loading' ? "Loading colleges..." : "Select your college"} />
                         </SelectTrigger>
                         <SelectContent>
                           {colleges.map((college) => (
@@ -350,7 +319,7 @@ export const RegisterPage = () => {
                 <Button
                   type="submit"
                   className={`w-full bg-gradient-to-r ${currentColors.button} hover:opacity-90`}
-                  disabled={isLoading || loadingColleges}
+                  disabled={isLoading || collegeStatus === 'loading'}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">

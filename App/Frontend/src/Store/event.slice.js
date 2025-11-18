@@ -42,21 +42,30 @@ export const fetchCompletedEvents = createAsyncThunk('events/fetchCompleted', as
 
 export const fetchEventRegistrations = createAsyncThunk('events/fetchRegistrations', async (eventId, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_BASE}/dashboard/events/${eventId}/registrations`)
-    return { eventId, logs: res.data }
+    const res = await axios.get(`${API_BASE}/event/events/${eventId}/registrations`);
+    return { eventId, registrations: res.data };
   } catch (err) {
-    return rejectWithValue(err?.response?.data?.error || 'Failed to load registrations')
+    return rejectWithValue(err?.response?.data?.error || 'Failed to load registrations');
   }
-})
+});
 
-export const fetchEventCheckIns = createAsyncThunk('events/fetchCheckIns', async (eventId, { rejectWithValue }) => {
+export const fetchEventAttendees = createAsyncThunk('events/fetchAttendees', async (eventId, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_BASE}/dashboard/events/${eventId}/checkins`)
-    return { eventId, checkIns: res.data }
+    const res = await axios.get(`${API_BASE}/event/events/${eventId}/attendees`);
+    return { eventId, attendees: res.data };
   } catch (err) {
-    return rejectWithValue(err?.response?.data?.error || 'Failed to load check-ins')
+    return rejectWithValue(err?.response?.data?.error || 'Failed to load attendees');
   }
-})
+});
+
+export const fetchEventReviews = createAsyncThunk('events/fetchReviews', async (eventId, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`${API_BASE}/event/events/${eventId}/ratings`);
+    return { eventId, reviews: res.data };
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to load reviews');
+  }
+});
 
 export const fetchEventById = createAsyncThunk('events/fetchById', async (eventId, { rejectWithValue }) => {
   try {
@@ -163,8 +172,9 @@ const initialState = {
   published: [],
   drafts: [],
   completed: [],
-  logsByEventId: {},
-  checkInsByEventId: {},
+  registrationsByEventId: {},
+  attendeesByEventId: {},
+  reviewsByEventId: {},
   potentialSubEvents: [],
   status: 'idle',
   error: null,
@@ -192,8 +202,9 @@ const eventsSlice = createSlice({
       .addCase(fetchPublishedEvents.fulfilled, (state, action) => { state.published = action.payload })
       .addCase(fetchDraftEvents.fulfilled, (state, action) => { state.drafts = action.payload })
       .addCase(fetchCompletedEvents.fulfilled, (state, action) => { state.completed = action.payload })
-      .addCase(fetchEventRegistrations.fulfilled, (state, action) => { state.logsByEventId[action.payload.eventId] = action.payload.logs })
-      .addCase(fetchEventCheckIns.fulfilled, (state, action) => { state.checkInsByEventId[action.payload.eventId] = action.payload.checkIns })
+      .addCase(fetchEventRegistrations.fulfilled, (state, action) => { state.registrationsByEventId[action.payload.eventId] = action.payload.registrations })
+      .addCase(fetchEventAttendees.fulfilled, (state, action) => { state.attendeesByEventId[action.payload.eventId] = action.payload.attendees })
+      .addCase(fetchEventReviews.fulfilled, (state, action) => { state.reviewsByEventId[action.payload.eventId] = action.payload.reviews })
       .addCase(createEventDraft.fulfilled, (state, action) => { const updatedEvent = action.payload.event;
         const index = state.drafts.findIndex(d => d._id === updatedEvent._id);
         if (index !== -1) {
