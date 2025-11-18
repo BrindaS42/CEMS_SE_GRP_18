@@ -23,7 +23,17 @@ import registrationRouter from './routes/event_routes/registration.route.js';
 import analyticsRoutes from './routes/organizer_routes/analytics.route.js'; 
 import geocodingRouter from './routes/geocoding.route.js';
 import eventInteractionRouter from './routes/event_routes/event.interaction.route.js';
+<<<<<<< HEAD
 import searchRouter from './routes/search.route.js';
+=======
+import sponsorAdsRoutes from "./routes/sponsor_controllers/sponsor_ads.routes.js";
+
+app.use("/api/sponsor/ads", sponsorAdsRoutes);
+
+import sponsorDashboardRoutes from "./routes/sponsor_controllers/sponsor_dashboard.routes.js";
+
+app.use("/api/sponsor/dashboard", sponsorDashboardRoutes);
+>>>>>>> feature/sponsor/admin
 
 import adminRoute from "./routes/admin.route.js";
 import collegeRouter from './routes/college.route.js';
