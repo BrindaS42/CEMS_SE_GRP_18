@@ -1,74 +1,90 @@
-import SponsorAd from "../../models/sponsorAd.model.js";
+import SponsorAd from "../../models/SponsorAd.model.js";
 
-export const GetAllSponsorNameDescpNoOfEsponsred = async (req, res) => {
+export const getDraftedAds = async (req, res) => {
     try {
-        const { role } = req.user;
-        
-        const sponsors = await SponsorAd.aggregate([
-            {
-                $group: {
-                    _id: "$sponsorId",
-                    noOfSponsored: { $sum: 1 },
-                },
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "sponsorDetails",
-                },
-            },
-            {
-                $unwind: "$sponsorDetails",
-            },
-            {
-                $project: {
-                    _id: 0,
-                    sponsorId: "$_id",
-                    name: "$sponsorDetails.name",
-                    description: "$sponsorDetails.description",
-                    noOfSponsored: 1,
-                },
-            },
-        ]);
+        const sponsorId = req.user._id;
 
-        res.status(200).json({
+        const ads = await SponsorAd.find({
+            sponsorId,
+            status: "Drafted"
+        });
+
+        res.json({
             success: true,
-            data: sponsors,
+            count: ads.length,
+            ads
         });
-    } catch (error) {
-        console.error("Error fetching sponsor list:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch sponsor list",
-        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 
-export const GetAllAdsBySpID = async (req, res) => {
-  try {
-    const { sponsorId } = req.params;
+// -------------------------------
+// GET PUBLISHED ADS
+// -------------------------------
+export const getPublishedAds = async (req, res) => {
+    try {
+        const sponsorId = req.user._id;
 
-    const ads = await SponsorAd.find({ sponsorId });
+        const ads = await SponsorAd.find({
+            sponsorId,
+            status: "Published"
+        });
 
-    if (!ads || ads.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No ads found for this sponsor",
-      });
+        res.json({
+            success: true,
+            count: ads.length,
+            ads
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
+};
 
-    res.status(200).json({
-      success: true,
-      count: ads.length,
-      data: ads,
-    });
-  } catch (error) {
-    console.error("Error fetching sponsor ads:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch sponsor ads",
-    });
-  }
+// -------------------------------
+// GET TOTAL VIEWS OF ALL PUBLISHED ADS
+// -------------------------------
+export const getPublishedAdsViews = async (req, res) => {
+    try {
+        const sponsorId = req.user._id;
+
+        const ads = await SponsorAd.find({
+            sponsorId,
+            status: "Published"
+        }).select("views title");
+
+        const totalViews = ads.reduce((sum, ad) => sum + ad.views, 0);
+
+        res.json({
+            success: true,
+            totalViews,
+            ads
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// -------------------------------
+// GET TOTAL LIKES OF ALL PUBLISHED ADS
+// -------------------------------
+export const getPublishedAdsLikes = async (req, res) => {
+    try {
+        const sponsorId = req.user._id;
+
+        const ads = await SponsorAd.find({
+            sponsorId,
+            status: "Published"
+        }).select("likes title");
+
+        const totalLikes = ads.reduce((sum, ad) => sum + ad.likes, 0);
+
+        res.json({
+            success: true,
+            totalLikes,
+            ads
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
 };
