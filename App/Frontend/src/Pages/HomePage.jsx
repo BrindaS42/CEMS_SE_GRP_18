@@ -19,6 +19,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { eventService } from '../services/eventService';
+import { ChatBot } from '@/components/ChatBot';
 
 export const HomePage = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -420,6 +421,7 @@ export const HomePage = () => {
           </motion.div>
         </div>
       </section>
+      {isAuthenticated && <ChatBot />}
     </div>
   );
 };

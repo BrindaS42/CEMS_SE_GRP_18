@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { ChatBot } from '@/components/ChatBot';
 
 export const SponsorListingPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { sponsors, ads, loading: isLoading } = useSelector((state) => state.sponsor);
+  const { sponsors, ads, loading: isLoading } = useSelector((state) => state.sponsor); const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [selectedSponsor, setSelectedSponsor] = useState(null);
   const [showAdsDialog, setShowAdsDialog] = useState(false);
@@ -249,6 +250,7 @@ export const SponsorListingPage = () => {
           )}
         </DialogContent>
       </Dialog>
+      {isAuthenticated && <ChatBot />}
     </div>
   );
 };

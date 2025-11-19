@@ -27,7 +27,11 @@ export const getRegistrationStatus = createAsyncThunk('registration/getStatus', 
     const res = await axios.get(`${API_BASE}/registrations/${eventId}/${participantId}/status`)
     return res.data
   } catch (err) {
-    return rejectWithValue(err?.response?.data?.error || 'Failed to get registration status')
+    // If it's a 404, it just means the user isn't registered. Return null instead of an error.
+    if (err.response && err.response.status === 404) {
+      return null
+    }
+    return rejectWithValue(err?.response?.data?.error || 'Failed to get registration status');
   }
 })
 

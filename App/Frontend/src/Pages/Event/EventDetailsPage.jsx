@@ -82,7 +82,7 @@ export const EventDetailsPage = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { currentEvent: event, loading } = useSelector((state) => state.studentEvents);
   const { messages: chatMessages, status: chatStatus } = useSelector((state) => state.eventInteraction) || { messages: [], status: 'idle' };
-  const { status: registrationStatus } = useSelector((state) => state.registration);
+  const registrationStatus = useSelector((state) => state.registration.status);
   const announcements = event?.announcements || [];
   const sponsors = event?.sponsors || [];
   const reviews = event?.ratings || [];

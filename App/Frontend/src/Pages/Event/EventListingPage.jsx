@@ -27,10 +27,11 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPublicEvents } from '@/store/studentEvents.slice';
+import { ChatBot } from '@/components/ChatBot';
 
 export const EventListingPage = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { events, pagination, loading } = useSelector((state) => state.studentEvents);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
@@ -38,6 +39,8 @@ export const EventListingPage = () => {
 
   console.log("studentEvents:", events);
   console.log("pagination:", pagination);
+  // console.log("studentEvents:", events);
+  // console.log("pagination:", pagination);
   
   const isStudentView = user?.role === 'student';
 
@@ -310,6 +313,7 @@ export const EventListingPage = () => {
           </div>
         )}
       </div>
+      {isAuthenticated && <ChatBot />}
     </div>
   );
 };
