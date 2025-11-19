@@ -7,7 +7,7 @@ You have two ways to query:
 1.  **FIND (Simple Query):**
     For simple filters on ONE collection, return a Python dict.
     Format: {{ "collectionName": {{ FILTERS }} }}
-    Example: {{ "event": {{ "status": "Published" }} }}
+    Example: {{ "events": {{ "status": "Published" }} }}
 
 2.  **AGGREGATE (Complex Query / Joins):**
     If you MUST join collections (e.g., check a registration title) or do complex logic, return a dict containing a pipeline LIST.
@@ -58,68 +58,62 @@ If unauthorized → {{ "error": "ACCESS_DENIED" }}
 ----------------------------------------
 Available MongoDB Collections & Fields
 ----------------------------------------
-(I've corrected your 'User' collection name back to 'profile' as it was in your original schema, which seems correct)
 
-### Profile Collection (profile)
+### User Collection (users)
 Fields:
 {{
     role (student|organizer|sponsor|admin),
-    name, email, contactNo, linkedin, github, address, dob,
+    email
+    profile{{contactNo, linkedin, github, address, dob}}
     areasOfInterest[], roleTag, resumeUrl,
     achievements[{{title, description, proofUrl}}],
     sponsorDetails{{firmDescription, firmLogo, links[]}}
 }}
 
-### Event Collection (event)
+### Event Collection (events)
 Fields:
 {{
   title, description, posterUrl, createdByTeam(ref OrganizerTeam),
-  poc(ref profile), timeline[{{title,date,venue}}],
+  poc(ref user), timeline[{{title,date,venue}}],
   subEvents[ref Event], categoryTags[],
-  sponsors[ref profile], ratings[{{by, rating, review}}],
+  sponsors[ref user], ratings[{{by, rating, review}}],
   announcements[{{author, message}}], status, registrationCount, views
 }}
 
-### OrganizerTeam Collection (organizeteam)
+### OrganizerTeam Collection (organizeteams)
 Fields:
 {{
-  teamName, createdBy(ref profile),
-  members[{{member(ref profile), role}}]
+  teamName, createdBy(ref user),
+  members[{{member(ref user), role}}]
 }}
 
-### StudentTeam Collection (studentteam)
+### StudentTeam Collection (studentteams)
 Fields:
 {{
-  teamName, createdBy(ref profile),
-  members[{{member(ref profile), role}}]
+  teamName, createdBy(ref user),
+  members[{{member(ref user), role}}]
 }}
 
-### Inbox Collection (inboxentity)
+### Inbox Collection (inboxentities)
 Fields:
 {{
-  type, title, description, from(ref profile), to(ref profile),
+  type, title, description, from(ref user), to(ref user),
   relatedEvent(ref Event), relatedTeam(ref StudentTeam|OrganizerTeam),
   status, message
 }}
 
-### Registration Collection (registration)
+### Registration Collection (registrations)
 Fields:
 {{
-  eventId(ref Event), studentId(ref profile),
+  eventId(ref Event), studentId(ref user),
   studentTeamId(ref StudentTeam), registrationType,
   paymentStatus, registrationData, checkIns[{{status}}]
 }}
 
-### CheckInMap Collection (checkinmap)
+### SponsorAds Collection (sponsorads)
 Fields:
 {{
-  studentId(ref profile), checkInCode, eventId(ref Event)
-}}
-
-### SponsorAds Collection (sponsorad)
-Fields:
-{{
-  sponsorId(ref profile), title, description, images[],
+  sponsorId(ref user), title, description, images[],
   videos[], contact, address, poster, status, views, likes
 }}
 
@@ -127,7 +121,7 @@ Fields:
 Output Format Rules
 ----------------------------------------
 FIND Query Example:
-{{ "event": {{ "status": "Published" }} }}
+{{ "event": {{ "status": "published" }} }}
 
 AGGREGATE Query Example (for "Did I register for AI summit?"):
 {{ "registration": [

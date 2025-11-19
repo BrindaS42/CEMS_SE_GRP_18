@@ -72,6 +72,10 @@ async def run_mongo_query(state: State) -> State:
 
         collection_name = list(parsed.keys())[0]
         query_data = parsed[collection_name]
+        print(f"Mongo Collection: {collection_name}")
+        print(f"Mongo Query: {query_data}")
+
+
 
         docs = []
 
@@ -105,6 +109,7 @@ async def run_mongo_query(state: State) -> State:
             return {**state, "result": "Invalid query data. Expected a dict or list."}
         
         docs_safe = _convert_object_ids(docs)
+        print(f"Mongo Docs Retrieved: {docs_safe[:2]}... (total {len(docs_safe)})")
         return {**state, "result": docs_safe}
         
     except Exception as e:

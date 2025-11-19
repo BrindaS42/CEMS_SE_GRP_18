@@ -2,3 +2,4 @@
 __pycache__
 .venv
 seed_mongo.py   
+tests.py

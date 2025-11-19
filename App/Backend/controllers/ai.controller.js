@@ -12,11 +12,11 @@ export const getRecommendations = async (req, res) => {
 
   export const queryChatBot = async (req, res) => {
     try {
-      const { question } = req.body;
-      if (!question) return res.status(400).json({ error: "Question required" });
+      const { query } = req.body;
+      if (!query) return res.status(400).json({ error: "Query required" });
   
       const response = await pythonClient.post("/bot/query", {
-        question,
+        question: query, // The python service expects 'question'
         user_role: req.user.role,
         user_id: req.user.id,
       });

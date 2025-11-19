@@ -9,9 +9,9 @@ from app.config.qdrant import qdrant_client, COLLECTION_NAME, VECTOR_SIZE
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["recm_test"]
+db = mongo_client["test"]
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("all-mpnet-base-v2")
 
 def get_embedding(text: str):
     """Generate MiniLM embeddings (locally)."""
@@ -32,23 +32,32 @@ def setup_collection():
 
 # Building event genome 
 def build_event_genome(event):
-    parts = [
-        event.get("title", ""),
-        event.get("description", ""),
-        " ".join(event.get("categoryTags", [])),
-    ]
-    return " ".join(parts)
+    title = event.get("title", "")
+    desc = event.get("description", "")
+    tags = " ".join(event.get("categoryTags", []))
+
+    # Strong signals
+    enhanced_tags = " ".join([tag for tag in event.get("categoryTags", [])] * 3)
+
+    genome = f"""
+        {title}.
+        {desc}.
+        Categories: {tags}.
+        Focus Areas: {enhanced_tags}.
+    """
+
+    return genome
 
 # Index all events 
 def index_all_events():
     try:
-        qqdrant_client.clear_payload(collection_name=COLLECTION_NAME)
+        qdrant_client.clear_payload(collection_name=COLLECTION_NAME)
         print("Old Qdrant collection deleted")
     except:
         print("No previous collection found")
 
     setup_collection()
-    events = list( db.event.find({"status": "Published"}))
+    events = list( db.events.find({"status": "Published"}))
     points = []
     for ev in events:
         genome = build_event_genome(ev)
@@ -66,7 +75,7 @@ def index_all_events():
 
 # Incremental Add / Delete
 def add_event(event_id: str):
-    event =  db.event.find_one({"_id": ObjectId(event_id)})
+    event =  db.events.find_one({"_id": ObjectId(event_id)})
     if not event:
         print(f"No event found for ID {event_id}")
         return
@@ -115,39 +124,49 @@ def convert_object_ids(obj):
 
 # content based recommendation
 def recommend_events_for_user(profile_id: str, top_k=5):
-    profile =  db.user.find_one({"_id": ObjectId(profile_id)})
+
+    profile = db.users.find_one({"_id": ObjectId(profile_id)})
     if not profile:
         return []
 
-    # profile genome
-    user_genome = " ".join(profile.get("areasOfInterest", [])) + " " + " ".join(
-        [ach["title"] + " " + ach.get("description", "") for ach in profile.get("achievements", [])]
+    profile_data = profile.get("profile", {})
+
+    # Extract areasOfInterest and pastAchievements
+    interests = " ".join(profile_data.get("areasOfInterest", []))
+
+    achievements = " ".join(
+        [(a.get("title", "") + " " + a.get("description", "")) 
+         for a in profile_data.get("pastAchievements", [])]
     )
+
+    user_genome = (interests + " ") * 3 + achievements
+    print("USER GENOME:", user_genome)
+
     user_embedding = get_embedding(user_genome)
 
-    # Search in Qdrant
+    # VECTOR SEARCH (not .query)
     res = qdrant_client.search(
         collection_name=COLLECTION_NAME,
         query_vector=user_embedding,
         limit=top_k,
-        with_payload=True,
-        with_vectors=False,
+        with_payload=True
     )
 
     ranked_results = []
+
     for hit in res:
         event_id = ObjectId(hit.payload["event_id"])
-        distance = hit.score            
-        similarity = 1 - float(distance) 
+        event = db.events.find_one({"_id": event_id})
 
-        event =  db.event.find_one({"_id": event_id})
-        if event:
-            ranked_results.append({
-                "event": convert_object_ids(event),
-                "score": similarity
-            })
+        if not event:
+            continue
+
+
+        ranked_results.append({
+            "event": convert_object_ids(event),
+            "score": float(hit.score)
+        })
 
     ranked_results.sort(key=lambda x: x["score"], reverse=True)
 
     return ranked_results
-

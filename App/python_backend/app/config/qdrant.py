@@ -9,5 +9,5 @@ QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 
 qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
-COLLECTION_NAME = "event_embeddings"
-VECTOR_SIZE = 384  
+COLLECTION_NAME = "evs"
+VECTOR_SIZE = 768  

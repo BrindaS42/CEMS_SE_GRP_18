@@ -239,7 +239,7 @@ export const getOrganizerTeams = async (req, res) => {
   try {
     const organizerId = req.user.id;
 
-    const teams = await organizerTeam.find({
+    const teams = await Team.find({
       $or: [{ leader: organizerId }, { "members.user": organizerId }],
     })
       .select("name leader members")

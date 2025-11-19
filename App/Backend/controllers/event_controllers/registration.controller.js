@@ -91,11 +91,11 @@ export const submitRegistration = async (req, res) => {
       status = "pending";
 
       // Find the organizer team to notify the leader and members
-      const Team = await Team.findById(event.createdBy).lean();
+      const team = await Team.findById(event.createdBy).lean();
       let notificationRecipients = [];
-      if (Team) {
-        notificationRecipients.push(Team.leader);
-        Team.members.forEach(member => notificationRecipients.push(member.member));
+      if (team) {
+        notificationRecipients.push(team.leader);
+        team.members.forEach(member => notificationRecipients.push(member.member));
       }
       console.log("notificationRecipients", notificationRecipients);
       await notify({
