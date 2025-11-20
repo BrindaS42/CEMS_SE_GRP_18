@@ -31,7 +31,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { SegmentedControl } from '../components/ui/segmented-control'; // UPDATED: Imported SegmentedControl
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,9 @@ export const ProfilePage = () => {
   });
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
+
+  // UPDATED: State for Segmented Control
+  const [activeTab, setActiveTab] = useState('info');
 
   const isOwnProfile = !userIdFromUrl || userIdFromUrl === loggedInUser?.id;
   const displayUser = isOwnProfile ? loggedInUser : viewedUser;
@@ -193,10 +196,10 @@ export const ProfilePage = () => {
   };
 
   const getRoleColor = () => {
-    if (isStudentView) return 'from-purple-500 via-pink-500 to-orange-500';
-    if (isOrganizerView) return 'from-indigo-600 via-purple-600 to-pink-600';
-    if (isSponsorView) return 'from-blue-600 via-indigo-600 to-purple-600';
-    return 'from-gray-600 to-gray-800';
+    if (isStudentView) return 'from-purple-500 via-pink-500 to-orange-500 dark:from-purple-400 dark:via-pink-500 dark:to-orange-400';
+    if (isOrganizerView) return 'from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500';
+    if (isSponsorView) return 'from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500';
+    return 'from-gray-600 to-gray-800 dark:from-gray-500 dark:to-gray-700';
   };
 
   const handleSubmitReport = async () => {
@@ -232,19 +235,19 @@ export const ProfilePage = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto smooth-scroll p-6 page-transition">
           <div
-            className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 ${
+            className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
               isStudentView
-                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
-                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50'
+                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950'
+                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950'
             }`}
           >
             {/* Profile Header */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="p-8 mb-8 border-2 shadow-lg">
+              <Card className="p-8 mb-8 border-2 shadow-lg dark:bg-gray-800 dark:border-gray-700">
                 <div className="flex flex-col md:flex-row items-start gap-8">
                   {/* Profile Picture */}
                   <div className="relative">
-                    <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
+                    <Avatar className="w-32 h-32 border-4 border-white dark:border-gray-700 shadow-lg">
                       <AvatarImage src={profileData?.profilePic} alt={profileData?.name} />
                       <AvatarFallback className={`text-3xl bg-gradient-to-br ${getRoleColor()} text-white`}>
                         {getInitials()}
@@ -253,7 +256,7 @@ export const ProfilePage = () => {
                     {isOwnProfile && isEditing && (
                       <label
                         htmlFor="profile-picture"
-                        className="absolute bottom-0 right-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors shadow-lg"
+                        className="absolute bottom-0 right-0 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors shadow-lg z-10"
                       >
                         <Camera className="w-5 h-5 text-white" />
                         <input
@@ -278,12 +281,13 @@ export const ProfilePage = () => {
                             value={profileData?.name || ''}
                             onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                             placeholder="Enter your full name"
+                            className="dark:bg-gray-900 dark:border-gray-600"
                           />
                         </div>
                       </div>
                     ) : (
                       <>
-                        <h1 className="text-3xl md:text-4xl font-black mb-2">
+                        <h1 className="text-3xl md:text-4xl font-black mb-2 dark:text-white">
                           {profileData?.name || 'Anonymous User'}
                         </h1>
                         <Badge className={`bg-gradient-to-r ${getRoleColor()} text-white border-0 mb-4 capitalize`}>
@@ -295,12 +299,12 @@ export const ProfilePage = () => {
                     <div className="flex flex-wrap gap-3 mt-4">
                       {!isEditing ? (
                         <>
-                          <Button onClick={() => setIsEditing(true)} className={`bg-gradient-to-r ${getRoleColor()}`}>
+                          <Button onClick={() => setIsEditing(true)} className={`bg-gradient-to-r ${getRoleColor()} border-0`}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Profile
                           </Button>
                           {!isOwnProfile && (
-                            <Button variant="outline" onClick={() => setReportDialogOpen(true)}>
+                            <Button variant="outline" onClick={() => setReportDialogOpen(true)} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                               <Flag className="w-4 h-4 mr-2" />
                               Report User
                             </Button>
@@ -311,7 +315,7 @@ export const ProfilePage = () => {
                           <Button
                             onClick={handleSaveProfile}
                             disabled={loading}
-                            className={`bg-gradient-to-r ${getRoleColor()}`}
+                            className={`bg-gradient-to-r ${getRoleColor()} border-0`}
                           >
                             <Save className="w-4 h-4 mr-2" />
                             {loading ? 'Saving...' : 'Save Changes'}
@@ -322,6 +326,7 @@ export const ProfilePage = () => {
                               setIsEditing(false);
                               setProfileData({ ...(displayUser?.profile || {}), sponsorDetails: displayUser?.sponsorDetails || {} });
                             }}
+                            className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
                           >
                             <X className="w-4 h-4 mr-2" />
                             Cancel
@@ -334,150 +339,164 @@ export const ProfilePage = () => {
               </Card>
             </motion.div>
 
-            {/* Profile Details */}
-            <Tabs defaultValue="info" className="space-y-6">
-              <TabsList className="grid grid-cols-3 w-full max-w-md">
-                <TabsTrigger value="info">Information</TabsTrigger>
-                <TabsTrigger value="achievements">Achievements</TabsTrigger>
-                <TabsTrigger value="interests">Interests</TabsTrigger>
-              </TabsList>
+            {/* UPDATED: Replaced Tabs with SegmentedControl */}
+            <div className="space-y-6">
+              <div className="flex justify-center md:justify-start">
+                <SegmentedControl
+                  options={[
+                    { value: 'info', label: 'Information' },
+                    { value: 'achievements', label: 'Achievements' },
+                    { value: 'interests', label: 'Interests' }
+                  ]}
+                  value={activeTab}
+                  onChange={setActiveTab}
+                  variant={loggedInUser?.role || 'student'}
+                  //className="w-full max-w-md"
+                />
+              </div>
 
-              {/* Information Tab */}
-              <TabsContent value="info">
-                <Card className="p-8">
-                  <h2 className="text-2xl font-black mb-6">Contact Information</h2>
+              {/* Content Switching based on activeTab */}
+              <div className="tab-transition">
+                {activeTab === 'info' && (
+                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 dark:text-white">Contact Information</h2>
+                    {/* ... existing Info content ... */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="email" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <Mail className="w-4 h-4" />
+                          Email
+                        </Label>
+                        {isEditing ? (
+                          <Input id="email" type="email" value={displayUser?.email || ''} disabled className="bg-gray-100 dark:bg-gray-900 dark:border-gray-600 dark:text-gray-400" />
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">{displayUser?.email || 'Not provided'}</p>
+                        )}
+                      </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="email" className="flex items-center gap-2 mb-2">
-                        <Mail className="w-4 h-4" />
-                        Email
-                      </Label>
-                      {isEditing ? (
-                        <Input id="email" type="email" value={displayUser?.email || ''} disabled className="bg-gray-100" />
-                      ) : (
-                        <p className="text-gray-700">{displayUser?.email || 'Not provided'}</p>
-                      )}
+                      <div>
+                        <Label htmlFor="phone" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <Phone className="w-4 h-4" />
+                          Phone Number
+                        </Label>
+                        {isOwnProfile && isEditing ? (
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={profileData?.contactNo || ''}
+                            onChange={(e) => setProfileData({ ...profileData, contactNo: e.target.value })}
+                            placeholder="Enter phone number"
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">{profileData?.contactNo || 'Not provided'}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="dob" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <Calendar className="w-4 h-4" />
+                          Date of Birth
+                        </Label>
+                        {isOwnProfile && isEditing ? (
+                          <Input
+                            id="dob"
+                            type="date"
+                            value={profileData?.dob ? new Date(profileData.dob).toISOString().split('T')[0] : ''}
+                            onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">
+                            {profileData?.dob ? new Date(profileData.dob).toLocaleDateString() : 'Not provided'}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="address" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <MapPin className="w-4 h-4" />
+                          Address
+                        </Label>
+                        {isOwnProfile && isEditing ? (
+                          <Input
+                            id="address"
+                            value={profileData?.address || ''}
+                            onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
+                            placeholder="Enter address"
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">{profileData?.address || 'Not provided'}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="linkedin" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <Linkedin className="w-4 h-4" />
+                          LinkedIn Profile
+                        </Label>
+                        {isOwnProfile && isEditing ? (
+                          <Input
+                            id="linkedin"
+                            value={profileData?.linkedin || ''}
+                            onChange={(e) => setProfileData({ ...profileData, linkedin: e.target.value })}
+                            placeholder="LinkedIn URL"
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : profileData?.linkedin ? (
+                          <a
+                            href={ensureAbsoluteUrl(profileData.linkedin)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                          >
+                            View Profile <LinkIcon className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="github" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <Github className="w-4 h-4" />
+                          GitHub Profile
+                        </Label>
+                        {isOwnProfile && isEditing ? (
+                          <Input
+                            id="github"
+                            value={profileData?.github || ''}
+                            onChange={(e) => setProfileData({ ...profileData, github: e.target.value })}
+                            placeholder="GitHub URL"
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : profileData?.github ? (
+                          <a
+                            href={ensureAbsoluteUrl(profileData.github)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                          >
+                            View Profile <LinkIcon className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                        )}
+                      </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
-                        <Phone className="w-4 h-4" />
-                        Phone Number
-                      </Label>
-                      {isOwnProfile && isEditing ? (
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={profileData?.contactNo || ''}
-                          onChange={(e) => setProfileData({ ...profileData, contactNo: e.target.value })}
-                          placeholder="Enter phone number"
-                        />
-                      ) : (
-                        <p className="text-gray-700">{profileData?.contactNo || 'Not provided'}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="dob" className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-4 h-4" />
-                        Date of Birth
-                      </Label>
-                      {isOwnProfile && isEditing ? (
-                        <Input
-                          id="dob"
-                          type="date"
-                          value={profileData?.dob ? new Date(profileData.dob).toISOString().split('T')[0] : ''}
-                          onChange={(e) => setProfileData({ ...profileData, dob: e.target.value })}
-                        />
-                      ) : (
-                        <p className="text-gray-700">
-                          {profileData?.dob ? new Date(profileData.dob).toLocaleDateString() : 'Not provided'}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="address" className="flex items-center gap-2 mb-2">
-                        <MapPin className="w-4 h-4" />
-                        Address
-                      </Label>
-                      {isOwnProfile && isEditing ? (
-                        <Input
-                          id="address"
-                          value={profileData?.address || ''}
-                          onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                          placeholder="Enter address"
-                        />
-                      ) : (
-                        <p className="text-gray-700">{profileData?.address || 'Not provided'}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="linkedin" className="flex items-center gap-2 mb-2">
-                        <Linkedin className="w-4 h-4" />
-                        LinkedIn Profile
-                      </Label>
-                      {isOwnProfile && isEditing ? (
-                        <Input
-                          id="linkedin"
-                          value={profileData?.linkedin || ''}
-                          onChange={(e) => setProfileData({ ...profileData, linkedin: e.target.value })}
-                          placeholder="LinkedIn URL"
-                        />
-                      ) : profileData?.linkedin ? (
-                        <a
-                          href={ensureAbsoluteUrl(profileData.linkedin)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          View Profile <LinkIcon className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <p className="text-gray-700">Not provided</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="github" className="flex items-center gap-2 mb-2">
-                        <Github className="w-4 h-4" />
-                        GitHub Profile
-                      </Label>
-                      {isOwnProfile && isEditing ? (
-                        <Input
-                          id="github"
-                          value={profileData?.github || ''}
-                          onChange={(e) => setProfileData({ ...profileData, github: e.target.value })}
-                          placeholder="GitHub URL"
-                        />
-                      ) : profileData?.github ? (
-                        <a
-                          href={ensureAbsoluteUrl(profileData.github)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          View Profile <LinkIcon className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <p className="text-gray-700">Not provided</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Sponsor-specific fields */}
-                  {isSponsorView && (
-                    <div className="mt-8 pt-8 border-t">
-                      <h3 className="text-xl font-black mb-6 flex items-center gap-2">
-                        <Building className="w-5 h-5" />
-                        Sponsor Details
-                      </h3>
-
-                      <div className="grid md:grid-cols-2 gap-6">
+                    {/* Sponsor-specific fields */}
+                    {isSponsorView && (
+                      <div className="mt-8 pt-8 border-t dark:border-gray-700">
+                        <h3 className="text-xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                          <Building className="w-5 h-5" />
+                          Sponsor Details
+                        </h3>
+                        {/* ... Sponsor specific fields (same as before) ... */}
+                         <div className="grid md:grid-cols-2 gap-6">
                         <div className="md:col-span-2">
-                          <Label htmlFor="firmDescription">Firm Description</Label>
+                          <Label htmlFor="firmDescription" className="dark:text-gray-300">Firm Description</Label>
                           {isEditing ? (
                             <Textarea
                               id="firmDescription"
@@ -489,14 +508,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="Describe your firm"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700">{profileData?.sponsorDetails?.firmDescription || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.firmDescription || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="firmLogo">Firm Logo URL</Label>
+                          <Label htmlFor="firmLogo" className="dark:text-gray-300">Firm Logo URL</Label>
                           {isEditing ? (
                             <Input
                               id="firmLogo"
@@ -508,18 +528,19 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="URL for your firm's logo"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : profileData?.sponsorDetails?.firmLogo ? (
-                            <div className="w-24 h-24 rounded-lg overflow-hidden border bg-gray-50">
+                            <div className="w-24 h-24 rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-900 dark:border-gray-600">
                               <img src={profileData.sponsorDetails.firmLogo} alt="Firm Logo" className="w-full h-full object-contain" />
                             </div>
                           ) : (
-                            <p className="text-gray-700">Not provided</p>
+                            <p className="text-gray-700 dark:text-gray-300">Not provided</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="pocName">Point of Contact Name</Label>
+                          <Label htmlFor="pocName" className="dark:text-gray-300">Point of Contact Name</Label>
                           {isEditing ? (
                             <Input
                               id="pocName"
@@ -531,14 +552,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="e.g., Jane Doe"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.name || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.name || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="pocEmail">Point of Contact Email</Label>
+                          <Label htmlFor="pocEmail" className="dark:text-gray-300">Point of Contact Email</Label>
                           {isEditing ? (
                             <Input
                               id="pocEmail"
@@ -551,14 +573,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="e.g., jane.doe@company.com"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.email || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.email || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="pocContactNo">Point of Contact Phone</Label>
+                          <Label htmlFor="pocContactNo" className="dark:text-gray-300">Point of Contact Phone</Label>
                           {isEditing ? (
                             <Input
                               id="pocContactNo"
@@ -571,14 +594,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="e.g., +91 1234567890"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.contactNo || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.contactNo || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="pocRole">Point of Contact Role</Label>
+                          <Label htmlFor="pocRole" className="dark:text-gray-300">Point of Contact Role</Label>
                           {isEditing ? (
                             <Input
                               id="pocRole"
@@ -590,14 +614,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="e.g., Marketing Manager"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700">{profileData?.sponsorDetails?.poc?.role || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.role || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div className="md:col-span-2">
-                          <Label htmlFor="banner">Banner Image URL</Label>
+                          <Label htmlFor="banner" className="dark:text-gray-300">Banner Image URL</Label>
                           {isEditing ? (
                             <Input
                               id="banner"
@@ -609,14 +634,15 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="URL for a large banner image"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700 truncate">{profileData?.sponsorDetails?.banner || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300 truncate">{profileData?.sponsorDetails?.banner || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div className="md:col-span-2">
-                          <Label htmlFor="links">Website & Social Links</Label>
+                          <Label htmlFor="links" className="dark:text-gray-300">Website & Social Links</Label>
                           {isEditing ? (
                             <Textarea
                               id="links"
@@ -628,13 +654,14 @@ export const ProfilePage = () => {
                                 })
                               }
                               placeholder="Enter each URL on a new line"
+                              className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : profileData?.sponsorDetails?.links && profileData.sponsorDetails.links.filter((l) => l.trim()).length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                               {profileData.sponsorDetails.links.map((link, idx) => (
                                 link.trim() && (
                                   <a key={idx} href={ensureAbsoluteUrl(link)} target="_blank" rel="noopener noreferrer">
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-gray-100">
+                                    <Badge variant="outline" className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
                                       <LinkIcon className="w-3 h-3 mr-1.5" />
                                       Link {idx + 1}
                                     </Badge>
@@ -643,283 +670,212 @@ export const ProfilePage = () => {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-gray-700">Not provided</p>
+                            <p className="text-gray-700 dark:text-gray-300">Not provided</p>
                           )}
                         </div>
                       </div>
-
-                      {/* Dynamic Locations Section */}
-                      {isEditing && (
-                        <div className="mt-6 pt-6 border-t">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-semibold">Locations</h4>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const newLocations = [...(profileData.sponsorDetails?.locations || []), { title: '', address: '', description: '', mapLink: '' }];
-                                setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
-                              }}
-                            >
-                              <Plus className="w-4 h-4 mr-2" /> Add Location
-                            </Button>
-                          </div>
-                          <div className="space-y-4">
-                            {(profileData.sponsorDetails?.locations || []).map((loc, index) => (
-                              <div key={index} className="p-4 border rounded-lg relative">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="absolute top-1 right-1 h-7 w-7"
-                                  onClick={() => {
-                                    const newLocations = (profileData.sponsorDetails?.locations || []).filter((_, i) => i !== index);
-                                    setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
-                                  }}
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <Label htmlFor={`loc-title-${index}`}>Title</Label>
-                                    <Input
-                                      id={`loc-title-${index}`}
-                                      value={loc.title}
-                                      placeholder="e.g., Main Office"
-                                      onChange={(e) => {
-                                        const newLocations = [...(profileData.sponsorDetails?.locations || [])];
-                                        newLocations[index] = { ...newLocations[index], title: e.target.value };
-                                        setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
-                                      }}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label htmlFor={`loc-address-${index}`}>Address</Label>
-                                    <Input
-                                      id={`loc-address-${index}`}
-                                      value={loc.address}
-                                      placeholder="Full Address"
-                                      onChange={(e) => {
-                                        const newLocations = [...(profileData.sponsorDetails?.locations || [])];
-                                        newLocations[index] = { ...newLocations[index], address: e.target.value };
-                                        setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <Label htmlFor={`loc-map-${index}`}>Map Link</Label>
-                                    <Input
-                                      id={`loc-map-${index}`}
-                                      value={loc.mapLink}
-                                      placeholder="Google Maps URL"
-                                      onChange={(e) => {
-                                        const newLocations = [...(profileData.sponsorDetails?.locations || [])];
-                                        newLocations[index] = { ...newLocations[index], mapLink: e.target.value };
-                                        setProfileData({ ...profileData, sponsorDetails: { ...profileData.sponsorDetails, locations: newLocations } });
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Resume Section - Students Only */}
-                  {isStudentView && (
-                    <div className="mt-8 pt-8 border-t">
-                      <Label className="flex items-center gap-2 mb-2">
-                        <FileText className="w-4 h-4" />
-                        Resume
-                      </Label>
-                      {isOwnProfile && profileData?.resume ? (
-                        <div className="flex items-center gap-3">
-                          <Button variant="outline" asChild>
-                            <a href={profileData?.resume} target="_blank" rel="noopener noreferrer">
-                              View Resume
-                            </a>
-                          </Button>
-                          {isEditing && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setProfileData({ ...profileData, resume: '' })}
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      ) : isOwnProfile && isEditing ? (
-                        <Input
-                          type="url"
-                          placeholder="Resume URL"
-                          value={profileData?.resume || ''}
-                          onChange={(e) => setProfileData({ ...profileData, resume: e.target.value })}
-                        />
-                      ) : (
-                        <p className="text-gray-500">No resume uploaded</p>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              </TabsContent>
-
-              {/* Achievements Tab */}
-              <TabsContent value="achievements">
-                <Card className="p-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-black">Past Achievements</h2>
-                    {isOwnProfile && isEditing && (
-                      <Button onClick={() => setAchievementDialog(true)} className={`bg-gradient-to-r ${getRoleColor()}`}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Achievement
-                      </Button>
+                      </div>
                     )}
-                  </div>
 
-                  {profileData?.pastAchievements && profileData.pastAchievements.length > 0 ? (
-                    <div className="space-y-4">
-                      {profileData.pastAchievements.map((achievement, index) => (
-                        <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                          <Card className="p-6 border-l-4 border-purple-500">
-                            <div className="flex items-start justify-between">
-                              <div className="flex gap-4 flex-1">
-                                <Trophy className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
-                                <div className="flex-1">
-                                  <h3 className="font-black mb-1">{achievement.title}</h3>
-                                  <p className="text-gray-600 mb-2">{achievement.description}</p>
-                                  {achievement.proof && (
-                                    <Button variant="link" size="sm" asChild className="p-0 h-auto">
-                                      <a href={achievement.proof} target="_blank" rel="noopener noreferrer">
-                                        View Proof
-                                      </a>
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                              {isOwnProfile && isEditing && (
-                                <Button variant="ghost" size="sm" onClick={() => handleRemoveAchievement(index)}>
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Trophy className="w-16 h-16 mx-auto mb-3 text-gray-300" />
-                      <p className="text-gray-500">No achievements added yet</p>
+                    {/* Resume Section - Students Only */}
+                    {isStudentView && (
+                      <div className="mt-8 pt-8 border-t dark:border-gray-700">
+                        <Label className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                          <FileText className="w-4 h-4" />
+                          Resume
+                        </Label>
+                        {isOwnProfile && profileData?.resume ? (
+                          <div className="flex items-center gap-3">
+                            <Button variant="outline" asChild className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                              <a href={profileData?.resume} target="_blank" rel="noopener noreferrer">
+                                View Resume
+                              </a>
+                            </Button>
+                            {isEditing && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setProfileData({ ...profileData, resume: '' })}
+                                className="dark:text-gray-400 dark:hover:text-red-400"
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        ) : isOwnProfile && isEditing ? (
+                          <Input
+                            type="url"
+                            placeholder="Resume URL"
+                            value={profileData?.resume || ''}
+                            onChange={(e) => setProfileData({ ...profileData, resume: e.target.value })}
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                          />
+                        ) : (
+                          <p className="text-gray-500 dark:text-gray-400">No resume uploaded</p>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {activeTab === 'achievements' && (
+                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-black dark:text-white">Past Achievements</h2>
                       {isOwnProfile && isEditing && (
-                        <Button onClick={() => setAchievementDialog(true)} variant="outline" className="mt-4">
-                          Add Your First Achievement
+                        <Button onClick={() => setAchievementDialog(true)} className={`bg-gradient-to-r ${getRoleColor()} border-0`}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Achievement
                         </Button>
                       )}
                     </div>
-                  )}
-                </Card>
-              </TabsContent>
 
-              {/* Interests Tab */}
-              <TabsContent value="interests">
-                <Card className="p-8">
-                  <h2 className="text-2xl font-black mb-6">Areas of Interest</h2>
-
-                  {profileData?.areasOfInterest && profileData.areasOfInterest.length > 0 ? (
-                    <div className="flex flex-wrap gap-3">
-                      {profileData.areasOfInterest.map((interest, index) => (
-                        <Badge key={index} variant="outline" className="text-base py-2 px-4">
-                          {interest}
-                          {isOwnProfile && isEditing && (
-                            <button onClick={() => handleRemoveInterest(index)} className="ml-2 hover:text-red-600">
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 mb-4">No interests added yet</p>
-                  )}
-
-                  {isOwnProfile && isEditing && (
-                    <div className="mt-6">
-                      <Label htmlFor="new-interest">Add Interest</Label>
-                      <div className="flex gap-2 mt-2">
-                        <Input
-                          id="new-interest"
-                          placeholder="e.g., Web Development, Photography"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleAddInterest(e.currentTarget.value);
-                              e.currentTarget.value = '';
-                            }
-                          }}
-                        />
-                        <Button
-                          onClick={() => {
-                            const input = document.getElementById('new-interest');
-                            if (input) {
-                              handleAddInterest(input.value);
-                              input.value = '';
-                            }
-                          }}
-                        >
-                          Add
-                        </Button>
+                    {profileData?.pastAchievements && profileData.pastAchievements.length > 0 ? (
+                      <div className="space-y-4">
+                        {profileData.pastAchievements.map((achievement, index) => (
+                          <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                            <Card className="p-6 border-l-4 border-purple-500 dark:bg-gray-700 dark:border-t-0 dark:border-r-0 dark:border-b-0">
+                              <div className="flex items-start justify-between">
+                                <div className="flex gap-4 flex-1">
+                                  <Trophy className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
+                                  <div className="flex-1">
+                                    <h3 className="font-black mb-1 dark:text-white">{achievement.title}</h3>
+                                    <p className="text-gray-600 dark:text-gray-300 mb-2">{achievement.description}</p>
+                                    {achievement.proof && (
+                                      <Button variant="link" size="sm" asChild className="p-0 h-auto dark:text-blue-400">
+                                        <a href={achievement.proof} target="_blank" rel="noopener noreferrer">
+                                          View Proof
+                                        </a>
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                                {isOwnProfile && isEditing && (
+                                  <Button variant="ghost" size="sm" onClick={() => handleRemoveAchievement(index)} className="dark:text-gray-400 dark:hover:text-red-400">
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </Card>
+                          </motion.div>
+                        ))}
                       </div>
-                    </div>
-                  )}
-                </Card>
-              </TabsContent>
-            </Tabs>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Trophy className="w-16 h-16 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                        <p className="text-gray-500 dark:text-gray-400">No achievements added yet</p>
+                        {isOwnProfile && isEditing && (
+                          <Button onClick={() => setAchievementDialog(true)} variant="outline" className="mt-4 dark:text-gray-300 dark:border-gray-600">
+                            Add Your First Achievement
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {activeTab === 'interests' && (
+                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 dark:text-white">Areas of Interest</h2>
+
+                    {profileData?.areasOfInterest && profileData.areasOfInterest.length > 0 ? (
+                      <div className="flex flex-wrap gap-3">
+                        {profileData.areasOfInterest.map((interest, index) => (
+                          <Badge key={index} variant="outline" className="text-base py-2 px-4 dark:text-gray-300 dark:border-gray-600">
+                            {interest}
+                            {isOwnProfile && isEditing && (
+                              <button onClick={() => handleRemoveInterest(index)} className="ml-2 hover:text-red-600 dark:hover:text-red-400">
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">No interests added yet</p>
+                    )}
+
+                    {isOwnProfile && isEditing && (
+                      <div className="mt-6">
+                        <Label htmlFor="new-interest" className="dark:text-gray-300">Add Interest</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            id="new-interest"
+                            placeholder="e.g., Web Development, Photography"
+                            className="dark:bg-gray-900 dark:border-gray-600"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddInterest(e.currentTarget.value);
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                          <Button
+                            onClick={() => {
+                              const input = document.getElementById('new-interest');
+                              if (input) {
+                                handleAddInterest(input.value);
+                                input.value = '';
+                              }
+                            }}
+                            className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
+              </div>
+            </div>
 
             {/* Add Achievement Dialog */}
             <Dialog open={achievementDialog} onOpenChange={setAchievementDialog}>
-              <DialogContent>
+              <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
                 <DialogHeader>
-                  <DialogTitle>Add Achievement</DialogTitle>
-                  <DialogDescription>Add a new achievement to your profile</DialogDescription>
+                  <DialogTitle className="dark:text-white">Add Achievement</DialogTitle>
+                  <DialogDescription className="dark:text-gray-400">Add a new achievement to your profile</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="achievement-title">Title *</Label>
+                    <Label htmlFor="achievement-title" className="dark:text-gray-300">Title *</Label>
                     <Input
                       id="achievement-title"
                       value={newAchievement.title}
                       onChange={(e) => setNewAchievement({ ...newAchievement, title: e.target.value })}
                       placeholder="e.g., First Prize in Hackathon"
+                      className="dark:bg-gray-900 dark:border-gray-600"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="achievement-desc">Description *</Label>
+                    <Label htmlFor="achievement-desc" className="dark:text-gray-300">Description *</Label>
                     <Textarea
                       id="achievement-desc"
                       value={newAchievement.description}
                       onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
                       placeholder="Describe your achievement..."
                       rows={3}
+                      className="dark:bg-gray-900 dark:border-gray-600"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="achievement-proof">Proof (URL)</Label>
+                    <Label htmlFor="achievement-proof" className="dark:text-gray-300">Proof (URL)</Label>
                     <Input
                       id="achievement-proof"
                       type="url"
                       value={newAchievement.proof}
                       onChange={(e) => setNewAchievement({ ...newAchievement, proof: e.target.value })}
                       placeholder="Link to certificate or proof"
+                      className="dark:bg-gray-900 dark:border-gray-600"
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setAchievementDialog(false)}>
+                  <Button variant="outline" onClick={() => setAchievementDialog(false)} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                     Cancel
                   </Button>
-                  <Button onClick={handleAddAchievement} className={`bg-gradient-to-r ${getRoleColor()}`}>
+                  <Button onClick={handleAddAchievement} className={`bg-gradient-to-r ${getRoleColor()} border-0`}>
                     Add Achievement
                   </Button>
                 </DialogFooter>
@@ -928,10 +884,10 @@ export const ProfilePage = () => {
 
             {/* Report User Dialog */}
             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-              <DialogContent>
+              <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
                 <DialogHeader>
-                  <DialogTitle>Report User</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="dark:text-white">Report User</DialogTitle>
+                  <DialogDescription className="dark:text-gray-400">
                     Please describe the issue you're reporting. Our team will review it shortly.
                   </DialogDescription>
                 </DialogHeader>
@@ -940,11 +896,11 @@ export const ProfilePage = () => {
                     placeholder="Describe the issue..."
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
-                    className="min-h-32"
+                    className="min-h-32 dark:bg-gray-900 dark:border-gray-600"
                   />
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => setReportDialogOpen(false)} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                     Cancel
                   </Button>
                   <Button onClick={handleSubmitReport} disabled={!reportReason.trim()} variant="destructive">

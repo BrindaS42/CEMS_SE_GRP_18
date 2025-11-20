@@ -147,6 +147,7 @@ const LoginPage = () => {
                   value={selectedRole}
                   onChange={setSelectedRole}
                   variant={selectedRole}
+                  isFullWidth={true} // Updated to force full width
                 />
               </div>
 

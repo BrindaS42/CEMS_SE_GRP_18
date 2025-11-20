@@ -7,6 +7,7 @@ export function SegmentedControl({
   value, 
   onChange, 
   variant = 'blue',
+  isFullWidth = false, // New prop to control width behavior
   className 
 }) {
   const buttonRefs = useRef([]);
@@ -16,11 +17,11 @@ export function SegmentedControl({
   const colors = {
     // Default fallbacks
     blue: {
-      active: 'bg-primary',
+      active: 'bg-primary shadow-sm',
       activeText: 'text-primary-foreground',
     },
     orange: {
-      active: 'bg-secondary',
+      active: 'bg-secondary shadow-sm',
       activeText: 'text-secondary-foreground',
     },
     // Specific Role Colors (Apple-style brights)
@@ -60,13 +61,14 @@ export function SegmentedControl({
         });
       }
     }
-  }, [selectedIndex, value, options]); // Added options dependency for resize safety
+  }, [selectedIndex, value, options, isFullWidth]); 
 
   return (
     <div 
       className={cn(
-        // Layout Fix: Use flex w-full instead of inline-flex to prevent overflow
-        "flex w-full p-1.5 rounded-xl relative select-none",
+        // Layout: Default to inline-flex (compact), switch to flex w-full if isFullWidth is true
+        isFullWidth ? "flex w-full" : "inline-flex w-fit",
+        "p-1 rounded-xl relative select-none items-center",
         // Background: Darker in dark mode, lighter in light mode
         "bg-muted/50 dark:bg-slate-900/50 border border-border/50",
         className
@@ -76,7 +78,7 @@ export function SegmentedControl({
       {selectedIndex !== -1 && (
         <motion.div
           className={cn(
-            "absolute rounded-lg h-[calc(100%-12px)] top-1.5",
+            "absolute rounded-lg h-[calc(100%-8px)] top-1",
             colorScheme.active
           )}
           initial={false}
@@ -102,8 +104,9 @@ export function SegmentedControl({
             ref={(el) => (buttonRefs.current[index] = el)}
             onClick={() => onChange(option.value)}
             className={cn(
-              // Layout Fix: flex-1 forces equal width distribution
-              "flex-1 relative z-10 px-2 py-2 rounded-lg transition-colors duration-200",
+              // If full width, force equal distribution. If not, use standard padding
+              isFullWidth ? "flex-1" : "px-4",
+              "relative z-10 py-1.5 rounded-lg transition-colors duration-200",
               "text-sm font-medium cursor-pointer text-center truncate",
               isActive 
                 ? colorScheme.activeText 

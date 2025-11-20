@@ -21,12 +21,9 @@ import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '../components/ui/tabs';
+import { Separator } from '../components/ui/separator';
+import {Sidebar} from '../components/general/Sidebar';
+import { SegmentedControl } from '../components/ui/segmented-control'; // UPDATED
 import {
   Select,
   SelectContent,
@@ -34,8 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Separator } from '../components/ui/separator';
-import {Sidebar} from '../components/general/Sidebar';
 import { toast } from 'sonner';
 
 export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }) => {
@@ -53,6 +48,9 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [eventReminders, setEventReminders] = useState(true);
+
+  // UPDATED: State for Segmented Control
+  const [activeTab, setActiveTab] = useState('general');
 
   const isStudentView = user?.role === 'student';
 
@@ -73,9 +71,10 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto smooth-scroll p-6 page-transition">
           <div
-            className={`max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 ${isStudentView
-                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
-                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50'
+            className={`max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
+                isStudentView
+                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950'
+                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950'
               }`}
           >
           {/* Header */}
@@ -93,72 +92,68 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
               >
                 <Settings className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
                 Settings
               </h1>
             </div>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Manage your account settings and preferences
             </p>
           </motion.div>
 
-          {/* Settings Tabs */}
+          {/* Settings Tabs (Replaced with SegmentedControl) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="space-y-6"
           >
-            <Tabs defaultValue="general" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="general" className="gap-2">
-                  <User className="w-4 h-4" />
-                  General
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-2">
-                  <Bell className="w-4 h-4" />
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger value="privacy" className="gap-2">
-                  <Lock className="w-4 h-4" />
-                  Privacy
-                </TabsTrigger>
-                <TabsTrigger value="preferences" className="gap-2">
-                  <Globe className="w-4 h-4" />
-                  Preferences
-                </TabsTrigger>
-              </TabsList>
+            <SegmentedControl
+              options={[
+                { value: 'general', label: <div className="flex items-center justify-center gap-2"><User className="w-4 h-4" /> General</div> },
+                { value: 'notifications', label: <div className="flex items-center justify-center gap-2"><Bell className="w-4 h-4" /> Notifications</div> },
+                { value: 'privacy', label: <div className="flex items-center justify-center gap-2"><Lock className="w-4 h-4" /> Privacy</div> },
+                { value: 'preferences', label: <div className="flex items-center justify-center gap-2"><Globe className="w-4 h-4" /> Preferences</div> },
+              ]}
+              value={activeTab}
+              onChange={setActiveTab}
+              variant={user?.role || 'blue'}
+              // className="w-full"
+            />
 
               {/* General Settings */}
-              <TabsContent value="general">
-                <Card className="p-6">
-                  <h3 className="text-xl font-black mb-4">General Settings</h3>
+              {activeTab === 'general' && (
+                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <h3 className="text-xl font-black mb-4 dark:text-white">General Settings</h3>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="username" className="dark:text-gray-300">Username</Label>
                       <Input
                         id="username"
                         placeholder="Enter your username"
                         defaultValue={user?.username}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email" className="dark:text-gray-300">Email Address</Label>
                       <Input
                         id="email"
                         type="email"
                         placeholder="Enter your email"
                         defaultValue={user?.email}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="language">Language</Label>
+                      <Label htmlFor="language" className="dark:text-gray-300">Language</Label>
                       <Select defaultValue="en">
-                        <SelectTrigger id="language">
+                        <SelectTrigger id="language" className="dark:bg-gray-900 dark:border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                           <SelectItem value="en">English</SelectItem>
                           <SelectItem value="es">Spanish</SelectItem>
                           <SelectItem value="fr">French</SelectItem>
@@ -167,16 +162,16 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       </Select>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
                       <Button
                         onClick={handleSaveSettings}
                         className={
                           isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
                         }
                       >
                         <Save className="w-4 h-4 mr-2" />
@@ -185,22 +180,22 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
+              )}
 
               {/* Notifications Settings */}
-              <TabsContent value="notifications">
-                <Card className="p-6">
-                  <h3 className="text-xl font-black mb-4">
+              {activeTab === 'notifications' && (
+                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <h3 className="text-xl font-black mb-4 dark:text-white">
                     Notification Preferences
                   </h3>
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-500" />
-                          <Label>Email Notifications</Label>
+                          <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <Label className="dark:text-gray-300">Email Notifications</Label>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Receive email updates about your events
                         </p>
                       </div>
@@ -210,15 +205,15 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       />
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-gray-500" />
-                          <Label>Push Notifications</Label>
+                          <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <Label className="dark:text-gray-300">Push Notifications</Label>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Get notified about important updates
                         </p>
                       </div>
@@ -228,15 +223,15 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       />
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-gray-500" />
-                          <Label>Event Reminders</Label>
+                          <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <Label className="dark:text-gray-300">Event Reminders</Label>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Receive reminders before events start
                         </p>
                       </div>
@@ -246,16 +241,16 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       />
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
                       <Button
                         onClick={handleSaveSettings}
                         className={
                           isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
                         }
                       >
                         <Save className="w-4 h-4 mr-2" />
@@ -264,54 +259,55 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
+              )}
 
               {/* Privacy Settings */}
-              <TabsContent value="privacy">
-                <Card className="p-6">
-                  <h3 className="text-xl font-black mb-4">Privacy & Security</h3>
+              {activeTab === 'privacy' && (
+                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <h3 className="text-xl font-black mb-4 dark:text-white">Privacy & Security</h3>
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label>Profile Visibility</Label>
+                      <Label className="dark:text-gray-300">Profile Visibility</Label>
                       <Select defaultValue="public">
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                           <SelectItem value="public">Public</SelectItem>
                           <SelectItem value="private">Private</SelectItem>
                           <SelectItem value="friends">Friends Only</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         Choose who can see your profile
                       </p>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="space-y-4">
-                      <Label>Password</Label>
+                      <Label className="dark:text-gray-300">Password</Label>
                       <div className="grid gap-4">
-                        <Input type="password" placeholder="Current password" />
-                        <Input type="password" placeholder="New password" />
+                        <Input type="password" placeholder="Current password" className="dark:bg-gray-900 dark:border-gray-600" />
+                        <Input type="password" placeholder="New password" className="dark:bg-gray-900 dark:border-gray-600" />
                         <Input
                           type="password"
                           placeholder="Confirm new password"
+                          className="dark:bg-gray-900 dark:border-gray-600"
                         />
                       </div>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-900/20 dark:border-red-800/50">
                       <div className="flex items-center gap-2 mb-2">
-                        <Shield className="w-5 h-5 text-red-600" />
-                        <h4 className="font-semibold text-red-900">
+                        <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
+                        <h4 className="font-semibold text-red-900 dark:text-red-300">
                           Danger Zone
                         </h4>
                       </div>
-                      <p className="text-sm text-red-700 mb-3">
+                      <p className="text-sm text-red-700 dark:text-red-300/80 mb-3">
                         Delete your account and all associated data
                       </p>
                       <Button variant="destructive" size="sm">
@@ -320,13 +316,13 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                     </div>
 
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
                       <Button
                         onClick={handleSaveSettings}
                         className={
                           isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
                         }
                       >
                         <Save className="w-4 h-4 mr-2" />
@@ -335,12 +331,12 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
+              )}
 
               {/* Preferences Settings */}
-              <TabsContent value="preferences">
-                <Card className="p-6">
-                  <h3 className="text-xl font-black mb-4">
+              {activeTab === 'preferences' && (
+                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <h3 className="text-xl font-black mb-4 dark:text-white">
                     Appearance & Preferences
                   </h3>
                   <div className="space-y-6">
@@ -348,28 +344,28 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                           {darkMode ? (
-                            <Moon className="w-4 h-4 text-gray-500" />
+                            <Moon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           ) : (
-                            <Sun className="w-4 h-4 text-gray-500" />
+                            <Sun className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           )}
-                          <Label>Dark Mode</Label>
+                          <Label className="dark:text-gray-300">Dark Mode</Label>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Toggle dark mode theme
                         </p>
                       </div>
                       <Switch checked={darkMode} onCheckedChange={setDarkMode} />
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="space-y-2">
-                      <Label>Timezone</Label>
+                      <Label className="dark:text-gray-300">Timezone</Label>
                       <Select defaultValue="utc">
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                           <SelectItem value="utc">UTC</SelectItem>
                           <SelectItem value="est">Eastern Time</SelectItem>
                           <SelectItem value="pst">Pacific Time</SelectItem>
@@ -380,15 +376,15 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       </Select>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="space-y-2">
-                      <Label>Date Format</Label>
+                      <Label className="dark:text-gray-300">Date Format</Label>
                       <Select defaultValue="mdy">
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                           <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
                           <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
                           <SelectItem value="ymd">YYYY/MM/DD</SelectItem>
@@ -396,15 +392,15 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       </Select>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="space-y-2">
-                      <Label>Default View</Label>
+                      <Label className="dark:text-gray-300">Default View</Label>
                       <Select defaultValue="grid">
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                           <SelectItem value="grid">Grid View</SelectItem>
                           <SelectItem value="list">List View</SelectItem>
                           <SelectItem value="compact">
@@ -414,16 +410,16 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                       </Select>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
 
                     <div className="flex justify-end gap-3">
-                      <Button variant="outline">Cancel</Button>
+                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
                       <Button
                         onClick={handleSaveSettings}
                         className={
                           isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
                         }
                       >
                         <Save className="w-4 h-4 mr-2" />
@@ -432,9 +428,8 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                     </div>
                   </div>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </motion.div>
+              )}
+            </motion.div>
           </div>
           </main>
       </div>
