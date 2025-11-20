@@ -80,12 +80,12 @@ export const EventListingPage = () => {
       whileHover={{ y: -8, scale: 1.02 }}
     >
       <Link to={`/events/${event._id}`}>
-        <Card className={`overflow-hidden h-full border-2 transition-all hover:shadow-2xl ${
+        <Card className={`overflow-hidden h-full border-2 transition-all hover:shadow-2xl dark:bg-gray-800 dark:border-gray-700 ${
           isStudentView 
-            ? 'hover:border-purple-400' 
-            : 'hover:border-indigo-400'
+            ? 'hover:border-purple-400 dark:hover:border-purple-500' 
+            : 'hover:border-indigo-400 dark:hover:border-indigo-500'
         }`}>
-          <div className="relative h-48 bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
+          <div className="relative h-48 bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 dark:from-purple-900 dark:via-pink-900 dark:to-orange-900 overflow-hidden">
             {event.gallery && event.gallery[0] ? (
               <img
                 src={event.gallery[0]}
@@ -120,30 +120,30 @@ export const EventListingPage = () => {
           </div>
 
           <div className="p-6">
-            <h3 className="text-xl font-black mb-2 line-clamp-1">
+            <h3 className="text-xl font-black mb-2 line-clamp-1 dark:text-white">
               {event.title}
             </h3>
             
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
               {event.description || 'No description available'}
             </p>
 
             {event.categoryTags && event.categoryTags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {event.categoryTags.slice(0, 3).map((tag, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">
+                  <Badge key={i} variant="outline" className="text-xs dark:text-gray-300 dark:border-gray-600">
                     {tag}
                   </Badge>
                 ))}
                 {event.categoryTags.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs dark:text-gray-300 dark:border-gray-600">
                     +{event.categoryTags.length - 3}
                   </Badge>
                 )}
               </div>
             )}
 
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
               {event.venue?.address && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -160,11 +160,11 @@ export const EventListingPage = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center gap-1 text-purple-600">
+              <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
                   <Users className="w-4 h-4" />
                   <span className="font-semibold">{event.registrationCount || 0}</span>
-                  <span className="text-xs text-gray-500">registered</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">registered</span>
                 </div>
               </div>
             </div>
@@ -175,10 +175,10 @@ export const EventListingPage = () => {
   );
 
   return (
-    <div className={`min-h-screen pt-20 pb-12 ${
+    <div className={`min-h-screen pt-20 pb-12 transition-colors duration-300 ${
       isStudentView
-        ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50'
-        : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50'
+        ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950'
+        : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -190,20 +190,20 @@ export const EventListingPage = () => {
             <h1 className="text-5xl md:text-6xl font-black mb-4">
               <span className={`bg-gradient-to-r ${
                 isStudentView
-                  ? 'from-purple-600 via-pink-600 to-orange-600'
-                  : 'from-indigo-600 via-purple-600 to-pink-600'
+                  ? 'from-purple-600 via-pink-600 to-orange-600 dark:from-purple-400 dark:via-pink-400 dark:to-orange-400'
+                  : 'from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400'
               } bg-clip-text text-transparent`}>
                 Discover Events
               </span>
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               Find amazing events happening around you! {isStudentView ? '🎉' : '📅'}
             </p>
           </div>
 
           <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <Input
                 type="text"
                 placeholder="Search events..."
@@ -212,7 +212,7 @@ export const EventListingPage = () => {
                   setSearchQuery(e.target.value);
                   setPage(1);
                 }}
-                className="pl-12 pr-4 py-6 text-lg rounded-2xl border-2 focus:border-purple-400"
+                className="pl-12 pr-4 py-6 text-lg rounded-2xl border-2 focus:border-purple-400 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
               />
             </div>
           </div>
@@ -228,7 +228,7 @@ export const EventListingPage = () => {
                   isStudentView
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
                     : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
-                ) : ''}
+                ) : 'dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'}
               >
                 {tag}
               </Button>
@@ -236,7 +236,7 @@ export const EventListingPage = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Filter className="w-5 h-5" />
               <span className="font-semibold">
                 {events.length} events found
@@ -248,15 +248,15 @@ export const EventListingPage = () => {
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <Skeleton className="h-48 w-full" />
+              <Card key={i} className="overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                <Skeleton className="h-48 w-full dark:bg-gray-700" />
                 <div className="p-6 space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-6 w-3/4 dark:bg-gray-700" />
+                  <Skeleton className="h-4 w-full dark:bg-gray-700" />
+                  <Skeleton className="h-4 w-full dark:bg-gray-700" />
                   <div className="flex gap-2">
-                    <Skeleton className="h-6 w-16" />
-                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-6 w-16 dark:bg-gray-700" />
+                    <Skeleton className="h-6 w-16 dark:bg-gray-700" />
                   </div>
                 </div>
               </Card>
@@ -268,9 +268,9 @@ export const EventListingPage = () => {
             animate={{ opacity: 1 }}
             className="text-center py-20"
           >
-            <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-2xl font-black text-gray-400 mb-2">No events found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-2xl font-black text-gray-400 dark:text-gray-500 mb-2">No events found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filters</p>
           </motion.div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -286,6 +286,7 @@ export const EventListingPage = () => {
               variant="outline"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
+              className="dark:bg-gray-800 dark:text-white dark:border-gray-700"
             >
               Previous
             </Button>
@@ -296,9 +297,9 @@ export const EventListingPage = () => {
                 onClick={() => setPage(i + 1)}
                 className={page === i + 1 ? (
                   isStudentView
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                    : 'bg-gradient-to-r from-indigo-600 to-purple-600'
-                ) : ''}
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 dark:text-white border-0'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 dark:text-white border-0'
+                ) : 'dark:bg-gray-800 dark:text-white dark:border-gray-700'}
               >
                 {i + 1}
               </Button>
@@ -307,6 +308,7 @@ export const EventListingPage = () => {
               variant="outline"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              className="dark:bg-gray-800 dark:text-white dark:border-gray-700"
             >
               Next
             </Button>
