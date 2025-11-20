@@ -155,7 +155,7 @@ export const SponsorDetailsPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {ads && ads.map((ad) => (
+                  {ads && ads.filter(ad => ad.status !== 'Drafted').map((ad) => (
                     <Card key={ad._id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                       <img
                         src={ad.images[0] || ad.poster}

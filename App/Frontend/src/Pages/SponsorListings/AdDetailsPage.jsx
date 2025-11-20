@@ -72,7 +72,7 @@ const AdDetailsPage = () => {
       <div className="container mx-auto px-4 py-8">
         <Card className="p-8 text-center">
           <p className="text-gray-500">Advertisement not found</p>
-          <Button onClick={() => navigate(-1)} className="mt-4">
+          <Button onClick={() => navigate(`/sponsors/${ad.sponsorId._id}`)} className="mt-4">
             Go Back
           </Button>
         </Card>
@@ -83,14 +83,6 @@ const AdDetailsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-8">
       <div className="container mx-auto px-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">

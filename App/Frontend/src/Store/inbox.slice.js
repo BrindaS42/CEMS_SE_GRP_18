@@ -51,9 +51,9 @@ export const updateDraft = createAsyncThunk('inbox/updateDraft', async ({ draftI
   }
 });
 
-export const sendMessage = createAsyncThunk('inbox/sendMessage', async (draftId, { rejectWithValue }) => {
+export const sendMessage = createAsyncThunk('inbox/sendMessage', async (draftPayload, { rejectWithValue }) => {
   try {
-    const res = await axios.put(`${API_BASE}/inbox/drafts/${draftId}/send`);
+    const res = await axios.put(`${API_BASE}/inbox/drafts/${draftPayload._id}/send`, draftPayload);
     return res.data.data;
   } catch (err) {
     return rejectWithValue(err?.response?.data?.error || 'Failed to send message');

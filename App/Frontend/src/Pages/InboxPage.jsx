@@ -95,6 +95,7 @@ const InboxPage = () => {
     status: 'Draft',
   });
   const [currentRecipient, setCurrentRecipient] = useState({ email: '', role: 'student' });
+  const [broadcastType, setBroadcastType] = useState('specific');
 
 
   useEffect(() => {
@@ -115,6 +116,7 @@ const InboxPage = () => {
   const resetComposeForm = () => {
     setComposeForm({ type: 'message', title: '', description: '', to: [], status: 'Draft' });
     setCurrentRecipient({ email: '', role: 'student' });
+    setBroadcastType('specific');
   };
 
   const loadMessages = async () => {
@@ -124,16 +126,40 @@ const InboxPage = () => {
   };
 
   const handleEditDraft = (draft) => {
-    setComposeForm({
-      _id: draft._id,
-      type: draft.type,
-      title: draft.title,
-      description: draft.description || '',
-      to: draft.to?.map(u => ({ email: u.email, role: u.role })) || [],
-      status: 'Draft',
-    });
-    setComposeDialogOpen(true);
-  };
+    // Check for Broadcast:
+    // If the `to` array has exactly one element and it's a string starting with 'to_', it's a broadcast keyword.
+    const isBroadcastKeyword = draft.to?.length === 1 && typeof draft.to[0] === 'string' && draft.to[0].startsWith('to_');
+
+    if (isBroadcastKeyword) {
+      setBroadcastType(draft.to[0]);
+      // In broadcast mode, the 'to' array in composeForm should be empty since the value is in broadcastType
+    } else {
+      setBroadcastType('specific');
+    }
+
+    let mappedRecipients = [];
+    if (draft.to && Array.isArray(draft.to)) {
+      // Map populated user objects back to the simple {email, role} format for the compose form
+      if (!isBroadcastKeyword) {
+        mappedRecipients = draft.to
+          .filter(u => u && typeof u === 'object' && u.email && u.role)
+          .map(u => ({ email: u.email, role: u.role }));
+      }
+    }
+
+
+    setComposeForm({
+      _id: draft._id,
+      type: draft.type,
+      title: draft.title,
+      description: draft.description || '',
+      // If it's a broadcast, mappedRecipients is empty (handled by broadcastType state).
+      // If it's specific, mappedRecipients has the list of recipients.
+      to: mappedRecipients,
+      status: 'Draft',
+    });
+    setComposeDialogOpen(true);
+  };
 
   const handleComposeMessage = async (saveAs) => {
     if (!composeForm.title.trim()) {
@@ -141,7 +167,10 @@ const InboxPage = () => {
       return;
     }
 
-    if (saveAs === 'Sent' && composeForm.to.length === 0) {
+    const isBroadcast = broadcastType !== 'specific';
+    const finalTo = isBroadcast ? [broadcastType] : composeForm.to;
+
+    if (saveAs === 'Sent' && finalTo.length === 0) {
       toast.error('Please specify a recipient');
       return;
     }
@@ -149,6 +178,7 @@ const InboxPage = () => {
     try {
       const payload = { ...composeForm };
 
+      payload.to = finalTo;
       if (saveAs === 'Draft') {
         delete payload._id; // Don't send _id in the body for create/update
         const thunk = composeForm._id ? updateDraft({ draftId: composeForm._id, payload }) : createDraft(payload);
@@ -157,8 +187,8 @@ const InboxPage = () => {
       } else { // 'Sent'
         if (composeForm._id) {
           // It's an existing draft, so update it then send it
-          const draftResult = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
-          await dispatch(sendMessage(draftResult._id)).unwrap();
+          const updatedDraft = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
+          await dispatch(sendMessage(updatedDraft)).unwrap();
         } else {
           // It's a new message, send it directly
           await dispatch(sendDirectMessage(payload)).unwrap();
@@ -367,7 +397,7 @@ const InboxPage = () => {
                 {selectedMessage.to && selectedMessage.to.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Send className="w-4 h-4" />
-                    To: {selectedMessage.to.map(u => u.profile?.name || '[Deleted User]').join(', ')}
+                    To: {selectedMessage.to.map(u => u.profile?.name || u.email || '[Deleted User]').join(', ')}
                   </div>
                 )}
                 <div className="flex items-center gap-1">
@@ -578,6 +608,30 @@ const InboxPage = () => {
                 </Select>
               </div>
 
+              {user?.role === 'admin' && (
+                <div>
+                  <Label>Broadcast To</Label>
+                  <Select
+                    value={broadcastType}
+                    onValueChange={(value) => {
+                      setBroadcastType(value);
+                      if (value !== 'specific') {
+                        setComposeForm(prev => ({ ...prev, to: [] }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="specific">Specific Users</SelectItem>
+                      <SelectItem value="to_all_student">All Students</SelectItem>
+                      <SelectItem value="to_all_organizer">All Organizers</SelectItem>
+                      <SelectItem value="to_all_sponsor">All Sponsors</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label>To</Label>
                 <div className="flex gap-2">
@@ -586,19 +640,20 @@ const InboxPage = () => {
                     value={currentRecipient.email}
                     onChange={(e) => setCurrentRecipient(prev => ({ ...prev, email: e.target.value }))}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                    disabled={broadcastType !== 'specific'}
                   />
                   <Select value={currentRecipient.role} onValueChange={(value) => setCurrentRecipient(prev => ({ ...prev, role: value }))}>
                     <SelectTrigger className="w-[150px]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent disabled={broadcastType !== 'specific'}>
                       <SelectItem value="student">Student</SelectItem>
                       <SelectItem value="organizer">Organizer</SelectItem>
                       <SelectItem value="sponsor">Sponsor</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button type="button" onClick={handleAddRecipient}><Plus className="w-4 h-4" /></Button>
+                  <Button type="button" onClick={handleAddRecipient} disabled={broadcastType !== 'specific'}><Plus className="w-4 h-4" /></Button>
                 </div>
                 {composeForm.to.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md">
@@ -651,7 +706,7 @@ const InboxPage = () => {
               </Button>
               <Button
                 onClick={() => handleComposeMessage('Sent')}
-                disabled={loading === 'loading' || !composeForm.title.trim() || composeForm.to.length === 0}
+                disabled={loading === 'loading' || !composeForm.title.trim() || (composeForm.to.length === 0 && broadcastType === 'specific')}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 <Send className="w-4 h-4 mr-2" />

@@ -5,26 +5,78 @@ import StudentTeam from "../models/studentTeam.model.js";
 import Registration from "../models/registration.model.js";
 import User from "../models/user.model.js";
 
+async function broadcastRecipients(keyword) {
+  if (keyword === "to_allusers") {
+    const users = await User.find().select("_id");
+    return users.map((u) => u._id);
+  }
+
+  if (keyword === "to_all_student") {
+    const users = await User.find({ role: "student" }).select("_id");
+    return users.map((u) => u._id);
+  }
+
+  if (keyword === "to_all_organizer") {
+    const users = await User.find({ role: "organizer" }).select("_id");
+    return users.map((u) => u._id);
+  }
+
+  if (keyword === "to_all_sponsor") {
+    const users = await User.find({ role: "sponsor" }).select("_id");
+    return users.map((u) => u._id);
+  }
+
+  if (keyword.startsWith("to_college:")) {
+    const collegeName = keyword.split(":")[1].trim();
+    const college = await College.findOne({ name: collegeName });
+
+    if (!college) throw new Error(`College '${collegeName}' not found`);
+
+    const users = await User.find({ college: college._id }).select("_id");
+    return users.map((u) => u._id);
+  }
+
+  return null;
+}
 
 export const createDraft = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+    const userRole = req.user?.role;
+    const {
+      type,
+      title,
+      description,
+      to,
+      message,
+      relatedEvent,
+      relatedTeam,
+      relatedTeamModel,
+    } = req.body;
 
     if (!type || !title) {
       return res.status(400).json({ error: "Type and title are required" });
     }
 
     let toUserIds = [];
+
     if (to && Array.isArray(to) && to.length > 0) {
-      // 'to' is an array of {email, role} objects
-      const findUserPromises = to.map(recipient =>
-        User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
-      );
-      const users = await Promise.all(findUserPromises);
-      toUserIds = users.filter(Boolean).map(user => user._id);
-      if (toUserIds.length !== to.length) {
-        console.warn("Some recipients were not found and were skipped.");
+      const keyword = typeof to[0] === 'string' ? to[0] : null;
+      const isBroadcastKeyword =
+        keyword && (
+          keyword === "to_allusers" ||
+          keyword === "to_all_student" ||
+          keyword === "to_all_organizer" ||
+          keyword === "to_all_sponsor" ||
+          keyword.startsWith("to_college:")
+        );
+
+      if (userRole === "admin" && isBroadcastKeyword) {
+        toUserIds = await broadcastRecipients(keyword);
+      } else {
+        const findUserPromises = to.map(recipient => User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean());
+        const users = await Promise.all(findUserPromises);
+        toUserIds = users.filter(Boolean).map(user => user._id);
       }
     }
 
@@ -55,40 +107,63 @@ export const createDraft = async (req, res) => {
   }
 };
 
-// Edit Draft
 export const editDraft = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const userRole = req.user?.role;
     const { draftId } = req.params;
-    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+
+    const {
+      type,
+      title,
+      description,
+      to,
+      relatedEvent,
+      relatedTeam,
+      relatedTeamModel,
+    } = req.body;
 
     const draft = await InboxEntity.findById(draftId);
-
-    if (!draft) {
+    if (!draft)
       return res.status(404).json({ success: false, error: "Draft not found" });
-    }
 
-    if (draft.from.toString() !== userId) {
-      return res.status(403).json({ success: false, error: "Unauthorized to edit this draft" });
-    }
+    if (draft.from.toString() !== userId)
+      return res
+        .status(403)
+        .json({ success: false, error: "Unauthorized to edit this draft" });
 
-    if (draft.status !== "Draft") {
-      return res.status(400).json({ success: false, error: "Can only edit drafts with Draft status" });
-    }
+    if (draft.status !== "Draft")
+      return res
+        .status(400)
+        .json({ success: false, error: "Only drafts can be edited" });
 
     let toUserIds = draft.to;
+
     if (to && Array.isArray(to) && to.length > 0) {
-      // 'to' is an array of {email, role} objects
-      const findUserPromises = to.map(recipient =>
-        User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
-      );
-      const users = await Promise.all(findUserPromises);
-      toUserIds = users.filter(Boolean).map(user => user._id);
-      if (toUserIds.length !== to.length) {
-        console.warn("Some recipients were not found and were skipped during update.");
+      const keyword = typeof to[0] === 'string' ? to[0] : null;
+      const isBroadcastKeyword =
+        keyword && (
+          keyword === "to_allusers" ||
+          keyword === "to_all_student" ||
+          keyword === "to_all_organizer" ||
+          keyword === "to_all_sponsor" ||
+          keyword.startsWith("to_college:")
+        );
+
+      if (userRole === "admin" && isBroadcastKeyword) {
+        toUserIds = await broadcastRecipients(keyword);
+      } else {
+        // 'to' is an array of {email, role} objects
+        const findUserPromises = to.map(recipient =>
+          User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
+        );
+        const users = await Promise.all(findUserPromises);
+        toUserIds = users.filter(Boolean).map(user => user._id);
+        if (toUserIds.length !== to.length) {
+          console.warn("Some recipients were not found and were skipped during update.");
+        }
       }
     }
-
 
     const updatedDraft = await InboxEntity.findByIdAndUpdate(
       draftId,
@@ -103,7 +178,7 @@ export const editDraft = async (req, res) => {
       },
       { new: true, runValidators: true }
     ).populate("from", "email profile.name")
-     .populate("to", "email profile.name");
+      .populate("to", "email profile.name");
 
     res.status(200).json({
       success: true,
@@ -116,28 +191,23 @@ export const editDraft = async (req, res) => {
   }
 };
 
-// Delete Draft
 export const deleteDraft = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { draftId } = req.params;
 
     const draft = await InboxEntity.findById(draftId);
-
-    if (!draft) {
+    if (!draft)
       return res.status(404).json({ success: false, error: "Draft not found" });
-    }
 
-    if (draft.from.toString() !== userId) {
-      return res.status(403).json({ success: false, error: "Unauthorized to delete this draft" });
-    }
+    if (draft.from.toString() !== userId)
+      return res.status(403).json({ success: false, error: "Unauthorized" });
 
     await InboxEntity.findByIdAndDelete(draftId);
 
-    res.status(200).json({ 
-      success: true,
-      message: "Draft deleted successfully" 
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Draft deleted successfully" });
   } catch (error) {
     console.error("deleteDraft error:", error);
     res.status(500).json({ success: false, error: "Failed to delete draft" });
@@ -152,7 +222,7 @@ export const getListOfDrafts = async (req, res) => {
     const drafts = await InboxEntity.find({ from: userId, status: "Draft" })
       .populate({
         path: "from",
-        select: "email profile.name",
+        select: "email profile.name role",
         transform: doc => doc || { profile: { name: '[Deleted User]' } }
       })
       .populate({
@@ -185,31 +255,30 @@ export const sendMessage = async (req, res) => {
     const { draftId } = req.params;
 
     const draft = await InboxEntity.findById(draftId);
+    if (!draft)
+      return res
+        .status(404)
+        .json({ success: false, error: "Message not found" });
 
-    if (!draft) {
-      return res.status(404).json({ success: false, error: "Message not found" });
-    }
+    if (draft.from.toString() !== userId)
+      return res.status(403).json({ success: false, error: "Unauthorized" });
 
-    if (draft.from.toString() !== userId) {
-      return res.status(403).json({ success: false, error: "Unauthorized to send this message" });
-    }
-
-    if (!draft.to || draft.to.length === 0) {
-      return res.status(400).json({ success: false, error: "Recipients are required to send message" });
-    }
+    // The latest 'to' list is sent in the body from the frontend.
+    const { to } = req.body;
+    if (!to || to.length === 0)
+      return res
+        .status(400)
+        .json({ success: false, error: "Recipients are required" });
 
     const sentMessage = await InboxEntity.findByIdAndUpdate(
       draftId,
-      { status: "Sent" },
+      { status: "Sent", to: draft.to }, // Keep existing to, or update if needed, but main check is on body
       { new: true }
     )
       .populate("from", "email profile.name")
       .populate("to", "email profile.name")
       .populate("relatedEvent", "name description")
-      .populate({
-        path: "relatedTeam",
-        select: "name",
-      });
+      .populate({ path: "relatedTeam", select: "name" });
 
     res.status(200).json({
       success: true,
@@ -222,29 +291,52 @@ export const sendMessage = async (req, res) => {
   }
 };
 
-// Send Direct Message (Create and Send)
 export const sendDirectMessage = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { type, title, description, to, relatedEvent, relatedTeam, relatedTeamModel } = req.body;
+    const userRole = req.user?.role;
 
-    if (!type || !title) {
+    const {
+      type,
+      title,
+      description,
+      to,
+      message,
+      relatedEvent,
+      relatedTeam,
+      relatedTeamModel,
+    } = req.body;
+
+    console.log("sendDirectMessage payload:", req.body);
+    if (!type || !title)
       return res.status(400).json({ error: "Type and title are required" });
-    }
 
-    if (!to || !Array.isArray(to) || to.filter(Boolean).length === 0) {
-      return res.status(400).json({ success: false, error: "Recipients are required to send a message" });
-    }
+    if (!to || !Array.isArray(to) || to.filter(Boolean).length === 0)
+      return res
+        .status(400)
+        .json({ success: false, error: "Recipients required" });
+
+    const keyword = typeof to[0] === 'string' ? to[0] : null;
+    const isBroadcastKeyword =
+      keyword && (
+        keyword === "to_allusers" ||
+        keyword === "to_all_student" ||
+        keyword === "to_all_organizer" ||
+        keyword === "to_all_sponsor" ||
+        keyword.startsWith("to_college:")
+      );
 
     let toUserIds = [];
-    // 'to' is an array of {email, role} objects
-    const findUserPromises = to.map(recipient =>
-      User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean()
-    );
-    const users = await Promise.all(findUserPromises);
-    toUserIds = users.filter(Boolean).map(user => user._id);
-    if (toUserIds.length !== to.length) {
-      return res.status(404).json({ success: false, error: "One or more recipients could not be found. Please check the emails and roles." });
+      console.log("isBroadcastKeyword:", isBroadcastKeyword);
+      console.log("userRole:", userRole);
+      console.log("keyword:", keyword);
+    if (userRole === "admin" && isBroadcastKeyword) {
+      toUserIds = await broadcastRecipients(keyword);
+    } else {
+      // 'to' is an array of {email, role} objects
+      const findUserPromises = to.map(recipient => User.findOne({ email: recipient.email, role: recipient.role }).select('_id').lean());
+      const users = await Promise.all(findUserPromises);
+      toUserIds = users.filter(Boolean).map(user => user._id);
     }
 
     const sentMessage = await InboxEntity.create({
@@ -274,7 +366,6 @@ export const sendDirectMessage = async (req, res) => {
   }
 };
 
-// Get List of Sent Messages
 export const getListOfSents = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -294,10 +385,7 @@ export const getListOfSents = async (req, res) => {
         transform: doc => doc || { profile: { name: '[Deleted User]' } }
       })
       .populate("relatedEvent", "name description")
-      .populate({
-        path: "relatedTeam",
-        select: "name",
-      })
+      .populate({ path: "relatedTeam", select: "name" })
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -307,12 +395,12 @@ export const getListOfSents = async (req, res) => {
     });
   } catch (error) {
     console.error("getListOfSents error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch sent messages" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch sent messages" });
   }
 };
 
-
-// Get List of Arrivals (Messages received)
 export const getListOfArrivals = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -331,10 +419,7 @@ export const getListOfArrivals = async (req, res) => {
         transform: doc => doc || { profile: { name: '[Deleted User]' } }
       })
       .populate("relatedEvent", "name description")
-      .populate({
-        path: "relatedTeam",
-        select: "name",
-      })
+      .populate({ path: "relatedTeam", select: "name" })
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -344,7 +429,9 @@ export const getListOfArrivals = async (req, res) => {
     });
   } catch (error) {
     console.error("getListOfArrivals error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch arrival messages" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch arrival messages" });
   }
 };
 
@@ -361,7 +448,7 @@ export const approveInboxEntity = async (req, res) => {
 
     if (
       inbox.type === "message" ||
-      inbox.type === "announcement" 
+      inbox.type === "announcement"
     ) {
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
       return res.status(200).json({

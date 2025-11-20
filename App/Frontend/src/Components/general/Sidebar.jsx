@@ -56,7 +56,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate 
         { icon: LayoutDashboard, label: 'Control Panel', href: '/admin/control-panel', id: 'control-panel', iconType: 'dashboard' },
         { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
         { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-        { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
 
@@ -66,7 +65,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate 
         { icon: Users, label: 'Admin Panel', href: '/student/admin', id: 'admin', iconType: 'admin' },
         { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
         { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-        { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
 
@@ -75,7 +73,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate 
         { icon: Wrench, label: 'Admin Panel', href: '/sponsor/admin', id: 'admin', iconType: 'admin' },
         { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
         { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-        { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
       ];
     }
 
@@ -85,7 +82,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate 
       { icon: Wrench, label: 'Admin Panel', href: '/organizer/admin', id: 'admin', iconType: 'admin' },
       { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
       { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-      { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
     ];
   };
 

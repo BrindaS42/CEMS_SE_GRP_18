@@ -12,7 +12,7 @@ You have two ways to query:
 2.  **AGGREGATE (Complex Query / Joins):**
     If you MUST join collections (e.g., check a registration title) or do complex logic, return a dict containing a pipeline LIST.
     Format: {{ "collectionName": [ [PIPELINE_STAGES] ] }}
-    Example: {{ "registration": [
+    Example: {{ "registrations": [
         {{ "$lookup": {{ "from": "event", "localField": "eventId", "foreignField": "_id", "as": "eventDetails" }} }},
         {{ "$unwind": "$eventDetails" }},
         {{ "$match": {{ "studentId": "{user_id}", "eventDetails.title": "AI Summit" }} }}
@@ -27,14 +27,14 @@ Interpret user intent. Map everyday terms to schema:
 
 Examples:
 - "occasion", "fest", "function", "program" → event.title / event
-- "team", "club" → studentteam / organizeteam
-- "participants" → registration
-- "check-ins", "attendance" → checkinmap
+- "team", "club" → studentteams / organizeteams
+- "participants" → registrations
+- "check-ins", "attendance" → registrations.checkins
 - "sponsor promotion", "ads" → sponsorad
 
 Common phrases → fields:
 - "when", "date" → event.timeline.date
-- "organizer", "managed by" → event.createdByTeam
+- "organizer", "managed by" → event.createdBy (ref: Team)
 - "sponsor" → event.sponsors
 - "announcements" → event.announcements
 - "my events/registrations" → registration.studentId = {user_id}
@@ -62,59 +62,66 @@ Available MongoDB Collections & Fields
 ### User Collection (users)
 Fields:
 {{
-    role (student|organizer|sponsor|admin),
-    email
-    profile{{contactNo, linkedin, github, address, dob}}
-    areasOfInterest[], roleTag, resumeUrl,
-    achievements[{{title, description, proofUrl}}],
-    sponsorDetails{{firmDescription, firmLogo, links[]}}
+    role (student|organizer|sponsor|admin), email,
+    college (ref: College), status (active|suspended),
+    profile{{name, profilePic, contactNo, linkedin, github, address, dob, areasOfInterest[], resume}},
+    pastAchievements[{{title, description, proof}}],
+    sponsorDetails{{firmDescription, firmLogo, links[], poc{{name, contactNo, email, role}}, banner, locations[]}}
 }}
 
 ### Event Collection (events)
 Fields:
 {{
-  title, description, posterUrl, createdByTeam(ref OrganizerTeam),
-  poc(ref user), timeline[{{title,date,venue}}],
-  subEvents[ref Event], categoryTags[],
-  sponsors[ref user], ratings[{{by, rating, review}}],
-  announcements[{{author, message}}], status, registrationCount, views
+  title, description, categoryTags[], college(ref: College), posterUrl,
+  poc{{name, contact}}, venue, location{{address, coordinates{{lat, lng}}}},
+  timeline[{{title, description, date, duration{{from, to}}, venue, checkInRequired}}],
+  subEvents[{{subevent(ref: Event), status}}], gallery[],
+  config{{fees, registrationType(Individual|Team), teamSizeRange{{min, max}}, isFree}},
+  registrations[ref: Registration],
+  sponsors[{{sponsor(ref: User), status}}],
+  announcements[{{date, author(ref: User), message}}],
+  ratings[{{by(ref: User), rating, review}}],
+  status(draft|published|completed|suspended), createdBy(ref: Team)
 }}
 
-### OrganizerTeam Collection (organizeteams)
+### OrganizerTeam Collection (teams)
 Fields:
 {{
-  teamName, createdBy(ref user),
-  members[{{member(ref user), role}}]
+  name, description, leader(ref: User),
+  members[{{user(ref: User), role(co-organizer|volunteer), status(Pending|Approved|Rejected)}}]
 }}
 
 ### StudentTeam Collection (studentteams)
 Fields:
 {{
-  teamName, createdBy(ref user),
-  members[{{member(ref user), role}}]
+  teamName, leader(ref: User),
+  members[{{member(ref: User), status(Approved|Pending|Rejected)}}]
 }}
 
 ### Inbox Collection (inboxentities)
 Fields:
 {{
-  type, title, description, from(ref user), to(ref user),
-  relatedEvent(ref Event), relatedTeam(ref StudentTeam|OrganizerTeam),
-  status, message
+  type(announcement|team_invite|...), title, description,
+  from(ref: User), to[ref: User],
+  status(Draft|Sent|Approved|Rejected|Pending),
+  relatedEvent(ref: Event), relatedTeam(ref: Team|StudentTeam),
+  meta{{subEventId(ref: Event)}}
 }}
 
 ### Registration Collection (registrations)
 Fields:
 {{
-  eventId(ref Event), studentId(ref user),
-  studentTeamId(ref StudentTeam), registrationType,
-  paymentStatus, registrationData, checkIns[{{status}}]
+  eventId(ref: Event), userId(ref: User), teamName(ref: StudentTeam),
+  paymentStatus(pending|verified|rejected|not_required),
+  status(pending|confirmed|cancelled),
+  checkIns[{{timelineRef, status(absent|present)}}]
 }}
 
 ### SponsorAds Collection (sponsorads)
 Fields:
 {{
-  sponsorId(ref user), title, description, images[],
-  videos[], contact, address, poster, status, views, likes
+  sponsorId(ref: User), title, description, images[], videos[],
+  contact, address, poster, status(Drafted|Published|Suspended|Expired), views, likes
 }}
 
 ----------------------------------------

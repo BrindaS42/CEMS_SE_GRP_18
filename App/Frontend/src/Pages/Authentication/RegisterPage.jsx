@@ -124,23 +124,35 @@ export const RegisterPage = () => {
     console.log('Form data before submission:', formData); // Debug log
     
     if (!validateEmail(formData.email)) {
+      console.log('Invalid email:', formData.email); // Debug log
       toast.error('Please enter a valid email address');
       return;
     }
     if (formData.password !== formData.confirmPassword) {
+      console.log('Passwords do not match:', formData.password, formData.confirmPassword); // Debug log
       toast.error('Passwords do not match');
       return;
     }
     if (formData.password.length < 8) {
+      console.log('Password too short:', formData.password); // Debug log
       toast.error('Password must be at least 8 characters long');
       return;
     }
     if (!validatePassword(formData.password)) {
+      console.log('Password complexity not met:', formData.password); // Debug log
       toast.error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
       return;
     }
 
     try {
+      console.log('Submitting registration for:', {
+        username: formData.name,
+        email: formData.email,
+        password: formData.password,
+        college: formData.college,
+        role: selectedRole,
+      }); // Debug log
+
       await dispatch(registerUser({
         username: formData.name, 
         email: formData.email,
@@ -149,6 +161,7 @@ export const RegisterPage = () => {
         role: selectedRole,
       })).unwrap();
 
+      console.log('Registration successful'); // Debug log
       toast.success(`Account created successfully! Welcome as ${selectedRole}`);
       navigate('/');
     } catch (err) {
