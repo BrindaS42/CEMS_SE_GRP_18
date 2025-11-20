@@ -414,9 +414,13 @@ export const HomePage = () => {
                   <ArrowRight className="ml-2 w-6 h-6" />
                 </Link>
               </Button>
-              <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-                Already have an account? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Login here</Link>
-              </p>
+              
+              {/* Condition added to hide login link if authenticated */}
+              {!isAuthenticated && (
+                <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+                  Already have an account? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Login here</Link>
+                </p>
+              )}
             </Card>
           </motion.div>
         </div>

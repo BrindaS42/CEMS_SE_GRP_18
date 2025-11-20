@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useDispatch, useSelector } from 'react-redux';
 import { Toaster } from './components/ui/sonner';
 import { Navbar } from './components/general/Navbar.jsx';
-import { ThemeProvider } from './utils/ThemeContext'; // UPDATED: Added ThemeProvider import
+import { ThemeProvider } from './utils/ThemeContext';
 import { HomePage } from './Pages/HomePage.jsx';
 import { LoginPage } from './Pages/Authentication/LoginPage.jsx';
 import { RegisterPage } from './Pages/Authentication/RegisterPage.jsx';
@@ -12,6 +12,7 @@ import ChangePasswordPage from './Pages/Authentication/ChangePasswordPage.jsx';
 import { CollegeRegistrationPage } from './Pages/Authentication/CollegeRegistrationPage.jsx';
 import { InboxPage } from './Pages/InboxPage.jsx';
 import { ProfilePage } from './Pages/ProfilePage.jsx';
+import { SettingsPage } from './Pages/SettingsPage.jsx'; // UPDATED: Added import
 import { fetchAuthProfile } from './store/auth.slice.js';
 import StudentDashboard from './Pages/Student/Dashboard.page.jsx';
 import StudentAdminPanel from './Pages/Student/AdminPanel.page.jsx';
@@ -117,6 +118,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      {/* UPDATED: Added Settings Route */}
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
@@ -242,7 +252,6 @@ export default function App() {
   }, []);
 
   return (
-    // UPDATED: Wrapped AppLayout with ThemeProvider
     <ThemeProvider>
       <AppLayout>
         <AppRoutes />
