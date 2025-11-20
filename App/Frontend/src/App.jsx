@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Toaster } from './components/ui/sonner';
+// import { Toaster } from './components/ui/toaster';
 import { Navbar } from './components/general/Navbar.jsx';
-import { ThemeProvider } from './utils/ThemeContext'; // UPDATED: Added ThemeProvider import
 import { HomePage } from './Pages/HomePage.jsx';
 import { LoginPage } from './Pages/Authentication/LoginPage.jsx';
 import { RegisterPage } from './Pages/Authentication/RegisterPage.jsx';
@@ -60,7 +59,7 @@ const AppLayout = ({ children }) => {
     <>
       <Navbar />
       <main>{children}</main>
-      <Toaster />
+      {/* <Toaster /> */}
     </>
   );
 };
@@ -242,12 +241,9 @@ export default function App() {
   }, []);
 
   return (
-    // UPDATED: Wrapped AppLayout with ThemeProvider
-    <ThemeProvider>
-      <AppLayout>
-        <AppRoutes />
-      </AppLayout>
-    </ThemeProvider>
+    <AppLayout>
+      <AppRoutes />
+    </AppLayout>
   );
 }
 
