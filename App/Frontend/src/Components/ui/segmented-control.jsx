@@ -12,46 +12,42 @@ export function SegmentedControl({
   const buttonRefs = useRef([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
+  // Define bright, role-specific color schemes
   const colors = {
+    // Default fallbacks
     blue: {
-      active: 'var(--primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      active: 'bg-primary',
+      activeText: 'text-primary-foreground',
     },
     orange: {
-      active: 'var(--secondary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      active: 'bg-secondary',
+      activeText: 'text-secondary-foreground',
     },
+    // Specific Role Colors (Apple-style brights)
     student: {
-      active: 'var(--student-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
-    },
-    sponsor: {
-      active: 'var(--sponsor-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
-    },
-    admin: {
-      active: 'var(--admin-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      // Purple/Pink Gradient
+      active: 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-md',
+      activeText: 'text-white',
     },
     organizer: {
-      active: 'var(--organizer-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      // Blue/Indigo Gradient
+      active: 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-md',
+      activeText: 'text-white',
+    },
+    sponsor: {
+      // Emerald/Teal Gradient
+      active: 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md',
+      activeText: 'text-white',
+    },
+    admin: {
+      // Slate/Zinc Gradient
+      active: 'bg-gradient-to-r from-slate-700 to-zinc-800 shadow-md border border-slate-600',
+      activeText: 'text-white',
     },
   };
 
-  const colorScheme = colors[variant];
+  // Fallback to 'blue' if variant doesn't exist
+  const colorScheme = colors[variant] || colors.blue;
   const selectedIndex = options.findIndex(option => option.value === value);
 
   useLayoutEffect(() => {
@@ -64,25 +60,25 @@ export function SegmentedControl({
         });
       }
     }
-  }, [selectedIndex, value]);
+  }, [selectedIndex, value, options]); // Added options dependency for resize safety
 
   return (
     <div 
       className={cn(
-        "inline-flex p-1 rounded-full relative",
+        // Layout Fix: Use flex w-full instead of inline-flex to prevent overflow
+        "flex w-full p-1.5 rounded-xl relative select-none",
+        // Background: Darker in dark mode, lighter in light mode
+        "bg-muted/50 dark:bg-slate-900/50 border border-border/50",
         className
       )}
-      style={{ 
-        backgroundColor: colorScheme.inactive,
-      }}
     >
       {/* Animated Background Indicator */}
       {selectedIndex !== -1 && (
         <motion.div
-          className="absolute rounded-full h-[calc(100%-8px)] top-1"
-          style={{ 
-            backgroundColor: colorScheme.active,
-          }}
+          className={cn(
+            "absolute rounded-lg h-[calc(100%-12px)] top-1.5",
+            colorScheme.active
+          )}
           initial={false}
           animate={{
             left: indicatorStyle.left,
@@ -106,13 +102,16 @@ export function SegmentedControl({
             ref={(el) => (buttonRefs.current[index] = el)}
             onClick={() => onChange(option.value)}
             className={cn(
-              "relative z-10 px-6 py-2 rounded-full transition-colors duration-200",
-              "whitespace-nowrap cursor-pointer select-none text-center",
-              isActive ? colorScheme.activeText : colorScheme.inactiveText
+              // Layout Fix: flex-1 forces equal width distribution
+              "flex-1 relative z-10 px-2 py-2 rounded-lg transition-colors duration-200",
+              "text-sm font-medium cursor-pointer text-center truncate",
+              isActive 
+                ? colorScheme.activeText 
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <motion.span
-              className="block"
+              className="block truncate"
               initial={false}
               animate={{
                 scale: isActive ? 1 : 0.95,

@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card.jsx';
 import { Alert, AlertDescription } from '../../components/ui/alert.jsx';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { SegmentedControl } from '../../components/ui/segmented-control';
 import { loginUser, clearError } from '../../store/auth.slice.js';
 import { toast } from 'sonner';
 
@@ -90,7 +90,6 @@ const LoginPage = () => {
       text: 'text-emerald-600 dark:text-emerald-400',
     },
     admin: {
-      // UPDATED: Added lighter colors for dark mode text gradient
       gradient: 'from-slate-700 via-gray-800 to-zinc-900 dark:from-slate-100 dark:via-gray-200 dark:to-zinc-300',
       bg: 'from-slate-50 via-gray-50 to-zinc-50 dark:from-gray-900 dark:via-zinc-900 dark:to-black',
       button: 'from-slate-700 to-gray-800 dark:from-slate-600 dark:to-gray-700',
@@ -137,14 +136,19 @@ const LoginPage = () => {
                 </AlertDescription>
               </Alert>
               
-              <Tabs value={selectedRole} onValueChange={setSelectedRole} className="mb-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="student">Student</TabsTrigger>
-                  <TabsTrigger value="organizer">Organizer</TabsTrigger>
-                  <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
-                  <TabsTrigger value="admin">Admin</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="mb-6">
+                <SegmentedControl
+                  options={[
+                    { value: 'student', label: 'Student' },
+                    { value: 'organizer', label: 'Organizer' },
+                    { value: 'sponsor', label: 'Sponsor' },
+                    { value: 'admin', label: 'Admin' },
+                  ]}
+                  value={selectedRole}
+                  onChange={setSelectedRole}
+                  variant={selectedRole}
+                />
+              </div>
 
               {error && (
                 <Alert variant="destructive" className="mb-4">
