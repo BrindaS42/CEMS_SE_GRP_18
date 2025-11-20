@@ -1,6 +1,6 @@
 import { Router } from "express";
 import auth from "../middleware/auth.middleware.js";
-import { getRecommendations, queryChatBot } from "../controllers/ai.controller.js";
+import { getRecommendations, queryChatBot, rebuildSearchIndex } from "../controllers/ai.controller.js";
 
 const { authentication, authorizeRoles } = auth;
 
@@ -19,6 +19,12 @@ router.post(
     authorizeRoles("student", "organizer", "sponsor"),
     queryChatBot
   );
-  
+
+router.post(
+  "/rebuild-index",
+  authentication,
+  authorizeRoles("admin"),
+  rebuildSearchIndex
+);
 
 export default router;

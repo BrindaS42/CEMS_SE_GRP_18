@@ -29,6 +29,12 @@ def setup_collection():
             vectors_config=qmodels.VectorParams(size=VECTOR_SIZE, distance="Cosine")
         )
         print(f"Created collection '{COLLECTION_NAME}'")
+        qdrant_client.create_payload_index(
+            collection_name=COLLECTION_NAME,
+            field_name="event_id",
+            field_schema=qmodels.PayloadSchemaType.KEYWORD,
+        )
+        print(f"Created payload index for 'event_id' in collection '{COLLECTION_NAME}'")
 
 # Building event genome 
 def build_event_genome(event):
@@ -51,13 +57,13 @@ def build_event_genome(event):
 # Index all events 
 def index_all_events():
     try:
-        qdrant_client.clear_payload(collection_name=COLLECTION_NAME)
-        print("Old Qdrant collection deleted")
-    except:
+        qdrant_client.delete_collection(collection_name=COLLECTION_NAME)
+        print(f"Deleted existing collection '{COLLECTION_NAME}'")
+    except Exception:
         print("No previous collection found")
 
     setup_collection()
-    events = list( db.events.find({"status": "Published"}))
+    events = list( db.events.find({"status": "published"}))
     points = []
     for ev in events:
         genome = build_event_genome(ev)

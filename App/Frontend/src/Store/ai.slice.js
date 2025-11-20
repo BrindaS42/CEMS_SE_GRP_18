@@ -23,10 +23,21 @@ export const queryChatBot = createAsyncThunk('ai/queryChatBot', async (query, { 
   }
 })
 
+export const rebuildIndex = createAsyncThunk('ai/rebuildIndex', async (_, { rejectWithValue }) => {
+  try {
+    const res = await axios.post(`${API_BASE}/ai/rebuild-index`)
+    return res.data
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to rebuild index')
+  }
+})
+
 const initialState = {
   recommendations: [],
   chatHistory: [],
   loading: false,
+  rebuilding: false,
+  rebuildError: null,
   error: null,
 }
 
@@ -52,6 +63,16 @@ const aiSlice = createSlice({
       .addCase(getRecommendations.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(queryChatBot.fulfilled, (state, action) => { 
         state.chatHistory.push({ type: 'bot', message: action.payload.answer })
+      })
+      .addCase(rebuildIndex.pending, (state) => {
+        state.rebuilding = true;
+        state.rebuildError = null;
+      })
+      .addCase(rebuildIndex.fulfilled, (state) => {
+        state.rebuilding = false;
+      })
+      .addCase(rebuildIndex.rejected, (state, action) => {
+        state.rebuilding = false; state.rebuildError = action.payload;
       })
   }
 })

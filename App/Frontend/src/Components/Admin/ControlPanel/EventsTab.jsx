@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Search, Eye, Ban, Check, Calendar, MapPin } from 'lucide-react';
+import { Search, Eye, Ban, Check, Calendar, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/components/ui/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { ViewEventModal } from './ViewEventModal';
 import { SuspendEventModal } from './SuspendEventModal';
 import { UnsuspendEventModal } from './UnsuspendEventModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { SegmentedControl } from '@/components/ui/segmented-control';
+import { rebuildIndex } from '@/store/ai.slice';
 
 // Helper function to refactor nested ternary
 const getEventBadgeVariant = (status) => {
@@ -26,6 +30,9 @@ const getEventBadgeVariant = (status) => {
 };
 
 export function EventsTab({ isLoading, events, onSuspendEvent, onUnsuspendEvent }) {
+  const dispatch = useDispatch();
+  const { rebuilding, rebuildError } = useSelector((state) => state.ai);
+
   const [activeSubTab, setActiveSubTab] = useState('Published');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -58,6 +65,20 @@ export function EventsTab({ isLoading, events, onSuspendEvent, onUnsuspendEvent 
     setUnsuspendModalOpen(true);
   };
 
+  const handleRebuildIndex = () => {
+    toast.info('Recommendation index rebuild started...');
+    dispatch(rebuildIndex())
+      .unwrap()
+      .then(() => {
+        toast.success('Index rebuilt successfully!');
+      })
+      .catch((error) => {
+        toast.error('Failed to rebuild index.', {
+          description: error,
+        });
+      });
+  };
+
   return (
     <div className="space-y-6">
       {/* Sub-tabs */}
@@ -72,6 +93,18 @@ export function EventsTab({ isLoading, events, onSuspendEvent, onUnsuspendEvent 
           onChange={(value) => setActiveSubTab(value)}
           variant="orange"
         />
+        <div className="flex items-center gap-2">
+          {rebuildError && <AlertCircle className="w-5 h-5 text-destructive" title={rebuildError} />}
+          <Button onClick={handleRebuildIndex} disabled={rebuilding}>
+            <RefreshCw
+              className={cn(
+                'mr-2 h-4 w-4',
+                rebuilding && 'animate-spin'
+              )}
+            />
+            {rebuilding ? 'Rebuilding...' : 'Rebuild Index'}
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}

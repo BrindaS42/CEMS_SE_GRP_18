@@ -27,3 +27,13 @@ export const getRecommendations = async (req, res) => {
       return res.status(500).json({ error: "Chatbot failed" });
     }
   };
+
+  export const rebuildSearchIndex = async (req, res) => {
+    try {
+      const response = await pythonClient.post("/recommend/rebuild");
+      return res.json(response.data);
+    } catch (err) {
+      console.error("Rebuild Index Error:", err);
+      return res.status(500).json({ error: "Rebuilding search index failed" });
+    }
+  };
