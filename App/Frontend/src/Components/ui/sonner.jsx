@@ -3,7 +3,7 @@
 "use client";
 
 import * as React from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "../../utils/ThemeContext"; // UPDATED: Changed import source
 import { Toaster as Sonner } from "sonner";
 
 const Toaster = ({ ...props }) => {

@@ -126,11 +126,11 @@ export const Navbar = () => {
                         ? isStudentView
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                           : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800/50'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className="text-sm">{link.label}</span>
+                    <span className="text-sm font-medium">{link.label}</span>
                     {link.label === 'Inbox' && unreadCount > 0 && (
                       <Badge variant="destructive" className="ml-1 h-5 min-w-[20px] px-1 text-xs">
                         {unreadCount > 99 ? '99+' : unreadCount}
@@ -150,7 +150,7 @@ export const Navbar = () => {
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64 bg-white/50 backdrop-blur-sm"
+                  className="pl-9 w-64 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
                 />
               </form>
             )}
@@ -217,7 +217,7 @@ export const Navbar = () => {
                 <Button variant="ghost" asChild>
                   <Link to="/login">Login</Link>
                 </Button>
-                <Button asChild className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                <Button asChild className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0">
                   <Link to="/register">Sign Up</Link>
                 </Button>
               </div>
@@ -241,7 +241,7 @@ export const Navbar = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white dark:bg-gray-900 border-t"
+            className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-800"
           >
             <div className="px-4 py-4 space-y-2">
               {navLinks.map((link) => {
@@ -257,7 +257,7 @@ export const Navbar = () => {
                         ? isStudentView
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                           : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
