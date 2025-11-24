@@ -7,4 +7,5 @@ python-dotenv
 langgraph
 langchain_groq
 langchain-community
-qdrant-client = 1.7.0
+qdrant-client == 1.7.0
+
