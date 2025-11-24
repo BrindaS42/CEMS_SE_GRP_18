@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Check, X, Ban, ShieldAlert } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/components/ui/utils';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { cn } from '@/Components/ui/utils';
+import { Badge } from '@/Components/ui/badge';
+import { Input } from '@/Components/ui/input';
 import { ViewCollegeModal } from './ViewCollegeModal';
 import { RejectCollegeModal } from './RejectCollegeModal';
 import { SuspendCollegeModal } from './SuspendCollegeModal';
 import { UnsuspendCollegeModal } from './UnsuspendCollegeModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
 
 // Helper function to refactor nested ternary
 const getCollegeBadgeVariant = (status) => {

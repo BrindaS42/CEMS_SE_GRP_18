@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllSponsors, fetchSponsorAds } from '@/store/sponsor.slice';
+import { fetchAllSponsors, fetchSponsorAds } from '@/Store/sponsor.slice';
 import { motion } from 'motion/react';
 import { Building2, ExternalLink, Image as ImageIcon, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Badge } from '@/Components/ui/badge';
+import { Skeleton } from '@/Components/ui/skeleton';
 import { toast } from 'sonner';
-import { ChatBot } from '@/components/ChatBot';
+import { ChatBot } from '@/Components/ChatBot';
 
 export const SponsorListingPage = () => {
   const navigate = useNavigate();

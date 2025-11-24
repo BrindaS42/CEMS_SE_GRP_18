@@ -2,18 +2,18 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search, Eye, Ban, Check, Calendar, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/components/ui/utils';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { cn } from '@/Components/ui/utils';
+import { Badge } from '@/Components/ui/badge';
+import { Input } from '@/Components/ui/input';
+import { Button } from '@/Components/ui/button';
 import { toast } from 'sonner';
 import { ViewEventModal } from './ViewEventModal';
 import { SuspendEventModal } from './SuspendEventModal';
 import { UnsuspendEventModal } from './UnsuspendEventModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { rebuildIndex } from '@/store/ai.slice';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
+import { rebuildIndex } from '@/Store/ai.slice';
 
 // Helper function to refactor nested ternary
 const getEventBadgeVariant = (status) => {

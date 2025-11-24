@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
 import { Calendar, Clock, MapPin, Eye, Users, Plus, Edit, Trash2, MessageSquare } from 'lucide-react';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { AddAnnouncementModal } from './Announcements/AddAnnouncementModal';
 import { ViewAnnouncementsModal } from './Announcements/ViewAnnouncementsModal';
 import { EditAnnouncementModal } from './Announcements/EditAnnouncementModal';
 import { DeleteAnnouncementModal } from './Announcements/DeleteAnnouncementModal';
-import { addAnnouncement, editAnnouncement, deleteAnnouncement } from '../../../store/event.slice';
+import { addAnnouncement, editAnnouncement, deleteAnnouncement } from '../../../Store/event.slice';
 
 export function AnnouncementsAdminTab({
   currentUserEmail,

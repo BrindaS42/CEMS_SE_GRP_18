@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { fetchDashboardEvents } from '../../store/event.slice.js';
+import { fetchDashboardEvents } from '../../Store/event.slice.js';
 
 export default function EventLocationList() {
     const dispatch = useDispatch();

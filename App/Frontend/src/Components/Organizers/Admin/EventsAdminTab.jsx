@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/Components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import { DraftedEventsTab } from './DraftedEventsTab';
 import { PublishedEventsTab } from './PublishedEventsTab';
 import { CompletedEventsTab } from './CompletedEventsTab';
 import { CreateEventModal } from './CreateEventModal';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { deleteEvent, fetchDraftEvents, fetchPublishedEvents, fetchCompletedEvents } from '../../../store/event.slice';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
+import { deleteEvent, fetchDraftEvents, fetchPublishedEvents, fetchCompletedEvents } from '../../../Store/event.slice';
 
 
 export function EventsAdminTab({

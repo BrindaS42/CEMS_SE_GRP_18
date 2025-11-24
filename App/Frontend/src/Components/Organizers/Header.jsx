@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { Button } from '../../components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Button } from '../../Components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../../Components/ui/avatar';
 import { LogOut } from 'lucide-react';
 
 export function Header({ role = 'organizer' }) {

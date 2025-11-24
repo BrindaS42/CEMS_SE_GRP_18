@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RegisteredEvents } from './Events/RegisteredEvents';
 import { RecommendedEvents } from './Events/RecommendedEvents';
 import { CompletedEvents } from './Events/CompletedEvents';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
 
 export function EventsTab() {
   // 1. Removed the TypeScript generic type: <'registered' | 'recommended' | 'completed'>

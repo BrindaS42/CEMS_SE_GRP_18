@@ -22,7 +22,7 @@ import {
   fetchEventWiseRatings,
   fetchAttendanceRatio,
   fetchEventPerformance,
-} from '../../store/analytics.slice';
+} from '../../Store/analytics.slice';
 
 export function AnalyticsTab() {
   const dispatch = useDispatch();

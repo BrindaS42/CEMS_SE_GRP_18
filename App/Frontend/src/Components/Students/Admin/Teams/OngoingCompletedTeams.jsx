@@ -1,11 +1,11 @@
 import PropTypes from 'prop-types';
 import { Users, Calendar, CheckCircle, Clock, Eye, Crown, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/components/ui/utils';
+import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
+import { cn } from '@/Components/ui/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchStudentTeams } from '@/store/student.slice';
+import { fetchStudentTeams } from '@/Store/student.slice';
 import { ViewTeamMembersModal } from './ViewTeamMembersModal';
 
 export function OngoingCompletedTeams() {

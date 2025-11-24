@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, MapPin, Eye } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { cn } from '../../../components/ui/utils';
-import { fetchRegisteredEvents } from '@/store/student.slice';
+import { Button } from '../../../Components/ui/button';
+import { Badge } from '../../../Components/ui/badge';
+import { cn } from '../../../Components/ui/utils';
+import { fetchRegisteredEvents } from '@/Store/student.slice';
 
 export function RegisteredEvents() {
   const dispatch = useDispatch();

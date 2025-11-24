@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/Components/ui/label';
+import { Input } from '@/Components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { User, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';

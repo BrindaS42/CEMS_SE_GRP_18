@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Button } from '@/Components/ui/button';
 import { User, Crown, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/Components/ui/badge';
 
 export function ViewTeamMembersModal({ open, onClose, team }) {
   if (!team) return null;

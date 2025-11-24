@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../components/general/Sidebar';
-import { CollegesTab } from '../../components/Admin/ControlPanel/CollegesTab';
-import { EventsTab } from '../../components/Admin/ControlPanel/EventsTab';
-import { UsersTab } from '../../components/Admin/ControlPanel/UsersTab';
-import { AdsTab } from '../../components/Admin/ControlPanel/AdsTab';
-import { cn } from '../../components/ui/utils';
+import { Sidebar } from '../../Components/general/Sidebar';
+import { CollegesTab } from '../../Components/Admin/ControlPanel/CollegesTab';
+import { EventsTab } from '../../Components/Admin/ControlPanel/EventsTab';
+import { UsersTab } from '../../Components/Admin/ControlPanel/UsersTab';
+import { AdsTab } from '../../Components/Admin/ControlPanel/AdsTab';
+import { cn } from '../../Components/ui/utils';
 import { toast } from 'sonner';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../../Components/ui/avatar';
 import { LogOut } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { SegmentedControl } from '../../components/ui/segmented-control';
+import { Button } from '../../Components/ui/button';
+import { SegmentedControl } from '../../Components/ui/segmented-control';
 import {
   fetchAllCollegesForAdmin,
   approveCollege,
@@ -22,7 +22,7 @@ import {
   fetchAllUsersForAdmin,
   fetchAllAdsForAdmin,
   toggleEntitySuspension,
-} from '../../store/admin.slice';
+} from '../../Store/admin.slice';
 
 export default function ControlPanelPage({ 
   isSidebarCollapsed, 

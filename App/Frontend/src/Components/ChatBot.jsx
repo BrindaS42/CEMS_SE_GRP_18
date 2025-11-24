@@ -3,10 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { Bot, Send, X, User, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { addChatMessage, queryChatBot } from '@/store/ai.slice';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/Components/ui/card';
+import { addChatMessage, queryChatBot } from '@/Store/ai.slice';
 
 export const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);

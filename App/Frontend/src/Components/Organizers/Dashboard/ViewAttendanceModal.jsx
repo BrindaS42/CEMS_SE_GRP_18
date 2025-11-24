@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { fetchEventAttendees } from '@/store/event.slice';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/Components/ui/accordion';
+import { ScrollArea } from '@/Components/ui/scroll-area';
+import { fetchEventAttendees } from '@/Store/event.slice';
 
 export function ViewAttendanceModal({ open, onClose, event }) {
   const dispatch = useDispatch();

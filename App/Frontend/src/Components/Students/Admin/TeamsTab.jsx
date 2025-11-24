@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/Components/ui/button';
 import { Plus } from 'lucide-react';
 import { PendingTeams } from './Teams/PendingTeams';
 import { CreatedTeams } from './Teams/CreatedTeams';
 import { OngoingCompletedTeams } from './Teams/OngoingCompletedTeams';
 import { CreateTeamModal } from './CreateTeamModal';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
 
 export function TeamsTab({ openCreateModal, onOpenCreateModal, onCloseCreateModal }) {
   const [activeSubTab, setActiveSubTab] = useState('created');

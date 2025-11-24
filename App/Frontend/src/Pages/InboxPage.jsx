@@ -20,18 +20,18 @@ import {
   Plus,
   Archive,
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Input } from '../components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Button } from '../Components/ui/button';
+import { Card } from '../Components/ui/card';
+import { Badge } from '../Components/ui/badge';
+import { Input } from '../Components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../Components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../components/ui/select';
+} from '../Components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +41,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '../components/ui/alert-dialog';
+} from '../Components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -49,13 +49,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '../components/ui/dialog';
-import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
-import { Skeleton } from '../components/ui/skeleton';
-import { ScrollArea } from '../components/ui/scroll-area';
+} from '../Components/ui/dialog';
+import { Label } from '../Components/ui/label';
+import { Textarea } from '../Components/ui/textarea';
+import { Skeleton } from '../Components/ui/skeleton';
+import { ScrollArea } from '../Components/ui/scroll-area';
 import { toast } from 'sonner';
-import {Sidebar} from '../components/general/Sidebar';
+import {Sidebar} from '../Components/general/Sidebar';
 import {
   fetchArrivals,
   fetchSent,
@@ -67,7 +67,7 @@ import {
   deleteMessage,
   approveMessage,
   rejectMessage,
-} from '../store/inbox.slice';
+} from '../Store/inbox.slice';
 
 
 const InboxPage = () => {

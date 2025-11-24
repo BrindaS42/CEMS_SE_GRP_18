@@ -4,7 +4,7 @@ import { AlertTriangle, Calendar, Clock, ArrowLeftRight } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import { cn } from '../../ui/utils';
-import { fetchClashWarnings } from '@/store/student.slice';
+import { fetchClashWarnings } from '@/Store/student.slice';
 
 export function ClashDetection() {
   const dispatch = useDispatch();

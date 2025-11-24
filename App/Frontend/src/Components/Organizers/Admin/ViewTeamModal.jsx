@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Badge } from '@/Components/ui/badge';
 import { Crown, Users, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/Components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/Components/ui/avatar';
 
 export function ViewTeamModal({ open, onClose, team }) {
   if (!team) return null;

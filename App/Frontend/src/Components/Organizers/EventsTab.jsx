@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { LiveEvents } from './LiveEvents.jsx';
 import { CompletedEvents } from './CompletedEvents.jsx';
 import { SegmentedControl } from '../ui/segmented-control';
-import { fetchPublishedEvents, fetchCompletedEvents } from '../../store/event.slice';
+import { fetchPublishedEvents, fetchCompletedEvents } from '../../Store/event.slice';
 
 export function EventsTab({ onViewEvent }) {
   const dispatch = useDispatch();

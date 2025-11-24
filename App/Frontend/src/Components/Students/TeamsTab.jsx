@@ -6,7 +6,7 @@ import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '../ui/utils';
 import { ViewTeamMembersModal } from './Admin/Teams/ViewTeamMembersModal';
-import { fetchStudentTeams } from '@/store/student.slice';
+import { fetchStudentTeams } from '@/Store/student.slice';
 
 export function TeamsTab() {
   const dispatch = useDispatch();

@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { ScrollArea } from '@/Components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Star } from 'lucide-react';
-import { fetchEventReviews } from '@/store/event.slice';
+import { fetchEventReviews } from '@/Store/event.slice';
 
 export function ViewReviewModal({ open, onClose, event }) {
   const dispatch = useDispatch();

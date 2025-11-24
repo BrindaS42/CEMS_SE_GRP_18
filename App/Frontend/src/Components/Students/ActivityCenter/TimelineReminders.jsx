@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, MapPin, Bell } from 'lucide-react';
 import { Badge } from '../../ui/badge';
 import { cn } from '../../ui/utils';
-import { fetchTimelineReminders } from '@/store/student.slice';
+import { fetchTimelineReminders } from '@/Store/student.slice';
 
 // Helper function to calculate days until event
 const getDaysUntil = (dateString) => {

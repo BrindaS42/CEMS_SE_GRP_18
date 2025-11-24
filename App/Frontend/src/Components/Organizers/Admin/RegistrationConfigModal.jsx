@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Button } from '@/Components/ui/button';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { PaymentConfigStep } from './Registration/PaymentConfigStep';
 import { RegistrationTypeStep } from './Registration/RegistrationTypeStep';
 import { RegistrationFieldsStep } from './Registration/RegistrationFieldsStep';
-import { updateEventConfig } from '@/store/event.slice';
+import { updateEventConfig } from '@/Store/event.slice';
 import { toast } from 'sonner';
 
 const STEPS = [

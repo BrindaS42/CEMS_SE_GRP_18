@@ -8,11 +8,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from '@/Components/ui/dialog';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
 import { Plus, X, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -22,11 +22,11 @@ import {
   CommandInput,
   CommandItem,
   CommandList
-} from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fetchAllOrganizers } from '@/store/auth.slice';
-import { createTeam, fetchTeamList } from '@/store/team.slice';
+} from '@/Components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import { fetchAllOrganizers } from '@/Store/auth.slice';
+import { createTeam, fetchTeamList } from '@/Store/team.slice';
 
 // Get current organizer from auth slice
 const getCurrentOrganizer = (user) => {

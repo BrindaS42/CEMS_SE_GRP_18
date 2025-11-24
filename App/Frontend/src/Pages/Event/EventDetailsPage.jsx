@@ -32,25 +32,25 @@ import {
   Star,
   Eye,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/Components/ui/button';
+import { Card } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs';
+import { Alert, AlertDescription } from '@/Components/ui/alert';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { Separator } from '@/Components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/Components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/Components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -58,22 +58,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/Components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { fetchEventDetails, addEventRating } from '@/store/studentEvents.slice';
-import { createReport } from '@/store/admin.slice';
-import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/store/event.interaction.slice';
-import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/store/registration.slice';
+} from '@/Components/ui/dropdown-menu';
+import { fetchEventDetails, addEventRating } from '@/Store/studentEvents.slice';
+import { createReport } from '@/Store/admin.slice';
+import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/Store/event.interaction.slice';
+import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/Store/registration.slice';
 import { toast } from 'sonner';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/Components/ui/scroll-area';
 import { socket } from '@/service/socket';
-import SponsorAdCarousel from '@/components/EventComponents/SponsorAdCarousel';
-import AnnotatedMapView from '@/components/EventComponents/Map/AnnotatedMapView';
+import SponsorAdCarousel from '@/Components/EventComponents/SponsorAdCarousel';
+import AnnotatedMapView from '@/Components/EventComponents/Map/AnnotatedMapView';
 
 export const EventDetailsPage = () => {
   const { id } = useParams();

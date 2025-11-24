@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Sidebar } from '../../components/general/Sidebar';
-import { TeamsTab } from '../../components/Students/Admin/TeamsTab';
+import { Sidebar } from '../../Components/general/Sidebar';
+import { TeamsTab } from '../../Components/Students/Admin/TeamsTab';
 
 export default function StudentAdminPanel({ onNavigate }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);

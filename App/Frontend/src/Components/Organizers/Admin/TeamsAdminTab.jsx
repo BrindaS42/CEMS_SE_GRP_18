@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/Components/ui/button';
 import { Plus } from 'lucide-react';
 import { PendingTeamsTab } from './PendingTeamsTab';
 import { CreatedTeamsTab } from './CreatedTeamsTab';
 import { EditTeamModal } from './EditTeamModal';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { fetchTeamList, deleteTeam, editTeam } from '../../../store/team.slice';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
+import { fetchTeamList, deleteTeam, editTeam } from '../../../Store/team.slice';
 
 export function TeamsAdminTab({ onCreateTeam, highlightTeamId, editTeamId, onClearHighlight }) {
   const dispatch = useDispatch();

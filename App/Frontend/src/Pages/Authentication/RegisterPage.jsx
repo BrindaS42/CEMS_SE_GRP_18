@@ -3,21 +3,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Mail, Lock, User, Building2 } from 'lucide-react';
-import { Button } from '../../components/ui/button.jsx';
-import { Input } from '../../components/ui/input.jsx';
-import { Label } from '../../components/ui/label.jsx';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card.jsx';
-import { Alert, AlertDescription } from '../../components/ui/alert.jsx';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { Button } from '../../Components/ui/button.jsx';
+import { Input } from '../../Components/ui/input.jsx';
+import { Label } from '../../Components/ui/label.jsx';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../Components/ui/card.jsx';
+import { Alert, AlertDescription } from '../../Components/ui/alert.jsx';
+import { Tabs, TabsList, TabsTrigger } from '../../Components/ui/tabs.jsx';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select.jsx';
-import { registerUser, clearError } from '../../store/auth.slice.js'; 
-import { fetchAllApprovedColleges } from '../../store/college.slice.js';
+} from '../../Components/ui/select.jsx';
+import { registerUser, clearError } from '../../Store/auth.slice.js'; 
+import { fetchAllApprovedColleges } from '../../Store/college.slice.js';
 import { toast } from 'sonner';
 
 // Helper to safely format many possible error shapes

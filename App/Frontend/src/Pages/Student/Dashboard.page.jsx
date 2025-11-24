@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Sidebar } from '../../components/general/Sidebar';
-import { EventsTab } from '../../components/Students/EventsTab';
-import { TeamsTab } from '../../components/Students/TeamsTab';
-import { ActivityCenterTab } from '../../components/Students/ActivityCenterTab';
-import { SegmentedControl } from '../../components/ui/segmented-control';
+import { Sidebar } from '../../Components/general/Sidebar';
+import { EventsTab } from '../../Components/Students/EventsTab';
+import { TeamsTab } from '../../Components/Students/TeamsTab';
+import { ActivityCenterTab } from '../../Components/Students/ActivityCenterTab';
+import { SegmentedControl } from '../../Components/ui/segmented-control';
 
 export default function StudentDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('events');

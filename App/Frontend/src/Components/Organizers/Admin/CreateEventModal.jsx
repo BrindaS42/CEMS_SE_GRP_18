@@ -1,24 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea'; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/Components/ui/dialog';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea'; 
 import { Plus, X, CheckCircle, XCircle, Upload, Image as ImageIcon, FileText, Calendar as CalendarIcon, MapPin, Clock, Users, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from '@/components/ui/calender';
-import { fetchTeamList } from '@/store/team.slice';
-import { fetchPotentialSubEvents, createEventDraft, publishEvent } from '@/store/event.slice';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/Components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import { Badge } from '@/Components/ui/badge';
+import { Switch } from '@/Components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs';
+import { Calendar } from '@/Components/ui/calender';
+import { fetchTeamList } from '@/Store/team.slice';
+import { fetchPotentialSubEvents, createEventDraft, publishEvent } from '@/Store/event.slice';
 import { uploadToCloudinary } from '@/service/cloudinary';
-import { fetchAllSponsors } from '@/store/auth.slice';
+import { fetchAllSponsors } from '@/Store/auth.slice';
 
 // Category options
 const CATEGORY_OPTIONS = [

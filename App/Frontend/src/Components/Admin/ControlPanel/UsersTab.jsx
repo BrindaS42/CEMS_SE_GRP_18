@@ -1,16 +1,16 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Search, Eye, Ban, Check, User2, Building } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/components/ui/utils';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { cn } from '@/Components/ui/utils';
+import { Badge } from '@/Components/ui/badge';
+import { Input } from '@/Components/ui/input';
 import { ViewUserModal } from './ViewUserModal';
 import { SuspendUserModal } from './SuspendUserModal';
 import { UnsuspendUserModal } from './UnsuspendUserModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SegmentedControl } from '@/Components/ui/segmented-control';
+import { Avatar, AvatarFallback, AvatarImage } from '@/Components/ui/avatar';
 
 export function UsersTab({ isLoading, users, onSuspendUser, onUnsuspendUser }) {
   const [activeSubTab, setActiveSubTab] = useState('active');

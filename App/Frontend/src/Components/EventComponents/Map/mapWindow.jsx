@@ -8,7 +8,7 @@ import "leaflet-draw";
 import "leaflet-control-geocoder/dist/Control.Geocoder.css";
 import "leaflet-control-geocoder";
 import { useDispatch, useSelector } from "react-redux";
-import { saveEventLocation, fetchEventLocation } from "../../../store/map_annotator.slice.js";
+import { saveEventLocation, fetchEventLocation } from "../../../Store/map_annotator.slice.js";
 import { toast } from "sonner";
 
 // Fix marker icons in React

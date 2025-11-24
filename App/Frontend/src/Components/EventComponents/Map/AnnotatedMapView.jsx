@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEventLocation } from '@/store/map_annotator.slice';
+import { fetchEventLocation } from '@/Store/map_annotator.slice';
 import LeafletMap from './leafletMap';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/Components/ui/skeleton';
 
 const AnnotatedMapView = ({ eventId }) => {
   const dispatch = useDispatch();

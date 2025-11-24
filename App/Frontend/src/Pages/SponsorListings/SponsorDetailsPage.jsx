@@ -17,13 +17,13 @@ import {
   DollarSign,
   Globe,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { fetchSponsorById, fetchSponsorAds, clearSelectedSponsor } from '@/store/sponsor.slice';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs';
+import { Separator } from '@/Components/ui/separator';
+import { fetchSponsorById, fetchSponsorAds, clearSelectedSponsor } from '@/Store/sponsor.slice';
 import { toast } from 'sonner';
 
 export const SponsorDetailsPage = () => {

@@ -16,10 +16,10 @@ import {
   PartyPopper,
   Building2,
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
+import { Button } from '../Components/ui/button';
+import { Card } from '../Components/ui/card';
 import { eventService } from '../services/eventService';
-import { ChatBot } from '@/components/ChatBot';
+import { ChatBot } from '@/Components/ChatBot';
 
 export const HomePage = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);

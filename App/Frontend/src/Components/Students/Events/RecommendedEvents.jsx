@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Eye, UserPlus } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { cn } from '../../../components/ui/utils';
-import { Skeleton } from '../../../components/ui/skeleton';
-import { getRecommendations } from '@/store/ai.slice';
+import { Button } from '../../../Components/ui/button';
+import { Badge } from '../../../Components/ui/badge';
+import { cn } from '../../../Components/ui/utils';
+import { Skeleton } from '../../../Components/ui/skeleton';
+import { getRecommendations } from '@/Store/ai.slice';
 
 export function RecommendedEvents() {
   const dispatch = useDispatch();

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
 import { Calendar, Clock, MapPin, Eye, Users, CheckCircle, FileText } from 'lucide-react';
 import { ImageWithFallback } from '../../figma/ImageWithFallback';
 import { ViewEventModal } from './ViewEventModal';

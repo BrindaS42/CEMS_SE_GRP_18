@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Users, UserPlus, Eye, Crown, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { fetchTeamList } from '../../store/team.slice';
+import { fetchTeamList } from '../../Store/team.slice';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
+} from '@/Components/ui/accordion';
+import { Badge } from '@/Components/ui/badge';
 
 export function TeamsTab({ onNavigate }) {
   const dispatch = useDispatch();

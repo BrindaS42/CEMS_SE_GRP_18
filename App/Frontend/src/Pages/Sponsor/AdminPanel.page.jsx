@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Sidebar } from '../../components/general/Sidebar';
-import { Button } from '../../components/ui/button';
+import { Sidebar } from '../../Components/general/Sidebar';
+import { Button } from '../../Components/ui/button';
 import { Plus } from 'lucide-react';
-import { SegmentedControl } from '../../components/ui/segmented-control';
-import { CreateAdModal } from '../../components/Sponsors/Admin/CreateAdModal';
-import { DraftedAdsTab } from '../../components/Sponsors/Admin/DraftedAdsTab';
-import { PublishedAdsTab } from '../../components/Sponsors/Admin/PublishedAdsTab';
+import { SegmentedControl } from '../../Components/ui/segmented-control';
+import { CreateAdModal } from '../../Components/Sponsors/Admin/CreateAdModal';
+import { DraftedAdsTab } from '../../Components/Sponsors/Admin/DraftedAdsTab';
+import { PublishedAdsTab } from '../../Components/Sponsors/Admin/PublishedAdsTab';
 import {
   fetchSponsorAds,
   createSponsorAd,
   updateSponsorAd,
   deleteSponsorAd,
   publishSponsorAd,
-} from '../../store/sponsorAds.slice.js';
+} from '../../Store/sponsorAds.slice.js';
 
 // Re-using SponsorAd shape for prop validation
 const sponsorAdPropType = PropTypes.shape({

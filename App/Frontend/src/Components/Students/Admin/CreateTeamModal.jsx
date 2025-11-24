@@ -2,14 +2,14 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/Components/ui/dialog';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 import { X, Plus, Search, CheckCircle, AlertCircle, User } from 'lucide-react';
-import { cn } from '@/components/ui/utils';
+import { cn } from '@/Components/ui/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { createStudentTeam, fetchAllStudents } from '@/store/student.slice';
+import { createStudentTeam, fetchAllStudents } from '@/Store/student.slice';
 
 
 // Mock existing teams - replace with actual API call

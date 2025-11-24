@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Card } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
+import { Separator } from '@/Components/ui/separator';
 import { 
   ArrowLeft, 
   Heart, 
@@ -19,7 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchAdById, clearSelectedAd, incrementAdView, toggleAdLike } from '@/store/sponsor.slice';
+import { fetchAdById, clearSelectedAd, incrementAdView, toggleAdLike } from '@/Store/sponsor.slice';
 
 const AdDetailsPage = () => {
   const { id } = useParams();

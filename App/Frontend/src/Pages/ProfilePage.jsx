@@ -24,14 +24,14 @@ import {
   AlertTriangle,
   XCircle,
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Badge } from '../components/ui/badge';
-import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Button } from '../Components/ui/button';
+import { Card } from '../Components/ui/card';
+import { Input } from '../Components/ui/input';
+import { Textarea } from '../Components/ui/textarea';
+import { Badge } from '../Components/ui/badge';
+import { Label } from '../Components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '../Components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../Components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -39,19 +39,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/ui/dialog';
+} from '../Components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
-import { Sidebar } from '@/components/general/Sidebar';
-import { updateAuthProfile } from '../store/auth.slice.js';
+} from '../Components/ui/dropdown-menu';
+import { Sidebar } from '@/Components/general/Sidebar';
+import { updateAuthProfile } from '../Store/auth.slice.js';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { createReport } from '../store/admin.slice.js';
+import { createReport } from '../Store/admin.slice.js';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const ProfilePage = () => {

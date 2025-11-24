@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Badge } from '@/Components/ui/badge';
 import { Calendar, Clock, MapPin, Eye, Users, Activity } from 'lucide-react';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
+import { ImageWithFallback } from '@/Components/figma/ImageWithFallback';
 import { ViewEventModal } from './ViewEventModal';
 
 export function OngoingEventsTab({

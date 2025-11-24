@@ -14,20 +14,20 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/Components/ui/input';
+import { Button } from '@/Components/ui/button';
+import { Card } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { fetchPublicEvents } from '@/store/studentEvents.slice';
-import { ChatBot } from '@/components/ChatBot';
+} from '@/Components/ui/select';
+import { Skeleton } from '@/Components/ui/skeleton';
+import { fetchPublicEvents } from '@/Store/studentEvents.slice';
+import { ChatBot } from '@/Components/ChatBot';
 
 export const EventListingPage = () => {
   const dispatch = useDispatch();

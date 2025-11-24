@@ -1,12 +1,12 @@
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-import { Sidebar } from '../../components/general/Sidebar';
-import { EventsTab } from '../../components/Organizers/EventsTab';
-import { AnalyticsTab } from '../../components/Organizers/AnalyticsTab';
-import { TeamsTab } from '../../components/Organizers/TeamsTab';
-import { Button } from '../../components/ui/button';
+import { Sidebar } from '../../Components/general/Sidebar';
+import { EventsTab } from '../../Components/Organizers/EventsTab';
+import { AnalyticsTab } from '../../Components/Organizers/AnalyticsTab';
+import { TeamsTab } from '../../Components/Organizers/TeamsTab';
+import { Button } from '../../Components/ui/button';
 import { Plus } from 'lucide-react';
-import { SegmentedControl } from '../../components/ui/segmented-control';
+import { SegmentedControl } from '../../Components/ui/segmented-control';
 
 export default function OrganizerDashboard({ onNavigate, isSidebarCollapsed, onToggleSidebar }) {
   const [activeTab, setActiveTab] = useState('events');
