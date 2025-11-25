@@ -7,5 +7,6 @@ python-dotenv
 langgraph
 langchain_groq
 langchain-community
-sklearn
+scikit-learn
 qdrant-client == 1.7.0
+
