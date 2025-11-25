@@ -2,23 +2,37 @@ import os
 import uuid
 from bson import ObjectId
 from pymongo import MongoClient
-from fastapi.encoders import jsonable_encoder
-from sentence_transformers import SentenceTransformer
 from qdrant_client.http import models as qmodels
 from app.config.qdrant import qdrant_client, COLLECTION_NAME, VECTOR_SIZE
+from google import genai
+from google.genai import types
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["test"]
+db = mongo_client["staging"]
 
-model = SentenceTransformer("all-mpnet-base-v2")
+client = genai.Client() 
 
 def get_embedding(text: str):
-    """Generate MiniLM embeddings (locally)."""
+    """Generate embedding via Google Gemini API with specified dimension."""
     if not text or not text.strip():
+        return [0.0] * VECTOR_SIZE 
+
+    try:
+        response = client.models.embed_content(
+            model='gemini-embedding-001',
+            contents=[text],
+            config=types.EmbedContentConfig(
+                task_type='SEMANTIC_SIMILARITY',
+                # 👇 This is the crucial part that tells the API to truncate the vector
+                output_dimensionality=VECTOR_SIZE 
+            )
+        )
+        
+        return response.embeddings[0].values
+    except Exception as e:
+        print(f"Error generating embedding via Gemini API: {e}")
         return [0.0] * VECTOR_SIZE
-    embedding = model.encode(text, normalize_embeddings=True)
-    return embedding.tolist()
 
 def setup_collection():
     collections = qdrant_client.get_collections().collections
