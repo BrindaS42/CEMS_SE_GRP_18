@@ -1,12 +1,11 @@
 import numpy as np
-from bson import ObjectId
 from pymongo import MongoClient
 from sklearn.metrics.pairwise import cosine_similarity
 import os
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["test"]
+db = mongo_client["staging"]
 
 
 def get_user_ids_for_registration(reg):

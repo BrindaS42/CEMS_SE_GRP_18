@@ -2,14 +2,15 @@ import numpy as np
 from bson import ObjectId
 from pymongo import MongoClient
 from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
+from google import genai
+from google.genai import types
 import os
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["test"]
+db = mongo_client["staging"]
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+client = genai.Client()
 
 
 def recommend_demographic(profile_id: str, top_k=5):
@@ -66,7 +67,25 @@ def recommend_demographic(profile_id: str, top_k=5):
 
     # Create embeddings
     user_strings = [vectorize(u) for u in users]
-    embeddings = model.encode(user_strings, normalize_embeddings=True)
+    try:
+        response = client.models.embed_content(
+            model='gemini-embedding-001',
+            # Pass the list of all user strings
+            contents=user_strings,
+            config=types.EmbedContentConfig(
+                task_type='SEMANTIC_SIMILARITY',
+                # Truncate the output vector size for efficiency
+                output_dimensionality=768 
+            )
+        )
+        # Extract the list of embedding vectors from the response object
+        embeddings_list = [e.values for e in response.embeddings]
+        # Convert the list of embeddings to a numpy array
+        embeddings = np.array(embeddings_list)
+        
+    except Exception as e:
+        print(f"Error generating Gemini embeddings: {e}")
+        return [] # Return empty list on critical embedding error
 
     # Target user index
     target_index = next(i for i, u in enumerate(users) if u["_id"] == profile_id)
