@@ -11,17 +11,19 @@ import {
     verifyForgotPassword
 } from '../controllers/auth.controller.js';import auth from '../middleware/auth.middleware.js'
 const { authentication } = auth
+import { validate } from '../middleware/vaildate.js';
+import { registerSchema, loginSchema } from '../utils/validation/authValidation.js';
 
 const authRouter = express.Router();
 
-authRouter.post('/register', register);
+authRouter.post('/register', validate(registerSchema), register);
 
-authRouter.post('/login', login);
+authRouter.post('/login', validate(loginSchema), login);
 
 authRouter.post('/logout',authentication, logout);
 
-authRouter.post('/password/request-reset', requestPasswordReset);
-authRouter.post('/password/confirm-reset', verifyOtpAndResetPassword);
+authRouter.post('/password/request-reset',authentication, requestPasswordReset);
+authRouter.post('/password/confirm-reset',authentication, verifyOtpAndResetPassword);
 
 authRouter.post('/password/forgot/request', requestForgotPassword);
 authRouter.post('/password/forgot/verify', verifyForgotPassword);
