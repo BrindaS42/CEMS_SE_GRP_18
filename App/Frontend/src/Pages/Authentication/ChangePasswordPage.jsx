@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card.jsx';
 import { Alert, AlertDescription } from '../../components/ui/alert.jsx';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { SegmentedControl } from '../../components/ui/segmented-control'; // Use SegmentedControl
 import { requestPasswordReset, verifyOtpAndResetPassword } from '../../store/auth.slice.js';
 import { toast } from 'sonner';
 
@@ -100,7 +100,7 @@ const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-md mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -108,10 +108,10 @@ const ChangePasswordPage = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-4xl mb-4 font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl mb-4 font-black bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
               Change Password
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {step === 'request' 
                 ? (isAuthenticated ? 'Request an OTP to change your password' : 'Enter your details to change password')
                 : 'Enter the OTP and your new password'
@@ -119,10 +119,10 @@ const ChangePasswordPage = () => {
             </p>
           </div>
 
-          <Card className="shadow-2xl border-2">
+          <Card className="shadow-2xl border-2 dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>{step === 'request' ? 'Request Password Change' : 'Verify & Change'}</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-white">{step === 'request' ? 'Request Password Change' : 'Verify & Change'}</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 {step === 'request' 
                   ? (isAuthenticated ? 'We will send an OTP to your registered email' : 'Choose your role and enter your email')
                   : 'Enter the 6-digit code sent to your email'
@@ -132,7 +132,7 @@ const ChangePasswordPage = () => {
 
             <CardContent>
               {error && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert variant="destructive" className="mb-4 dark:bg-gray-900 dark:border-gray-600">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -141,19 +141,25 @@ const ChangePasswordPage = () => {
                 <form onSubmit={handleRequestReset} className="space-y-4">
                   {!isAuthenticated && (
                     <>
-                      <Tabs value={selectedRole} onValueChange={setSelectedRole} className="mb-6">
-                        <TabsList className="grid w-full grid-cols-4">
-                          <TabsTrigger value="student">Student</TabsTrigger>
-                          <TabsTrigger value="organizer">Organizer</TabsTrigger>
-                          <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
-                          <TabsTrigger value="admin">Admin</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
+                      <div className="mb-6">
+                        <SegmentedControl
+                          options={[
+                            { value: 'student', label: 'Student' },
+                            { value: 'organizer', label: 'Organizer' },
+                            { value: 'sponsor', label: 'Sponsor' },
+                            { value: 'admin', label: 'Admin' },
+                          ]}
+                          value={selectedRole}
+                          onChange={setSelectedRole}
+                          variant={selectedRole}
+                          isFullWidth={true}
+                        />
+                      </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                          <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                           <Input
                             id="email"
                             name="email"
@@ -161,7 +167,7 @@ const ChangePasswordPage = () => {
                             placeholder="you@college.edu"
                             value={formData.email}
                             onChange={handleChange}
-                            className="pl-10"
+                            className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                             required
                           />
                         </div>
@@ -170,8 +176,8 @@ const ChangePasswordPage = () => {
                   )}
 
                   {isAuthenticated && (
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                    <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
                         An OTP will be sent to your registered email address to verify your identity.
                       </p>
                     </div>
@@ -179,7 +185,7 @@ const ChangePasswordPage = () => {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 dark:from-blue-500 dark:to-purple-500 text-white border-0"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -197,7 +203,7 @@ const ChangePasswordPage = () => {
               {step === 'verify' && (
                 <form onSubmit={handleVerifyAndReset} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="otp">Verification Code</Label>
+                    <Label htmlFor="otp" className="dark:text-gray-300">Verification Code</Label>
                     <Input
                       id="otp"
                       name="otp"
@@ -206,14 +212,15 @@ const ChangePasswordPage = () => {
                       value={formData.otp}
                       onChange={handleChange}
                       maxLength={6}
+                      className="dark:bg-gray-900 dark:border-gray-600"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword"className="dark:text-gray-300">New Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                       <Input
                         id="newPassword"
                         name="newPassword"
@@ -221,16 +228,16 @@ const ChangePasswordPage = () => {
                         placeholder="Enter new password"
                         value={formData.newPassword}
                         onChange={handleChange}
-                        className="pl-10"
+                        className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword"className="dark:text-gray-300">Confirm Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                       <Input
                         id="confirmPassword"
                         name="confirmPassword"
@@ -238,7 +245,7 @@ const ChangePasswordPage = () => {
                         placeholder="Confirm new password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="pl-10"
+                        className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
@@ -246,7 +253,7 @@ const ChangePasswordPage = () => {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 dark:from-blue-500 dark:to-purple-500 text-white border-0"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -264,7 +271,7 @@ const ChangePasswordPage = () => {
 
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">
-                <Link to="/login" className="text-blue-600 hover:underline flex items-center justify-center">
+                <Link to="/login" className="text-blue-600 hover:underline flex items-center justify-center dark:text-blue-400">
                   <ArrowLeft className="mr-1 h-4 w-4" />
                   Back to Login
                 </Link>

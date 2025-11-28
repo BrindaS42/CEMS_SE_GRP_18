@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/card.jsx';
 import { Alert, AlertDescription } from '../../components/ui/alert.jsx';
-import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs.jsx';
+import { SegmentedControl } from '../../components/ui/segmented-control';
 import { requestForgotPassword, verifyForgotPassword } from '../../store/auth.slice.js';
 import { toast } from 'sonner';
 
@@ -100,7 +100,7 @@ export const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-md mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -108,10 +108,10 @@ export const ForgotPasswordPage = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-4xl mb-4 font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl mb-4 font-black bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               {step === 'email' ? 'Forgot Password' : 'Reset Password'}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {step === 'email' 
                 ? 'Enter your email to receive a reset code' 
                 : 'Enter the OTP and your new password'
@@ -119,10 +119,10 @@ export const ForgotPasswordPage = () => {
             </p>
           </div>
 
-          <Card className="shadow-2xl border-2">
+          <Card className="shadow-2xl border-2 dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>{step === 'email' ? 'Reset Password' : 'Verify & Reset'}</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-white">{step === 'email' ? 'Reset Password' : 'Verify & Reset'}</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 {step === 'email' 
                   ? 'Choose your role and enter your email address'
                   : 'Enter the 6-digit code sent to your email'
@@ -133,26 +133,32 @@ export const ForgotPasswordPage = () => {
             <CardContent>
               {step === 'email' && (
                 <>
-                  <Tabs value={selectedRole} onValueChange={setSelectedRole} className="mb-6">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="student">Student</TabsTrigger>
-                      <TabsTrigger value="organizer">Organizer</TabsTrigger>
-                      <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
-                      <TabsTrigger value="admin">Admin</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+                  <div className="mb-6">
+                    <SegmentedControl
+                        options={[
+                            { value: 'student', label: 'Student' },
+                            { value: 'organizer', label: 'Organizer' },
+                            { value: 'sponsor', label: 'Sponsor' },
+                            { value: 'admin', label: 'Admin' },
+                        ]}
+                        value={selectedRole}
+                        onChange={setSelectedRole}
+                        variant={selectedRole}
+                        isFullWidth={true}
+                    />
+                  </div>
 
                   {error && (
-                    <Alert variant="destructive" className="mb-4">
+                    <Alert variant="destructive" className="mb-4 dark:bg-gray-900 dark:border-gray-600">
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
 
                   <form onSubmit={handleEmailSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email" className="dark:text-gray-300">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                         <Input
                           id="email"
                           name="email"
@@ -160,7 +166,7 @@ export const ForgotPasswordPage = () => {
                           placeholder="you@college.edu"
                           value={formData.email}
                           onChange={handleChange}
-                          className="pl-10"
+                          className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                           required
                         />
                       </div>
@@ -168,7 +174,7 @@ export const ForgotPasswordPage = () => {
 
                     <Button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 dark:from-indigo-500 dark:to-purple-500 text-white border-0"
                       disabled={isLoading}
                     >
                       {isLoading ? (
@@ -187,7 +193,7 @@ export const ForgotPasswordPage = () => {
               {step === 'verify' && (
                 <form onSubmit={handleVerifySubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="otp">Verification Code</Label>
+                    <Label htmlFor="otp" className="dark:text-gray-300">Verification Code</Label>
                     <Input
                       id="otp"
                       name="otp"
@@ -197,14 +203,15 @@ export const ForgotPasswordPage = () => {
                       onChange={handleChange}
                       maxLength={6}
                       pattern="[0-9]{6}"
+                      className="dark:bg-gray-900 dark:border-gray-600"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword"className="dark:text-gray-300">New Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                       <Input
                         id="newPassword"
                         name="newPassword"
@@ -212,16 +219,16 @@ export const ForgotPasswordPage = () => {
                         placeholder="Enter new password"
                         value={formData.newPassword}
                         onChange={handleChange}
-                        className="pl-10"
+                        className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword"className="dark:text-gray-300">Confirm Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                       <Input
                         id="confirmPassword"
                         name="confirmPassword"
@@ -229,7 +236,7 @@ export const ForgotPasswordPage = () => {
                         placeholder="Confirm new password"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="pl-10"
+                        className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
@@ -237,7 +244,7 @@ export const ForgotPasswordPage = () => {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 dark:from-indigo-500 dark:to-purple-500 text-white border-0"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -255,7 +262,7 @@ export const ForgotPasswordPage = () => {
 
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">
-                <Link to="/login" className="text-indigo-600 hover:underline flex items-center justify-center">
+                <Link to="/login" className="text-indigo-600 hover:underline flex items-center justify-center dark:text-indigo-400">
                   <ArrowLeft className="mr-1 h-4 w-4" />
                   Back to Login
                 </Link>

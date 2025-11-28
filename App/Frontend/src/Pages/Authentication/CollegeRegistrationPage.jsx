@@ -81,29 +81,29 @@ export const CollegeRegistrationPage = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-950 dark:via-emerald-950/20 dark:to-gray-950 transition-colors duration-300">
         <div className="max-w-2xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="shadow-2xl border-2">
+            <Card className="shadow-2xl border-2 dark:bg-gray-800 dark:border-gray-700">
               <CardHeader>
                 <div className="flex justify-center mb-4">
-                  <div className="rounded-full bg-emerald-100 p-4">
-                    <CheckCircle className="h-16 w-16 text-emerald-600" />
+                  <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 p-4">
+                    <CheckCircle className="h-16 w-16 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 </div>
-                <CardTitle className="text-center text-3xl">Registration Submitted!</CardTitle>
-                <CardDescription className="text-center text-lg">
+                <CardTitle className="text-center text-3xl dark:text-white">Registration Submitted!</CardTitle>
+                <CardDescription className="text-center text-lg dark:text-gray-300">
                   Thank you for registering your college
                 </CardDescription>
               </CardHeader>
 
               <CardContent>
-                <Alert className="bg-emerald-50 border-emerald-200">
-                  <AlertDescription>
+                <Alert className="bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800">
+                  <AlertDescription className="dark:text-emerald-100">
                     <ul className="list-disc list-inside space-y-2">
                       <li>Your college registration has been submitted for approval</li>
                       <li>Our admin team will review your submission within 2-3 business days</li>
@@ -116,7 +116,7 @@ export const CollegeRegistrationPage = () => {
 
               <CardFooter className="flex justify-center">
                 <Link to="/">
-                  <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90">
+                  <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 dark:from-emerald-500 dark:to-teal-500 text-white">
                     Back to Home
                   </Button>
                 </Link>
@@ -129,7 +129,7 @@ export const CollegeRegistrationPage = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-950 dark:via-emerald-950/20 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-3xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -137,18 +137,18 @@ export const CollegeRegistrationPage = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-5xl mb-4 font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl mb-4 font-black bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
               Register Your College
             </h1>
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-600 dark:text-gray-300 text-lg">
               Join the CEMS network and empower your college community
             </p>
           </div>
 
-          <Card className="shadow-2xl border-2">
+          <Card className="shadow-2xl border-2 dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle>College Registration Form</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-white">College Registration Form</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 Fill in the details below. Your college will be reviewed and approved by our admin team.
               </CardDescription>
             </CardHeader>
@@ -157,40 +157,42 @@ export const CollegeRegistrationPage = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* College Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Building2 className="mr-2 h-5 w-5 text-emerald-600" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <Building2 className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     College Information
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="name">College Name *</Label>
+                      <Label htmlFor="name" className="dark:text-gray-300">College Name *</Label>
                       <Input
                         id="name"
                         name="name"
                         placeholder="e.g., National Institute of Technology, Surat"
                         value={formData.name}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="code">College Code *</Label>
+                      <Label htmlFor="code" className="dark:text-gray-300">College Code *</Label>
                       <Input
                         id="code"
                         name="code"
                         placeholder="e.g., NIT-SRT"
                         value={formData.code}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="website">Website</Label>
+                      <Label htmlFor="website" className="dark:text-gray-300">Website</Label>
                       <div className="relative">
-                        <Globe className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Globe className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                         <Input
                           id="website"
                           name="website"
@@ -198,13 +200,13 @@ export const CollegeRegistrationPage = () => {
                           placeholder="https://www.college.edu"
                           value={formData.website}
                           onChange={handleChange}
-                          className="pl-10"
+                          className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="description" className="dark:text-gray-300">Description</Label>
                       <Textarea
                         id="description"
                         name="description"
@@ -212,6 +214,7 @@ export const CollegeRegistrationPage = () => {
                         value={formData.description}
                         onChange={handleChange}
                         rows={3}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                       />
                     </div>
                   </div>
@@ -219,28 +222,29 @@ export const CollegeRegistrationPage = () => {
 
                 {/* Point of Contact */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <User className="mr-2 h-5 w-5 text-emerald-600" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <User className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     Point of Contact
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="pocName">POC Name *</Label>
+                      <Label htmlFor="pocName" className="dark:text-gray-300">POC Name *</Label>
                       <Input
                         id="pocName"
                         name="pocName"
                         placeholder="Full name"
                         value={formData.pocName}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contactEmail">Contact Email *</Label>
+                      <Label htmlFor="contactEmail" className="dark:text-gray-300">Contact Email *</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                         <Input
                           id="contactEmail"
                           name="contactEmail"
@@ -248,16 +252,16 @@ export const CollegeRegistrationPage = () => {
                           placeholder="poc@college.edu"
                           value={formData.contactEmail}
                           onChange={handleChange}
-                          className="pl-10"
+                          className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                           required
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contactNumber">Contact Number *</Label>
+                      <Label htmlFor="contactNumber" className="dark:text-gray-300">Contact Number *</Label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                         <Input
                           id="contactNumber"
                           name="contactNumber"
@@ -265,7 +269,7 @@ export const CollegeRegistrationPage = () => {
                           placeholder="+91 9876543210"
                           value={formData.contactNumber}
                           onChange={handleChange}
-                          className="pl-10"
+                          className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                           required
                         />
                       </div>
@@ -275,67 +279,72 @@ export const CollegeRegistrationPage = () => {
 
                 {/* Address */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <MapPin className="mr-2 h-5 w-5 text-emerald-600" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <MapPin className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     College Address
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="localAddress">Street Address *</Label>
+                      <Label htmlFor="localAddress" className="dark:text-gray-300">Street Address *</Label>
                       <Input
                         id="localAddress"
                         name="localAddress"
                         placeholder="Street address"
                         value={formData.localAddress}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="city" className="dark:text-gray-300">City *</Label>
                       <Input
                         id="city"
                         name="city"
                         placeholder="City"
                         value={formData.city}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="state">State *</Label>
+                      <Label htmlFor="state" className="dark:text-gray-300">State *</Label>
                       <Input
                         id="state"
                         name="state"
                         placeholder="State"
                         value={formData.state}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="country">Country</Label>
+                      <Label htmlFor="country" className="dark:text-gray-300">Country</Label>
                       <Input
                         id="country"
                         name="country"
                         value={formData.country}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         disabled
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="pincode">Pincode *</Label>
+                      <Label htmlFor="pincode" className="dark:text-gray-300">Pincode *</Label>
                       <Input
                         id="pincode"
                         name="pincode"
                         placeholder="123456"
                         value={formData.pincode}
                         onChange={handleChange}
+                        className="dark:bg-gray-900 dark:border-gray-600"
                         required
                       />
                     </div>
@@ -344,7 +353,7 @@ export const CollegeRegistrationPage = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-lg py-6"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-lg py-6 text-white dark:from-emerald-500 dark:to-teal-500"
                   disabled={isLoading === 'loading'}
                 >
                   {isLoading === 'loading' ? (
@@ -363,7 +372,7 @@ export const CollegeRegistrationPage = () => {
             </CardContent>
 
             <CardFooter className="flex justify-center">
-              <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 underline">
+              <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline">
                 Back to Home
               </Link>
             </CardFooter>
