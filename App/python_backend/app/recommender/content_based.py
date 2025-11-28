@@ -9,7 +9,7 @@ from google.genai import types
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["staging"]
+db = mongo_client["main"]
 
 client = genai.Client() 
 

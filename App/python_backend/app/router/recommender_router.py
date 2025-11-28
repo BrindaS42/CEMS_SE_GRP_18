@@ -22,8 +22,8 @@ def delete(event_id: str):
     delete_event(event_id)
     return {"deleted": event_id}
 
-@router.get("/user/{profile_id}")
-def get_recommendations(profile_id: str, top_k: int = 5):
+@router.get("/content-based/{profile_id}")
+def content_based_recommend(profile_id: str, top_k: int = 5):
     events = recommend_events_for_user(profile_id, top_k)
     return {"recommendations": events}
 

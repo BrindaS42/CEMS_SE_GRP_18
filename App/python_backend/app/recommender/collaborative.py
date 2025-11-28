@@ -5,7 +5,7 @@ import os
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["staging"]
+db = mongo_client["main"]
 
 
 def get_user_ids_for_registration(reg):

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Mail, Lock, User, Building2 } from 'lucide-react';
+import { Mail, Lock, User, Building2, KeyRound } from 'lucide-react';
 import { Button } from '../../Components/ui/button.jsx';
 import { Input } from '../../Components/ui/input.jsx';
 import { Label } from '../../Components/ui/label.jsx';
@@ -64,6 +64,7 @@ export const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     college: '',
+    adminCode: '',
   });
 
   useEffect(() => {
@@ -120,6 +121,10 @@ export const RegisterPage = () => {
       toast.error('Please select your college');
       return;
     }
+    if (selectedRole === 'admin' && !formData.adminCode) {
+      toast.error('Please enter the admin code');
+      return;
+    }
     
     console.log('Form data before submission:', formData); // Debug log
     
@@ -150,6 +155,7 @@ export const RegisterPage = () => {
         email: formData.email,
         password: formData.password,
         college: formData.college,
+        adminCode: formData.adminCode,
         role: selectedRole,
       }); // Debug log
 
@@ -158,6 +164,7 @@ export const RegisterPage = () => {
         email: formData.email,
         password: formData.password,
         college: formData.college,
+        adminCode: formData.adminCode,
         role: selectedRole,
       })).unwrap();
 
@@ -291,6 +298,25 @@ export const RegisterPage = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+                )}
+
+                {selectedRole === 'admin' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="adminCode">Admin Code</Label>
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="adminCode"
+                        name="adminCode"
+                        type="password"
+                        placeholder="Enter admin code"
+                        value={formData.adminCode}
+                        onChange={handleChange}
+                        className="pl-10"
+                        required
+                      />
                     </div>
                   </div>
                 )}

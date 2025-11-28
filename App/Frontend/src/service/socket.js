@@ -1,5 +1,3 @@
-// socket.js - FIX: Properly initialize and connect socket
-
 import { io } from 'socket.io-client';
 
 // Get the socket server URL from environment or use defaults

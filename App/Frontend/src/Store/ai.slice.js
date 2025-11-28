@@ -14,6 +14,16 @@ export const getRecommendations = createAsyncThunk('ai/getRecommendations', asyn
   }
 })
 
+export const getContentBasedRecommendations = createAsyncThunk('ai/getContentBasedRecommendations', async (_, { rejectWithValue }) => {
+  try {
+    const res = await axios.get(`${API_BASE}/ai/recommend/content-based`)
+    console.log('Fetched Content-Based Recommendations:', res.data)
+    return res.data
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to get content-based recommendations')
+  }
+})
+
 export const queryChatBot = createAsyncThunk('ai/queryChatBot', async (query, { rejectWithValue }) => {
   try {
     const res = await axios.post(`${API_BASE}/ai/bot`, { query })
@@ -34,6 +44,7 @@ export const rebuildIndex = createAsyncThunk('ai/rebuildIndex', async (_, { reje
 
 const initialState = {
   recommendations: [],
+  contentBasedRecommendations: [],
   chatHistory: [],
   loading: false,
   rebuilding: false,
@@ -61,6 +72,13 @@ const aiSlice = createSlice({
         state.recommendations = Array.isArray(action.payload?.recommendations) ? action.payload.recommendations : [];
       })
       .addCase(getRecommendations.rejected, (state, action) => { state.loading = false; state.error = action.payload })
+      .addCase(getContentBasedRecommendations.pending, (state) => { state.loading = true; state.error = null })
+      .addCase(getContentBasedRecommendations.fulfilled, (state, action) => {
+        state.loading = false;
+        state.contentBasedRecommendations = Array.isArray(action.payload?.recommendations) ? action.payload.recommendations : [];
+      })
+      .addCase(getContentBasedRecommendations.rejected, (state, action) => { state.loading = false; state.error = action.payload })
+
       .addCase(queryChatBot.fulfilled, (state, action) => { 
         state.chatHistory.push({ type: 'bot', message: action.payload.answer })
       })

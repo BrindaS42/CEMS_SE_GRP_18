@@ -8,7 +8,7 @@ import os
 
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["staging"]
+db = mongo_client["main"]
 
 def recommend_hybrid(profile_id: str, top_k=5):
     content_scores = recommend_events_for_user(profile_id, top_k * 2)

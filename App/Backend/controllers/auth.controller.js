@@ -15,7 +15,7 @@ const generateTokenAndSetCookie = (res, user) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
   });
 
   return token;
@@ -23,10 +23,19 @@ const generateTokenAndSetCookie = (res, user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password, college, role } = req.body;
+    const { username, email, password, college, role, adminCode } = req.body;
 
     if (!username || !email || !password || !role) {
       return res.status(400).json({ success: false, message: 'Username, email, password, and role are required' });
+    }
+
+    if (role === 'admin') {
+      if (!adminCode) {
+        return res.status(400).json({ success: false, message: 'Admin code is required for admin registration' });
+      }
+      if (adminCode !== process.env.ADMIN_REGISTRATION_CODE) {
+        return res.status(403).json({ success: false, message: 'Invalid admin code' });
+      }
     }
 
     if ((role === 'student' || role === 'organizer') && !college) {

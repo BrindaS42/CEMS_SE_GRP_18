@@ -9,4 +9,4 @@ if not MONGO_URI:
     raise RuntimeError("MONGO_URI not set in .env")
 
 mongo_client = MongoClient(MONGO_URI)
-db = mongo_client['staging']
+db = mongo_client['main']

@@ -10,6 +10,16 @@ export const getRecommendations = async (req, res) => {
     }
   };
 
+export const getContentBasedRecommendations = async (req, res) => {
+  try {
+    const response = await pythonClient.get(`/recommend/content-based/${req.user.id}`);
+    return res.json(response.data);
+  } catch (err) {
+    console.error("Content-Based Recommendation Error:", err);
+    return res.status(500).json({ error: "Content-based recommendation failed" });
+  }
+};
+
   export const queryChatBot = async (req, res) => {
     try {
       const { query } = req.body;

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import auth from "../middleware/auth.middleware.js";
-import { getRecommendations, queryChatBot, rebuildSearchIndex } from "../controllers/ai.controller.js";
+import { getRecommendations, getContentBasedRecommendations, queryChatBot, rebuildSearchIndex } from "../controllers/ai.controller.js";
 
 const { authentication, authorizeRoles } = auth;
 
@@ -11,6 +11,13 @@ router.get(
   authentication,
   authorizeRoles("student"),
   getRecommendations
+);
+
+router.get(
+  "/recommend/content-based",
+  authentication,
+  authorizeRoles("student"),
+  getContentBasedRecommendations
 );
 
 router.post(
