@@ -18,7 +18,12 @@ export const submitRegistration = createAsyncThunk('registration/submit', async 
     const res = await axios.post(`${API_BASE}/registrations/submit`, registrationData)
     return res.data
   } catch (err) {
-    return rejectWithValue(err?.response?.data?.error || 'Failed to submit registration')
+    // Prefer 'message' for user-facing errors, fallback to 'error', then generic string
+    return rejectWithValue(
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      'Failed to submit registration'
+    )
   }
 })
 

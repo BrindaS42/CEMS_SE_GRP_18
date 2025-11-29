@@ -171,7 +171,8 @@ export const EventDetailsPage = () => {
       const finalRegistrationData = {
         ...registrationFormData,
         eventId: id,
-        registrationData: event.config.registrationFields.map(field => ({
+        // Safely access fields and map them
+        registrationData: (event?.config?.registrationFields || []).map(field => ({
           question: field.title,
           answer: customFieldsData[field.title] || ''
         }))
@@ -180,7 +181,9 @@ export const EventDetailsPage = () => {
       toast.success('Registration successful! Check your inbox for confirmation.');
       dispatch(getRegistrationStatus({ eventId: id, participantId: user.id }));
     } catch (error) {
-      toast.error((error && error.response?.data?.message) || 'Registration failed');
+      // Correctly handle string error payloads from unwrap()
+      const errorMessage = typeof error === 'string' ? error : (error?.response?.data?.message || 'Registration failed');
+      toast.error(errorMessage);
     } finally {
       setRegistering(false);
     }
@@ -999,6 +1002,7 @@ export const EventDetailsPage = () => {
 
               {isStudentView && registrationStatus?.registrationStatus !== 'confirmed' && (
                 <Button
+                  onClick={() => setActiveTab('registration')}
                   disabled={registering}
                   className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
