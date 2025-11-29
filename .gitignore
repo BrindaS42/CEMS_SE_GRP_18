@@ -58,3 +58,4 @@ tests/
 
 seed_mongo.py
 seed_mongo.js
+seed_sponsor.js
