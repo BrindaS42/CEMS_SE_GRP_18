@@ -130,64 +130,109 @@ export const GetTheTimeLineReminders = async(req , res) => {
 };
 
 
+const createDateTime = (baseDate, timeStr) => {
+  if (!baseDate || !timeStr) return null;
+  
+  // Create a fresh Date object from the base date
+  const d = new Date(baseDate);
+  
+  // Extract Hours and Minutes from "HH:mm" string
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  
+  if (isNaN(hours) || isNaN(minutes)) return null;
+
+  d.setHours(hours, minutes, 0, 0);
+  return d;
+};
+
 export const GetClashDetectionWarnings = async (req, res) => {
   try {
     const userId = req.user.id;
     const eventIds = await getStudentEventIds(userId);
-    const registeredEvents = await Event.find({ _id: { $in: eventIds }, status: 'published' }).select("title timeline").lean();
+    
+    // Fetch registered events
+    const registeredEvents = await Event.find({ 
+        _id: { $in: eventIds }, 
+        status: 'published' 
+    }).select("title timeline").lean();
 
     const timeSlots = [];
 
     registeredEvents.forEach((event) => {
+      if (event.timeline && Array.isArray(event.timeline)) {
+        event.timeline.forEach((entry) => {
+          // Check if we have the necessary data: Date AND Time strings
+          if (entry.date && entry.duration && entry.duration.from && entry.duration.to) {
+            
+            // FIX: Combine the Date + Time String
+            const startObj = createDateTime(entry.date, entry.duration.from);
+            const endObj = createDateTime(entry.date, entry.duration.to);
 
-      event.timeline.forEach((entry) => {
-        if (entry.duration && entry.duration.from && entry.duration.to) {
-          timeSlots.push({
-            eventId: event._id,
-            eventTitle: event.title,
-            timelineTitle: entry.title || "Event Period",
-            startTime: new Date(entry.duration.from),
-            endTime: new Date(entry.duration.to),
-          });
-        }
-      });
+            // Handle overnight events (e.g., Starts 11 PM, Ends 1 AM next day)
+            if (endObj < startObj) {
+               endObj.setDate(endObj.getDate() + 1);
+            }
+
+            if (startObj && endObj) {
+              timeSlots.push({
+                eventId: event._id.toString(),
+                eventTitle: event.title,
+                timelineTitle: entry.title || "Event Period",
+                startTime: startObj, // Now a valid Date object
+                endTime: endObj,     // Now a valid Date object
+              });
+            }
+          }
+        });
+      }
     });
+
+    // Debug log to confirm dates are now valid
+    console.log("All Time Slots Collected:", timeSlots.map(t => ({
+        title: t.eventTitle,
+        start: t.startTime.toLocaleString(),
+        end: t.endTime.toLocaleString()
+    })));
 
     const clashes = [];
 
+    // Compare logic
     for (let i = 0; i < timeSlots.length; i++) {
       const slotA = timeSlots[i];
 
       for (let j = i + 1; j < timeSlots.length; j++) {
         const slotB = timeSlots[j];
 
-        const isOverlap =
-          slotA.startTime <= slotB.endTime && slotB.startTime <= slotA.endTime;
+        // Strict Overlap Check
+        const isOverlap = slotA.startTime < slotB.endTime && slotB.startTime < slotA.endTime;
 
-        if (isOverlap && slotA.eventId.toString() !== slotB.eventId.toString()) {
-          clashes.push({
-            message: `CLASH DETECTED: Your event "${slotA.eventTitle}" (${slotA.timelineTitle}) conflicts with "${slotB.eventTitle}" (${slotB.timelineTitle}).`,
-            eventA: {
-              title: slotA.eventTitle,
-              timeline: slotA.timelineTitle,
-              starts: slotA.startTime,
-              ends: slotA.endTime,
-            },
-            eventB: {
-              title: slotB.eventTitle,
-              timeline: slotB.timelineTitle,
-              starts: slotB.startTime,
-              ends: slotB.endTime,
-            },
-          });
+        if (isOverlap) {
+            // Ensure we are comparing different events
+            if (slotA.eventId !== slotB.eventId) {
+              clashes.push({
+                message: `CLASH DETECTED: "${slotA.eventTitle}" (${slotA.timelineTitle}) overlaps with "${slotB.eventTitle}"`,
+                eventA: {
+                  title: slotA.eventTitle,
+                  timeline: slotA.timelineTitle,
+                  starts: slotA.startTime,
+                  ends: slotA.endTime,
+                },
+                eventB: {
+                  title: slotB.eventTitle,
+                  timeline: slotB.timelineTitle,
+                  starts: slotB.startTime,
+                  ends: slotB.endTime,
+                },
+              });
+            }
         }
       }
     }
-
+    console.log(`Total Clashes Found: ${clashes.length}`);
     if (clashes.length === 0) {
       return res.status(200).json({
         success: true,
-        message: "No schedule clashes found in your registered events.",
+        message: "No schedule clashes found.",
         count: 0,
         data: [],
       });
@@ -199,6 +244,7 @@ export const GetClashDetectionWarnings = async (req, res) => {
       count: clashes.length,
       data: clashes,
     });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({
