@@ -952,7 +952,7 @@ export const EventDetailsPage = () => {
                             </div>
                           )}
 
-                          {!event?.config?.isfree && (
+                          {event?.config?.isfree==="false" && (
                             <div className="space-y-4 border-t pt-4 dark:border-gray-700">
                               <div className="flex items-center justify-between">
                                 <Label className="dark:text-gray-300">Registration Fee</Label>

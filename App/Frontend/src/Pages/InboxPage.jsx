@@ -317,13 +317,16 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => {
               onClick={() => setSelectedMessage(message)}
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
+                {/* ADDED min-w-0 here to prevent flex overflow */}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white flex-shrink-0">
                     {getMessageIcon(message.type)}
                   </div>
+                  {/* ADDED min-w-0 here as well */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-black truncate dark:text-gray-200">{message.title}</h3>
+                      {/* ADDED max-w-full */}
+                      <h3 className="font-black truncate dark:text-gray-200 max-w-full">{message.title}</h3>
                       {message.status && getApprovalBadge(message.status)}
                       <Badge variant="outline" className="text-xs">
                         {message.type.replace('_', ' ')}
@@ -331,14 +334,15 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => {
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {message.from ? `From: ${message.from.profile?.name}` : 'From: [Deleted User]'}
-                      {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name}` : ''}
+                      {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name || message.to[0]?.email || ''}` : ''}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500 line-clamp-2">
+                    {/* ADDED break-words here */}
+                    <p className="text-sm text-gray-500 dark:text-gray-500 line-clamp-2 break-words">
                       {message.description || message.message}
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   <span className="text-xs text-gray-400 whitespace-nowrap">
                     {new Date(message.createdAt).toLocaleDateString()}
                   </span>
@@ -388,9 +392,11 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => {
       <Card className="h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 border-b dark:border-gray-700">
           <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <h2 className="text-2xl font-black mb-2 dark:text-white">{selectedMessage.title}</h2>
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            {/* ADDED min-w-0 */}
+            <div className="flex-1 min-w-0">
+              {/* ADDED break-words */}
+              <h2 className="text-2xl font-black mb-2 dark:text-white break-words">{selectedMessage.title}</h2>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
                   From: {selectedMessage.from?.profile?.name || '[Deleted User]'}
@@ -398,7 +404,9 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => {
                 {selectedMessage.to && selectedMessage.to.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Send className="w-4 h-4" />
-                    To: {selectedMessage.to.map(u => u.profile?.name || u.email || '[Deleted User]').join(', ')}
+                    To: <span className="break-words">
+                      {selectedMessage.to.map(u => u.profile?.name || u.email || '[Deleted User]').join(', ')}
+                    </span>
                   </div>
                 )}
                 <div className="flex items-center gap-1">
@@ -435,8 +443,8 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => {
             {selectedMessage.description && (
               <>
                 <h3 className="font-semibold mb-2 dark:text-gray-200">Message</h3>
-                {/* --- REACT LINKIFY COMPONENT --- */}
-                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                {/* ADDED break-words here to fix Linkify overflow */}
+                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
                   <Linkify componentDecorator={(decoratedHref, decoratedText, key) => (
                     <a target="_blank" href={decoratedHref} key={key} rel="noopener noreferrer" className="text-blue-500 hover:underline">
                       {decoratedText}
