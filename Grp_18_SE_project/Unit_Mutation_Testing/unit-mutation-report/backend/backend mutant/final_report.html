@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aggregated Mutation Testing Reports</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;display:flex;min-height:100vh}
+    nav{width:320px;border-right:1px solid #ddd;overflow:auto;padding:20px;background:#fafafa}
+    main{flex:1;display:flex;flex-direction:column}
+    header{padding:12px 20px;border-bottom:1px solid #eee;background:#fff}
+    .toc{list-style:none;padding:0;margin:0}
+    .toc li{margin:6px 0}
+    .toc a{color:#0366d6;text-decoration:none}
+    .controls{padding:10px 20px;border-bottom:1px solid #eee;background:#fff}
+    .viewer{flex:1;display:flex;flex-direction:column;gap:8px;padding:12px;overflow:auto}
+    .report-frame{width:100%;height:700px;border:1px solid #ccc}
+    .small{font-size:0.9rem;color:#555}
+    .btn{display:inline-block;padding:6px 10px;margin-right:8px;border-radius:4px;background:#0366d6;color:#fff;text-decoration:none}
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>Reports</h2>
+    <p class="small">Click a report to scroll to its viewer below, or use the Open buttons.</p>
+    <ul class="toc" id="toc">
+      <li><a href="#r-admin">admin.controller-report</a></li>
+      <li><a href="#r-ai">ai.controller-report</a></li>
+      <li><a href="#r-analytics">analytics.controller-report</a></li>
+      <li><a href="#r-auth">auth.controller-report</a></li>
+      <li><a href="#r-chatroom">chatroom.controller-report</a></li>
+      <li><a href="#r-college">college.controller-report</a></li>
+      <li><a href="#r-event-general">event.general.controller-report</a></li>
+      <li><a href="#r-event-manage">event.manage.controller-report</a></li>
+      <li><a href="#r-event-team">event.team.controller-report</a></li>
+      <li><a href="#r-geocoding">geocoding.controller-report</a></li>
+      <li><a href="#r-inbox">inbox.controller-report</a></li>
+      <li><a href="#r-map-annotator">map_annotator.controller-report</a></li>
+      <li><a href="#r-organizer-dashboard">organizer.dashboard.controller-report</a></li>
+      <li><a href="#r-profile">profile.controller-report</a></li>
+      <li><a href="#r-registration">registration.controller-report</a></li>
+      <li><a href="#r-search">search.controller-report</a></li>
+      <li><a href="#r-sponsor">sponsor.controller-report</a></li>
+      <li><a href="#r-sponsorAd">sponsorAd.controller-report</a></li>
+      <li><a href="#r-student-dashboard">student.dashboard.controller-report</a></li>
+      <li><a href="#r-student-team">student.team.controller-report</a></li>
+      <li><a href="#r-index">index.html</a></li>
+    </ul>
+  </nav>
+  <main>
+    <header>
+      <h1 style="margin:0">Aggregated Mutation Testing Reports</h1>
+      <div class="small">All reports are embedded in iframes to preserve interactivity and styles.</div>
+    </header>
+    <div class="controls">
+      <a class="btn" id="openAll">Open All in New Tabs</a>
+      <a class="btn" id="collapseAll" style="background:#6c757d">Collapse All (scroll top)</a>
+    </div>
+    <div class="viewer" id="viewer">
+      <section id="r-admin">
+        <h3>admin.controller-report</h3>
+        <div>
+          <iframe class="report-frame" src="./admin.controller-report.html" title="admin.controller-report"></iframe>
+        </div>
+      </section>
+
+      <section id="r-ai">
+        <h3>ai.controller-report</h3>
+        <iframe class="report-frame" src="./ai.controller-report.html" title="ai.controller-report"></iframe>
+      </section>
+
+      <section id="r-analytics">
+        <h3>analytics.controller-report</h3>
+        <iframe class="report-frame" src="./analytics.controller-report.html" title="analytics.controller-report"></iframe>
+      </section>
+
+      <section id="r-auth">
+        <h3>auth.controller-report</h3>
+        <iframe class="report-frame" src="./auth.controller-report.html" title="auth.controller-report"></iframe>
+      </section>
+
+      <section id="r-chatroom">
+        <h3>chatroom.controller-report</h3>
+        <iframe class="report-frame" src="./chatroom.controller-report.html" title="chatroom.controller-report"></iframe>
+      </section>
+
+      <section id="r-college">
+        <h3>college.controller-report</h3>
+        <iframe class="report-frame" src="./college.controller-report.html" title="college.controller-report"></iframe>
+      </section>
+
+      <section id="r-event-general">
+        <h3>event.general.controller-report</h3>
+        <iframe class="report-frame" src="./event.general.controller-report.html" title="event.general.controller-report"></iframe>
+      </section>
+
+      <section id="r-event-manage">
+        <h3>event.manage.controller-report</h3>
+        <iframe class="report-frame" src="./event.manage.controller-report.html" title="event.manage.controller-report"></iframe>
+      </section>
+
+      <section id="r-event-team">
+        <h3>event.team.controller-report</h3>
+        <iframe class="report-frame" src="./event.team.controller-report.html" title="event.team.controller-report"></iframe>
+      </section>
+
+      <section id="r-geocoding">
+        <h3>geocoding.controller-report</h3>
+        <iframe class="report-frame" src="./geocoding.controller-report.html" title="geocoding.controller-report"></iframe>
+      </section>
+
+      <section id="r-inbox">
+        <h3>inbox.controller-report</h3>
+        <iframe class="report-frame" src="./inbox.controller-report.html" title="inbox.controller-report"></iframe>
+      </section>
+
+      <section id="r-map-annotator">
+        <h3>map_annotator.controller-report</h3>
+        <iframe class="report-frame" src="./map_annotator.controller-report.html" title="map_annotator.controller-report"></iframe>
+      </section>
+
+      <section id="r-organizer-dashboard">
+        <h3>organizer.dashboard.controller-report</h3>
+        <iframe class="report-frame" src="./organizer.dashboard.controller-report.html" title="organizer.dashboard.controller-report"></iframe>
+      </section>
+
+      <section id="r-profile">
+        <h3>profile.controller-report</h3>
+        <iframe class="report-frame" src="./profile.controller-report.html" title="profile.controller-report"></iframe>
+      </section>
+
+      <section id="r-registration">
+        <h3>registration.controller-report</h3>
+        <iframe class="report-frame" src="./registration.controller-report.html" title="registration.controller-report"></iframe>
+      </section>
+
+      <section id="r-search">
+        <h3>search.controller-report</h3>
+        <iframe class="report-frame" src="./search.controller-report.html" title="search.controller-report"></iframe>
+      </section>
+
+      <section id="r-sponsor">
+        <h3>sponsor.controller-report</h3>
+        <iframe class="report-frame" src="./sponsor.controller-report.html" title="sponsor.controller-report"></iframe>
+      </section>
+
+      <section id="r-sponsorAd">
+        <h3>sponsorAd.controller-report</h3>
+        <iframe class="report-frame" src="./sponsorAd.controller-report.html" title="sponsorAd.controller-report"></iframe>
+      </section>
+
+      <section id="r-student-dashboard">
+        <h3>student.dashboard.controller-report</h3>
+        <iframe class="report-frame" src="./student.dashboard.controller-report.html" title="student.dashboard.controller-report"></iframe>
+      </section>
+
+      <section id="r-student-team">
+        <h3>student.team.controller-report</h3>
+        <iframe class="report-frame" src="./student.team.controller-report.html" title="student.team.controller-report"></iframe>
+      </section>
+
+      <section id="r-index">
+        <h3>index.html</h3>
+        <iframe class="report-frame" src="./index.html" title="index.html"></iframe>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // Open each report in a new tab when Open All is clicked
+    document.getElementById('openAll').addEventListener('click', function(){
+      const iframes = Array.from(document.querySelectorAll('.report-frame'));
+      iframes.forEach((f)=>{ window.open(f.src, '_blank'); });
+    });
+    // Collapse/scroll-to-top
+    document.getElementById('collapseAll').addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+    // Smooth scroll for TOC links
+    document.querySelectorAll('#toc a').forEach(a=>{
+      a.addEventListener('click', function(e){ e.preventDefault(); const id = this.getAttribute('href').slice(1); const el = document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth'}); });
+    });
+  </script>
+</body>
+</html>
