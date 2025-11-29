@@ -372,7 +372,7 @@ export const EventDetailsPage = () => {
                   <div className="p-6 space-y-8 animate-fade-in">
                     <div>
                       <h2 className="text-2xl font-black mb-4 dark:text-white">About This Event</h2>
-                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
                         {event.description}
                       </p>
                     </div>
@@ -959,8 +959,8 @@ export const EventDetailsPage = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <Card className="p-6 sticky top-24 dark:bg-gray-800 dark:border-gray-700">
+          <div className="space-y-6 sticky top-24 h-fit">
+            <Card className="p-6 dark:bg-gray-800 dark:border-gray-700">
               <div className="space-y-4">                
                 {event.timeline?.[0] && (
                   <>

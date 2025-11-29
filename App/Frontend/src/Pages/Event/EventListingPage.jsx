@@ -203,7 +203,7 @@ export const EventListingPage = () => {
 
           <div className="max-w-2xl mx-auto mb-6">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Search events..."
@@ -212,12 +212,31 @@ export const EventListingPage = () => {
                   setSearchQuery(e.target.value);
                   setPage(1);
                 }}
-                className="pl-12 pr-4 py-6 text-lg rounded-2xl border-2 focus:border-purple-400 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+                // Use !pl-14 to force padding override
+                className="!pl-14 pr-4 py-6 text-lg rounded-2xl border-2 focus:border-purple-400 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
               />
             </div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-6">
+            {/* "All" Filter Button */}
+            <Button
+              key="all"
+              variant={selectedTags.length === 0 ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setSelectedTags([]);
+                setPage(1);
+              }}
+              className={selectedTags.length === 0 ? (
+                isStudentView
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
+              ) : 'dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'}
+            >
+              All
+            </Button>
+
             {categoryTags.map((tag) => (
               <Button
                 key={tag}
