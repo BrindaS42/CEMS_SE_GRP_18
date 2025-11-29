@@ -22,7 +22,6 @@ const notify = async ({ type, from, to, eventId, title, description, role }) => 
   }
 };
 
-// ✅ Fetch registration form config
 export const getRegistrationForm = async (req, res) => {
   try {
     const event = await Event.findById(req.params.eventId).select("title config");
@@ -41,71 +40,62 @@ export const getRegistrationForm = async (req, res) => {
 
 export const submitRegistration = async (req, res) => {
   try {
-    const { eventId, teamName, paymentProof, registrationData } = req.body;
+    const { eventId, teamName, paymentProof, registrationData, comboId } = req.body;
     
-    // 1. Validate Event
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
     let teamId = null;
 
-    // 2. Team Logic
     if (event.config.registrationType === 'Team') {
       if (!teamName) {
         return res.status(400).json({ success: false, message: "Team name is required for this event." });
       }
-
-      // Find the team
       const team = await StudentTeam.findOne({ teamName: teamName });
-      
       if (!team) {
         return res.status(404).json({ success: false, message: `Team with name "${teamName}" not found.` });
       }
-
-      // Check leadership
       if (team.leader.toString() !== req.user.id.toString()) {
         return res.status(403).json({ success: false, message: "Only the designated team leader can submit the registration." });
       }
-      
       teamId = team._id;
     }
 
-    // 3. Duplicate Registration Check
     if (teamId) {
-      // Team check: Check if any member of this team is already associated with a registration for this event
       const team = await StudentTeam.findById(teamId).lean();
-      
-      // Get all member IDs including leader
       const memberIds = team.members ? team.members.map(m => m.member) : []; 
       memberIds.push(team.leader);
-
-      // Check if any of these users have already registered (either individually or as leader of another team)
-      // Note: This is a basic check. A more robust check would query if these users are part of *any* registered team.
       const existingRegistration = await Registration.findOne({ eventId, userId: { $in: memberIds } });
-      
       if (existingRegistration) {
         return res.status(400).json({ success: false, message: "A member of your team is already registered for this event." });
       }
     } else {
-      // Individual check
       const existing = await Registration.findOne({ eventId, userId: req.user.id });
       if (existing) return res.status(400).json({ success: false, message: "You are already registered for this event." });
     }
 
     const checkInCode = crypto.randomBytes(4).toString("hex").toUpperCase();
-
     const checkIns = (event.timeline || []).map((t) => ({
       timelineRef: t._id,
       checkedInAt: null,
       status: "absent",
     }));
 
+    let finalFee = event.config.fees;
+    let selectedCombo = null;
+
+    if (comboId) {
+      selectedCombo = event.config.combos.id(comboId);
+      if (!selectedCombo) {
+        return res.status(400).json({ success: false, message: "Invalid combo plan selected." });
+      }
+      finalFee = selectedCombo.fees;
+    }
+
     let paymentStatus = "not_required";
     let status = "confirmed";
 
-    // 4. Payment Logic
-    if (event.config?.fees > 0) {
-      // Validation: Ensure payment proof exists if fees > 0
+    if (finalFee > 0) {
       if (!paymentProof) {
          return res.status(400).json({ success: false, message: "Payment proof is required for paid events." });
       }
@@ -128,25 +118,27 @@ export const submitRegistration = async (req, res) => {
         to: notificationRecipients,
         eventId,
         title: `Registration approval required for ${event.title}`,
-        description: `A new participant has registered and payment proof needs verification.`,
+        description: `New registration (${selectedCombo ? selectedCombo.title : 'Standard'}). Payment of ₹${finalFee} needs verification.\n\nPayment Proof: ${paymentProof}`,
         role: "Organizer",
       });
     }
 
-    // 5. Create Registration
+    // Create Registration
     const registration = await Registration.create({
       eventId,
-      userId: req.user.id,       // ✅ Save the ObjectId reference to the team
-      teamName: teamId,   // ✅ Save the String name of the team
+      userId: req.user.id,
+      teamName: teamId,
       paymentProof,
       registrationData,
       paymentStatus,
       status,
       checkInCode,
       checkIns,
+      comboId: selectedCombo ? selectedCombo._id : null, 
+      amountPaid: finalFee 
     });
 
-    if (event.config.fees === 0 || paymentStatus === "not_required") {
+    if (finalFee === 0 || paymentStatus === "not_required") {
       event.registrations.push(registration._id);
       await event.save();
       await notify({
@@ -175,12 +167,9 @@ export const getRegistrationStatusByEIDPID = async (req, res) => {
   try {
     const { eventId, participantId } = req.params;
 
-    // 1. Direct Check: Check if the user registered directly (Individual or as Team Leader)
     let registration = await Registration.findOne({ eventId, userId: participantId });
 
-    // 2. Member Check: If direct registration not found, check if user is a member of a registered team
     if (!registration) {
-      // Find all teams where this user is an 'Approved' member
       const userTeams = await StudentTeam.find({
         "members.member": participantId,
         "members.status": "Approved"
@@ -189,7 +178,6 @@ export const getRegistrationStatusByEIDPID = async (req, res) => {
       if (userTeams.length > 0) {
         const teamIds = userTeams.map(t => t._id);
         
-        // Check if any of those teams have a registration for this event
         registration = await Registration.findOne({
           eventId,
           teamId: { $in: teamIds }
@@ -213,7 +201,6 @@ export const getRegistrationStatusByEIDPID = async (req, res) => {
 export const getStudentTeams = async (req, res) => {
     try {
         const studentId = req.user.id;
-        // Fetch teams where the student is the leader, as only leaders can register.
         const teams = await StudentTeam.find({ leader: studentId }).select('_id teamName members'); // Select relevant fields
         console.log("✅ Fetched student teams:", teams);
         res.status(200).json({

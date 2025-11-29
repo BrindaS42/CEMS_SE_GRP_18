@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {motion} from 'motion/react';
+import { motion } from 'motion/react';
+import Linkify from 'react-linkify'; // Import Linkify
 import {
   Inbox,
   Mail,
@@ -20,8 +21,7 @@ import { Button } from '../Components/ui/button';
 import { Card } from '../Components/ui/card';
 import { Badge } from '../Components/ui/badge';
 import { Input } from '../Components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../Components/ui/tabs';
-import { SegmentedControl } from '../Components/ui/segmented-control'; 
+import { SegmentedControl } from '../Components/ui/segmented-control';
 import {
   Select,
   SelectContent,
@@ -52,7 +52,7 @@ import { Textarea } from '../Components/ui/textarea';
 import { Skeleton } from '../Components/ui/skeleton';
 import { ScrollArea } from '../Components/ui/scroll-area';
 import { toast } from 'sonner';
-import {Sidebar} from '../Components/general/Sidebar';
+import { Sidebar } from '../Components/general/Sidebar';
 import {
   fetchArrivals,
   fetchSent,
@@ -66,8 +66,7 @@ import {
   rejectMessage,
 } from '../Store/inbox.slice';
 
-
-const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props here
+const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { 
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { arrivals, sent, drafts, status: loading } = useSelector((state) => state.inbox) || { arrivals: [], sent: [], drafts: [], status: 'idle' };
@@ -95,7 +94,6 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props
   const [broadcastType, setBroadcastType] = useState('specific');
 
   const [activeTab, setActiveTab] = useState('inbox');
-
 
   useEffect(() => {
     loadMessages();
@@ -125,40 +123,33 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props
   };
 
   const handleEditDraft = (draft) => {
-    // Check for Broadcast:
-    // If the `to` array has exactly one element and it's a string starting with 'to_', it's a broadcast keyword.
-    const isBroadcastKeyword = draft.to?.length === 1 && typeof draft.to[0] === 'string' && draft.to[0].startsWith('to_');
+    const isBroadcastKeyword = draft.to?.length === 1 && typeof draft.to[0] === 'string' && draft.to[0].startsWith('to_');
 
-    if (isBroadcastKeyword) {
-      setBroadcastType(draft.to[0]);
-      // In broadcast mode, the 'to' array in composeForm should be empty since the value is in broadcastType
-    } else {
-      setBroadcastType('specific');
-    }
+    if (isBroadcastKeyword) {
+      setBroadcastType(draft.to[0]);
+    } else {
+      setBroadcastType('specific');
+    }
 
-    let mappedRecipients = [];
-    if (draft.to && Array.isArray(draft.to)) {
-      // Map populated user objects back to the simple {email, role} format for the compose form
-      if (!isBroadcastKeyword) {
-        mappedRecipients = draft.to
-          .filter(u => u && typeof u === 'object' && u.email && u.role)
-          .map(u => ({ email: u.email, role: u.role }));
-      }
-    }
+    let mappedRecipients = [];
+    if (draft.to && Array.isArray(draft.to)) {
+      if (!isBroadcastKeyword) {
+        mappedRecipients = draft.to
+          .filter(u => u && typeof u === 'object' && u.email && u.role)
+          .map(u => ({ email: u.email, role: u.role }));
+      }
+    }
 
-
-    setComposeForm({
-      _id: draft._id,
-      type: draft.type,
-      title: draft.title,
-      description: draft.description || '',
-      // If it's a broadcast, mappedRecipients is empty (handled by broadcastType state).
-      // If it's specific, mappedRecipients has the list of recipients.
-      to: mappedRecipients,
-      status: 'Draft',
-    });
-    setComposeDialogOpen(true);
-  };
+    setComposeForm({
+      _id: draft._id,
+      type: draft.type,
+      title: draft.title,
+      description: draft.description || '',
+      to: mappedRecipients,
+      status: 'Draft',
+    });
+    setComposeDialogOpen(true);
+  };
 
   const handleComposeMessage = async (saveAs) => {
     if (!composeForm.title.trim()) {
@@ -177,10 +168,9 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props
     try {
       const payload = { 
         ...composeForm,
-        to: finalRecipients 
+        to: finalTo 
       };
 
-      payload.to = finalTo;
       if (saveAs === 'Draft') {
         delete payload._id; 
         const thunk = composeForm._id ? updateDraft({ draftId: composeForm._id, payload }) : createDraft(payload);
@@ -188,7 +178,6 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props
         toast.success('Saved as draft');
       } else { 
         if (composeForm._id) {
-          // It's an existing draft, so update it then send it
           const updatedDraft = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
           await dispatch(sendMessage(updatedDraft)).unwrap();
         } else {
@@ -446,7 +435,16 @@ const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props
             {selectedMessage.description && (
               <>
                 <h3 className="font-semibold mb-2 dark:text-gray-200">Message</h3>
-                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{selectedMessage.description}</p>
+                {/* --- REACT LINKIFY COMPONENT --- */}
+                <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  <Linkify componentDecorator={(decoratedHref, decoratedText, key) => (
+                    <a target="_blank" href={decoratedHref} key={key} rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      {decoratedText}
+                    </a>
+                  )}>
+                    {selectedMessage.description}
+                  </Linkify>
+                </div>
               </>
             )}
           </div>

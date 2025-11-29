@@ -6,7 +6,7 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Plus, Trash2, Upload, X } from 'lucide-react';
+import { Plus, Trash2, X, Link as LinkIcon } from 'lucide-react'; // Removed Upload, added LinkIcon
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 
@@ -17,16 +17,8 @@ const PRESET_COMBOS = [
 ];
 
 const CUSTOM_COLORS = [
-  '#2D3E7E', // Navy Blue
-  '#FDB913', // Golden Yellow
-  '#FF9F1C', // Orange
-  '#F24333', // Red
-  '#6B8CAE', // Slate Blue
-  '#10B981', // Green
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#14B8A6', // Teal
-  '#F59E0B', // Amber
+  '#2D3E7E', '#FDB913', '#FF9F1C', '#F24333', '#6B8CAE',
+  '#10B981', '#8B5CF6', '#EC4899', '#14B8A6', '#F59E0B',
 ];
 
 export function PaymentConfigStep({ config, updateConfig }) {
@@ -37,7 +29,6 @@ export function PaymentConfigStep({ config, updateConfig }) {
     fees: 0,
     color: CUSTOM_COLORS[0],
   });
-  const [qrCodeFile, setQrCodeFile] = useState(null);
 
   const handleToggleFree = (checked) => {
     updateConfig({ isFree: checked, combos: checked ? [] : config.combos });
@@ -81,22 +72,6 @@ export function PaymentConfigStep({ config, updateConfig }) {
     updateConfig({
       combos: config.combos.map((c) => (c.id === id ? { ...c, [field]: value } : c)),
     });
-  };
-
-  const handleQrCodeUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setQrCodeFile(file);
-      // In real implementation, upload to server and get URL
-      const mockUrl = URL.createObjectURL(file);
-      updateConfig({ qrCodeUrl: mockUrl });
-      toast.success('QR Code uploaded successfully');
-    }
-  };
-
-  const handleRemoveQrCode = () => {
-    setQrCodeFile(null);
-    updateConfig({ qrCodeUrl: undefined });
   };
 
   return (
@@ -325,52 +300,47 @@ export function PaymentConfigStep({ config, updateConfig }) {
             </CardContent>
           </Card>
 
-          {/* QR Code Upload */}
+          {/* QR Code URL Input (UPDATED SECTION) */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Payment QR Code</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Upload QR code for UPI/payment gateway
+                Enter the URL for your payment QR code image
               </p>
             </CardHeader>
-            <CardContent>
-              {config.qrCodeUrl ? (
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>QR Code Image URL</Label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    type="url"
+                    placeholder="https://example.com/qr-code.png"
+                    value={config.qrCodeUrl || ''}
+                    onChange={(e) => updateConfig({ qrCodeUrl: e.target.value })}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Preview - Only shows if URL is present */}
+              {config.qrCodeUrl && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  className="relative"
+                  className="bg-muted/50 p-4 rounded-lg flex flex-col items-center justify-center gap-2"
                 >
+                  <p className="text-xs text-muted-foreground self-start">Preview:</p>
                   <img
                     src={config.qrCodeUrl}
-                    alt="Payment QR Code"
-                    className="w-48 h-48 object-contain mx-auto border-2 rounded-lg"
+                    alt="Payment QR Code Preview"
+                    className="w-48 h-48 object-contain border-2 rounded-lg bg-white"
+                    onError={(e) => {
+                      e.target.style.display = 'none'; // Hide if broken link
+                    }}
                   />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveQrCode}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
                 </motion.div>
-              ) : (
-                <label className="block">
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
-                    <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Click to upload QR code image
-                    </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleQrCodeUpload}
-                    className="hidden"
-                  />
-                </label>
               )}
             </CardContent>
           </Card>

@@ -92,7 +92,7 @@ export const EventDetailsPage = () => {
   const announcements = event?.announcements || [];
   const sponsors = event?.sponsors || [];
   const reviews = event?.ratings || [];
-  
+
   // State for Segmented Control
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -103,15 +103,14 @@ export const EventDetailsPage = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [registrationFormData, setRegistrationFormData] = useState({});
   const [customFieldsData, setCustomFieldsData] = useState({});
-  
+  const [selectedComboId, setSelectedComboId] = useState(null);
   const [newReview, setNewReview] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  
+
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportText, setReportText] = useState('');
 
-  // --- New State for Team Search UI ---
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
 
@@ -172,7 +171,7 @@ export const EventDetailsPage = () => {
       socket.on('connect', onConnect);
       return () => socket.off('connect', onConnect);
     }
-  }, [id, dispatch, user?.id, user?.role]); 
+  }, [id, dispatch, user?.id, user?.role]);
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -188,6 +187,7 @@ export const EventDetailsPage = () => {
         ...registrationFormData,
         eventId: id,
         teamName: selectedTeam?.teamName,
+        comboId: selectedComboId,
         registrationData: event.config.registrationFields.map(field => ({
           question: field.title,
           answer: customFieldsData[field.title] || ''
@@ -473,11 +473,10 @@ export const EventDetailsPage = () => {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
                                 key={star}
-                                className={`w-5 h-5 ${
-                                  star <= Math.round(parseFloat(averageRating))
-                                    ? 'fill-yellow-500 text-yellow-500'
-                                    : 'text-gray-300 dark:text-gray-600'
-                                }`}
+                                className={`w-5 h-5 ${star <= Math.round(parseFloat(averageRating))
+                                  ? 'fill-yellow-500 text-yellow-500'
+                                  : 'text-gray-300 dark:text-gray-600'
+                                  }`}
                               />
                             ))}
                           </div>
@@ -501,11 +500,10 @@ export const EventDetailsPage = () => {
                                   className="transition-transform hover:scale-110"
                                 >
                                   <Star
-                                    className={`w-8 h-8 ${
-                                      star <= (hoverRating || newRating)
-                                        ? 'fill-yellow-500 text-yellow-500'
-                                        : 'text-gray-300 dark:text-gray-600'
-                                    }`}
+                                    className={`w-8 h-8 ${star <= (hoverRating || newRating)
+                                      ? 'fill-yellow-500 text-yellow-500'
+                                      : 'text-gray-300 dark:text-gray-600'
+                                      }`}
                                   />
                                 </button>
                               ))}
@@ -523,7 +521,7 @@ export const EventDetailsPage = () => {
                             onChange={(e) => setNewReview(e.target.value)}
                             className="mb-4 min-h-24 dark:bg-gray-900 dark:border-gray-700"
                           />
-                          
+
                           <Button
                             onClick={handleSubmitReview}
                             disabled={!newRating || !newReview.trim()}
@@ -568,11 +566,10 @@ export const EventDetailsPage = () => {
                                           {[1, 2, 3, 4, 5].map((star) => (
                                             <Star
                                               key={star}
-                                              className={`w-4 h-4 ${
-                                                star <= review.rating
-                                                  ? 'fill-yellow-500 text-yellow-500'
-                                                  : 'text-gray-300 dark:text-gray-600'
-                                              }`}
+                                              className={`w-4 h-4 ${star <= review.rating
+                                                ? 'fill-yellow-500 text-yellow-500'
+                                                : 'text-gray-300 dark:text-gray-600'
+                                                }`}
                                             />
                                           ))}
                                         </div>
@@ -760,7 +757,7 @@ export const EventDetailsPage = () => {
                           <AlertDescription className="dark:text-gray-300">
                             Only students can register for events
                           </AlertDescription>
-                        </Alert>                    
+                        </Alert>
                       ) : registrationStatus ? (
                         <div className="text-center p-4 border border-dashed rounded-lg dark:border-gray-600">
                           {registrationStatus.registrationStatus === 'confirmed' && (
@@ -786,9 +783,45 @@ export const EventDetailsPage = () => {
                           )}
                           <p className="text-sm mt-4 dark:text-gray-300">Payment Status: <Badge variant="outline" className="dark:text-gray-300 dark:border-gray-500">{registrationStatus.paymentStatus}</Badge></p>
                         </div>
-                      ) : (                      
-                        <form onSubmit={handleRegistrationSubmit} className="space-y-6">                        
-                          {/* --- UPDATED TEAM SELECTION UI START --- */}
+                      ) : (
+                        <form onSubmit={handleRegistrationSubmit} className="space-y-6">
+
+                          {event.config?.combos && event.config?.combos?.length > 0 && (
+                            <div className="space-y-4 pt-4">
+                              <Label className="dark:text-gray-300">Select a Plan</Label>
+                              <div className="grid md:grid-cols-2 gap-4">
+                                {event.config.combos.map((combo) => (
+                                  <div
+                                    key={combo._id}
+                                    onClick={() => setSelectedComboId(combo._id)}
+                                    className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${selectedComboId === combo._id
+                                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-500'
+                                      : 'border-gray-200 hover:border-purple-300 dark:border-gray-700 dark:hover:border-purple-700'
+                                      }`}
+                                  >
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className="w-4 h-4 rounded-full"
+                                          style={{ backgroundColor: combo.color || '#888' }}
+                                        />
+                                        <span className="font-bold dark:text-white">{combo.title}</span>
+                                      </div>
+                                      {selectedComboId === combo._id && (
+                                        <CheckCircle2 className="w-5 h-5 text-purple-600" />
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+                                      {combo.description}
+                                    </p>
+                                    <div className="font-black text-lg dark:text-white">
+                                      ₹{combo.fees}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {event?.config?.registrationType === 'Team' && (
                             <div className="space-y-4">
                               <Label className="dark:text-gray-300">Select Your Team *</Label>
@@ -803,7 +836,7 @@ export const EventDetailsPage = () => {
 
                                   const filteredTeams = myLeadTeams.filter(team =>
                                     // FIX: Added (team.name || '') to prevent crash if name is missing
-                                    (team?.teamName  || '').toLowerCase().includes(teamSearchQuery.toLowerCase())
+                                    (team?.teamName || '').toLowerCase().includes(teamSearchQuery.toLowerCase())
                                   );
 
                                   return (
@@ -864,17 +897,16 @@ export const EventDetailsPage = () => {
                                           </motion.div>
                                         )}
                                       </AnimatePresence>
-                                      
+
                                       {myLeadTeams.length === 0 && !teamsLoading && (
-                                         <p className="text-xs text-red-500 mt-2">
-                                           You don't lead any teams. Please create a team first.
-                                         </p>
+                                        <p className="text-xs text-red-500 mt-2">
+                                          You don't lead any teams. Please create a team first.
+                                        </p>
                                       )}
                                     </div>
                                   );
                                 }
 
-                                // 2. STATE: TEAM SELECTED - SHOW CARD
                                 return (
                                   <motion.div
                                     initial={{ opacity: 0, x: -20 }}
@@ -919,15 +951,24 @@ export const EventDetailsPage = () => {
                               )}
                             </div>
                           )}
-                          {/* --- UPDATED TEAM SELECTION UI END --- */}
 
-                          {event?.config?.fees > 0 && (
+                          {!event?.config?.isfree && (
                             <div className="space-y-4 border-t pt-4 dark:border-gray-700">
                               <div className="flex items-center justify-between">
                                 <Label className="dark:text-gray-300">Registration Fee</Label>
-                                <span className="text-2xl font-black dark:text-white">₹{event.config.fees}</span>
+                                <span className="text-3xl font-black text-purple-600 dark:text-purple-400">
+                                  ₹
+                                  {(() => {
+                                    // Dynamic Fee Calculation
+                                    if (selectedComboId) {
+                                      const combo = event.config.combos.find(c => c._id === selectedComboId);
+                                      return combo ? combo.fees : event.config.fees;
+                                    }
+                                    return event.config.fees;
+                                  })()}
+                                </span>
                               </div>
-                              
+
                               {event.config.qrCodeUrl && (
                                 <div className="flex justify-center py-4">
                                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 dark:border-gray-600">
@@ -942,7 +983,7 @@ export const EventDetailsPage = () => {
 
                               <div className="space-y-2">
                                 <Label htmlFor="paymentProof" className="dark:text-gray-300">Upload Payment Proof *</Label>
-                                <Input 
+                                <Input
                                   id="paymentProof"
                                   type="url"
                                   required
@@ -977,11 +1018,11 @@ export const EventDetailsPage = () => {
                                 />
                               )}
                               {['number', 'date', 'time'].includes(field.inputType) && (
-                                <Input 
-                                  id={`field-${idx}`} 
-                                  type={field.inputType} 
-                                  required={field.required} 
-                                  onChange={(e) => handleCustomFieldChange(field.title, e.target.value)} 
+                                <Input
+                                  id={`field-${idx}`}
+                                  type={field.inputType}
+                                  required={field.required}
+                                  onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
                                   className="dark:bg-gray-900 dark:border-gray-600"
                                 />
                               )}
@@ -1016,7 +1057,7 @@ export const EventDetailsPage = () => {
                       <Building2 className="w-6 h-6" />
                       Event Sponsors
                     </h2>
-                    
+
                     {sponsors.length > 0 ? (
                       <div className="space-y-4">
                         {sponsors.map((sponsor) => (
@@ -1030,7 +1071,7 @@ export const EventDetailsPage = () => {
                               <div className="flex-1">
                                 <h3 className="font-black text-xl mb-2 dark:text-white">{sponsor.sponsor?.profile?.name}</h3>
                                 <p className="text-gray-600 mb-3 dark:text-gray-300">{sponsor.sponsor?.profile?.firmDescription}</p>
-                                
+
                                 <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
                                   <div className="flex items-center gap-1">
                                     <MapPin className="w-4 h-4" />
@@ -1093,7 +1134,7 @@ export const EventDetailsPage = () => {
 
           <div className="space-y-6">
             <Card className="p-6 sticky top-24 dark:bg-gray-800 dark:border-gray-700">
-              <div className="space-y-4">                
+              <div className="space-y-4">
                 {event.timeline?.[0] && (
                   <>
                     <div className="flex items-center gap-3">

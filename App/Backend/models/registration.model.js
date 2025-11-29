@@ -12,9 +12,11 @@ const registrationSchema = new mongoose.Schema({
     required: true,
   },
 
-  teamName: { type: mongoose.Schema.Types.ObjectId, ref: "StudentTeam" },
+  teamName: { type: mongoose.Schema.Types.ObjectId, ref: "StudentTeam" }, 
   members: [{ type: String }],
 
+  comboId: { type: String }, 
+  amountPaid: { type: Number, default: 0 }, 
   registrationData: [
     {
       question: { type: String, required: true },
@@ -48,7 +50,6 @@ const registrationSchema = new mongoose.Schema({
       status: { type: String, enum: ["absent", "present"], default: "absent" },
     },
   ],
-
 
   checkIn: {
     type: Boolean,

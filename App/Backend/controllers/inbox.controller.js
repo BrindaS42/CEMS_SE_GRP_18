@@ -595,12 +595,14 @@ export const approveInboxEntity = async (req, res) => {
     }
 
     if (inbox.type === "registration_approval_request") {
-      const studentId = inbox.from?._id || inbox.from;
+      const userId = inbox.from?._id || inbox.from; 
       const eventId = inbox.relatedEvent?._id || inbox.relatedEvent;
 
-      const registration = await Registration.findOne({ studentId, eventId });
-      if (!registration)
-        return res.status(404).json({ message: "No registration found" });
+      const registration = await Registration.findOne({ userId: userId, eventId: eventId });
+      
+      if (!registration) {
+        return res.status(404).json({ message: "No related registration found for this user." });
+      }
 
       registration.paymentStatus = "verified";
       registration.status = "confirmed";
@@ -609,16 +611,23 @@ export const approveInboxEntity = async (req, res) => {
       await InboxEntity.findByIdAndUpdate(id, { status: "Approved" });
 
       const event = await Event.findById(eventId);
-      const checkInCode = registration.checkInCode;
+      
+      let planName = "Standard";
+      if (registration.comboId && event.config?.combos) {
+         const combo = event.config.combos.id(registration.comboId);
+         if (combo) planName = combo.title;
+      }
+
       await InboxEntity.create({
         type: "message",
-        from: inbox.to,
-        to: studentId,
+        from: req.user.id, 
+        to: [userId],    
         relatedEvent: eventId,
-        title: `Registration Approved for ${event.title}`,
-        description: `🎉 You have successfully registered for "${event.title}". Your check-in code is: ${checkInCode}`,
+        title: `Registration Approved: ${event.title}`,
+        description: `Your payment for the **${planName}** plan has been verified! \n\n🎉 You are officially registered.\n🆔 Your Check-in Code: **${registration.checkInCode}**`,
         status: "Sent",
       });
+
       return res.status(200).json({
         success: true,
         message: "Registration approved successfully",
