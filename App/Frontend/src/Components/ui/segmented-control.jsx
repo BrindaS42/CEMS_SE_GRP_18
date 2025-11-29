@@ -7,51 +7,48 @@ export function SegmentedControl({
   value, 
   onChange, 
   variant = 'blue',
+  isFullWidth = false, // New prop to control width behavior
   className 
 }) {
   const buttonRefs = useRef([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
+  // Define bright, role-specific color schemes
   const colors = {
+    // Default fallbacks
     blue: {
-      active: 'var(--primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      active: 'bg-primary shadow-sm',
+      activeText: 'text-primary-foreground',
     },
     orange: {
-      active: 'var(--secondary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      active: 'bg-secondary shadow-sm',
+      activeText: 'text-secondary-foreground',
     },
+    // Specific Role Colors (Apple-style brights)
     student: {
-      active: 'var(--student-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
-    },
-    sponsor: {
-      active: 'var(--sponsor-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
-    },
-    admin: {
-      active: 'var(--admin-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      // Purple/Pink Gradient
+      active: 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-md',
+      activeText: 'text-white',
     },
     organizer: {
-      active: 'var(--organizer-primary)',
-      activeText: 'text-white dark:text-white',
-      inactive: 'var(--muted)',
-      inactiveText: 'text-muted-foreground dark:text-muted-foreground',
+      // Blue/Indigo Gradient
+      active: 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-md',
+      activeText: 'text-white',
+    },
+    sponsor: {
+      // Emerald/Teal Gradient
+      active: 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-md',
+      activeText: 'text-white',
+    },
+    admin: {
+      // Slate/Zinc Gradient
+      active: 'bg-gradient-to-r from-slate-700 to-zinc-800 shadow-md border border-slate-600',
+      activeText: 'text-white',
     },
   };
 
-  const colorScheme = colors[variant];
+  // Fallback to 'blue' if variant doesn't exist
+  const colorScheme = colors[variant] || colors.blue;
   const selectedIndex = options.findIndex(option => option.value === value);
 
   useLayoutEffect(() => {
@@ -64,25 +61,26 @@ export function SegmentedControl({
         });
       }
     }
-  }, [selectedIndex, value]);
+  }, [selectedIndex, value, options, isFullWidth]); 
 
   return (
     <div 
       className={cn(
-        "inline-flex p-1 rounded-full relative",
+        // Layout: Default to inline-flex (compact), switch to flex w-full if isFullWidth is true
+        isFullWidth ? "flex w-full" : "inline-flex w-fit",
+        "p-1 rounded-xl relative select-none items-center",
+        // Background: Darker in dark mode, lighter in light mode
+        "bg-muted/50 dark:bg-slate-900/50 border border-border/50",
         className
       )}
-      style={{ 
-        backgroundColor: colorScheme.inactive,
-      }}
     >
       {/* Animated Background Indicator */}
       {selectedIndex !== -1 && (
         <motion.div
-          className="absolute rounded-full h-[calc(100%-8px)] top-1"
-          style={{ 
-            backgroundColor: colorScheme.active,
-          }}
+          className={cn(
+            "absolute rounded-lg h-[calc(100%-8px)] top-1",
+            colorScheme.active
+          )}
           initial={false}
           animate={{
             left: indicatorStyle.left,
@@ -106,13 +104,17 @@ export function SegmentedControl({
             ref={(el) => (buttonRefs.current[index] = el)}
             onClick={() => onChange(option.value)}
             className={cn(
-              "relative z-10 px-6 py-2 rounded-full transition-colors duration-200",
-              "whitespace-nowrap cursor-pointer select-none text-center",
-              isActive ? colorScheme.activeText : colorScheme.inactiveText
+              // If full width, force equal distribution. If not, use standard padding
+              isFullWidth ? "flex-1" : "px-4",
+              "relative z-10 py-1.5 rounded-lg transition-colors duration-200",
+              "text-sm font-medium cursor-pointer text-center truncate",
+              isActive 
+                ? colorScheme.activeText 
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <motion.span
-              className="block"
+              className="block truncate"
               initial={false}
               animate={{
                 scale: isActive ? 1 : 0.95,

@@ -65,6 +65,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
+import { SegmentedControl } from '@/Components/ui/segmented-control'; // Added SegmentedControl
 import { fetchEventDetails, addEventRating } from '@/Store/studentEvents.slice';
 import { createReport } from '@/Store/admin.slice';
 import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/Store/event.interaction.slice';
@@ -86,7 +87,10 @@ export const EventDetailsPage = () => {
   const announcements = event?.announcements || [];
   const sponsors = event?.sponsors || [];
   const reviews = event?.ratings || [];
-  console.log("event:", event);
+  
+  // State for Segmented Control
+  const [activeTab, setActiveTab] = useState('overview');
+
   const [registering, setRegistering] = useState(false);
   const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
   const [checkInCode, setCheckInCode] = useState('');
@@ -114,75 +118,47 @@ export const EventDetailsPage = () => {
   }, [event, user]);
 
   useEffect(() => {
-    // Scroll to the bottom of the chat
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // In EventDetailsPage.jsx - Replace the socket setup useEffect
+  useEffect(() => {
+    if (!id) return;
 
-useEffect(() => {
-  if (!id) return;
+    dispatch(fetchEventDetails(id));
+    if (user?.role === 'student' && user.id) {
+      dispatch(getRegistrationStatus({ eventId: id, participantId: user?.id }));
+    }
+    dispatch(fetchAllMessages(id));
 
-  dispatch(fetchEventDetails(id));
-  if (user?.role === 'student' && user.id) {
-    dispatch(getRegistrationStatus({ eventId: id, participantId: user?.id }));
-  }
-  dispatch(fetchAllMessages(id));
+    const setupSocketListeners = () => {
+      socket.emit('join_room', id);
 
-  console.log('[EventDetailsPage] 🔌 Socket connected?', socket.connected);
-  console.log('[EventDetailsPage] 🔌 Socket ID:', socket.id);
+      const handleReceiveMessage = (newMessage) => {
+        if (newMessage.eventId === id) {
+          dispatch(addMessage(newMessage));
+        }
+      };
 
-  // ===== WAIT for socket to be ready =====
-  const setupSocketListeners = () => {
-    console.log(`[EventDetailsPage] ✅ Setting up socket listeners for room: ${id}`);
+      socket.on('receive_message', handleReceiveMessage);
 
-    // Join room
-    socket.emit('join_room', id);
-    console.log(`[EventDetailsPage] 📤 Emitted join_room for: ${id}`);
-
-    // Setup message listener
-    const handleReceiveMessage = (newMessage) => {
-      console.log('[EventDetailsPage] 📥 ===== RECEIVED MESSAGE =====');
-      console.log('[EventDetailsPage] 📥 Message:', newMessage);
-      console.log('[EventDetailsPage] 📥 EventId match?', newMessage.eventId === id);
-
-      if (newMessage.eventId === id) {
-        console.log('[EventDetailsPage] ✅ Message is for this event, dispatching...');
-        dispatch(addMessage(newMessage));
-      }
+      return () => {
+        socket.emit('leave_room', id);
+        socket.off('receive_message', handleReceiveMessage);
+        dispatch(clearMessages());
+      };
     };
 
-    socket.on('receive_message', handleReceiveMessage);
-    console.log(`[EventDetailsPage] ✅ Listener 'receive_message' registered`);
-
-    // Cleanup
-    return () => {
-      console.log(`[EventDetailsPage] 🧹 Cleanup: leaving room ${id}`);
-      socket.emit('leave_room', id);
-      socket.off('receive_message', handleReceiveMessage);
-      dispatch(clearMessages());
-    };
-  };
-
-  // If socket is already connected, setup immediately
-  if (socket.connected) {
-    console.log('[EventDetailsPage] 🟢 Socket already connected, setting up now');
-    return setupSocketListeners();
-  } else {
-    // Wait for socket to connect
-    console.log('[EventDetailsPage] 🟡 Socket not connected yet, waiting...');
-    const onConnect = () => {
-      console.log('[EventDetailsPage] 🟢 Socket just connected, setting up now');
-      socket.off('connect', onConnect); // Remove this listener
+    if (socket.connected) {
       return setupSocketListeners();
-    };
-    socket.on('connect', onConnect);
-
-    return () => {
-      socket.off('connect', onConnect);
-    };
-  }
-}, [id, dispatch, user?.id]); // Add user?.id to dependencies
+    } else {
+      const onConnect = () => {
+        socket.off('connect', onConnect);
+        return setupSocketListeners();
+      };
+      socket.on('connect', onConnect);
+      return () => socket.off('connect', onConnect);
+    }
+  }, [id, dispatch, user?.id]); 
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -237,13 +213,10 @@ useEffect(() => {
       setCheckInDialogOpen(false);
       setCheckInCode('');
       setSelectedTimelineId(null);
-      // Optionally re-fetch data if needed, but for now, UI feedback is enough.
     } catch (error) {
       toast.error(error || 'Invalid check-in code or failed to check in.');
     }
   };
-
-  console.log("chatMessages:", chatMessages);
 
   const handleSendMessage = async () => {
     if (!chatMessage.trim()) return;
@@ -301,14 +274,14 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Skeleton className="h-96 w-full mb-8 rounded-3xl" />
+          <Skeleton className="h-96 w-full mb-8 rounded-3xl dark:bg-gray-800" />
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <Skeleton className="h-64 w-full" />
+              <Skeleton className="h-64 w-full dark:bg-gray-800" />
             </div>
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full dark:bg-gray-800" />
           </div>
         </div>
       </div>
@@ -317,10 +290,10 @@ useEffect(() => {
 
   if (!event) {
     return (
-      <div className="min-h-screen pt-20 pb-12 flex items-center justify-center">
+      <div className="min-h-screen pt-20 pb-12 flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
         <div className="text-center">
-          <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-          <h2 className="text-2xl font-black mb-2">Event Not Found</h2>
+          <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+          <h2 className="text-2xl font-black mb-2 dark:text-white">Event Not Found</h2>
           <Button asChild>
             <Link to="/events">Back to Events</Link>
           </Button>
@@ -330,14 +303,14 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="mb-6"
         >
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" asChild className="dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white">
             <Link to="/events">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Events
@@ -373,574 +346,612 @@ useEffect(() => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="w-full grid grid-cols-7 lg:grid-cols-7">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="announcements">Announcements</TabsTrigger>
-                  <TabsTrigger value="chatroom">Chatroom</TabsTrigger>
-                  <TabsTrigger value="registration">Register</TabsTrigger>
-                  <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
-                  <TabsTrigger value="map">Map</TabsTrigger>
-                </TabsList>
+            <Card className="dark:bg-gray-800 dark:border-gray-700">
+              {/* REPLACED TABS WITH SEGMENTED CONTROL */}
+              <div className="p-4 border-b dark:border-gray-700 overflow-x-auto">
+                <div className="min-w-max">
+                  <SegmentedControl
+                    options={[
+                      { value: 'overview', label: 'Overview' },
+                      { value: 'timeline', label: 'Timeline' },
+                      { value: 'announcements', label: 'Announcements' },
+                      { value: 'chatroom', label: 'Chatroom' },
+                      { value: 'registration', label: 'Register' },
+                      { value: 'sponsors', label: 'Sponsors' },
+                      { value: 'map', label: 'Map' },
+                    ]}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    variant="student" // Consistent with student theme
+                  />
+                </div>
+              </div>
 
-                <TabsContent value="overview" className="p-6 space-y-8">
-                  <div>
-                    <h2 className="text-2xl font-black mb-4">About This Event</h2>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {event.description}
-                    </p>
-                  </div>
-
-                  {event.subEvents && event.subEvents.length > 0 && (
+              <div className="tab-transition">
+                {activeTab === 'overview' && (
+                  <div className="p-6 space-y-8 animate-fade-in">
                     <div>
-                      <h2 className="text-2xl font-black mb-4 flex items-center gap-2">
-                        <Trophy className="w-6 h-6" />
-                        Sub Events
-                      </h2>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {event.subEvents.map((subEventItem, idx) => (
-                          <Card key={idx} className="p-4 space-y-2">
-                            <h3 className="font-black mb-2">{subEventItem.subevent?.title}</h3>
-                            <p className="text-sm text-gray-600">{subEventItem.subevent?.description}</p>
-                            {subEventItem.subevent?.timeline?.[0] && (
-                               <p className="text-xs text-muted-foreground">
-                                Date: {new Date(subEventItem.subevent.timeline[0].date).toLocaleDateString()}
-                               </p>
-                            )}
-                          </Card>
-                        ))}
+                      <h2 className="text-2xl font-black mb-4 dark:text-white">About This Event</h2>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {event.description}
+                      </p>
+                    </div>
+
+                    {event.subEvents && event.subEvents.length > 0 && (
+                      <div>
+                        <h2 className="text-2xl font-black mb-4 flex items-center gap-2 dark:text-white">
+                          <Trophy className="w-6 h-6" />
+                          Sub Events
+                        </h2>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {event.subEvents.map((subEventItem, idx) => (
+                            <Card key={idx} className="p-4 space-y-2 dark:bg-gray-700 dark:border-gray-600">
+                              <h3 className="font-black mb-2 dark:text-white">{subEventItem.subevent?.title}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{subEventItem.subevent?.description}</p>
+                              {subEventItem.subevent?.timeline?.[0] && (
+                                <p className="text-xs text-muted-foreground dark:text-gray-500">
+                                  Date: {new Date(subEventItem.subevent.timeline[0].date).toLocaleDateString()}
+                                </p>
+                              )}
+                            </Card>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {event.venue && (
-                    <div>
-                      <h2 className="text-2xl font-black mb-4 flex items-center gap-2">
-                        <MapPin className="w-6 h-6" />
-                        Venue Information
-                      </h2>
-                      <Card className="p-6">
-                        <p className="text-gray-700 mb-4">{event.venue}</p>
-                      </Card>
-                    </div>
-                  )}
+                    {event.venue && (
+                      <div>
+                        <h2 className="text-2xl font-black mb-4 flex items-center gap-2 dark:text-white">
+                          <MapPin className="w-6 h-6" />
+                          Venue Information
+                        </h2>
+                        <Card className="p-6 dark:bg-gray-700 dark:border-gray-600">
+                          <p className="text-gray-700 dark:text-gray-300 mb-4">{event.venue}</p>
+                        </Card>
+                      </div>
+                    )}
 
-                  {event.poc && (
-                    <div>
-                      <h2 className="text-2xl font-black mb-4">Points of Contact</h2>
-                      <div className="grid md:grid-cols-2 gap-4">
-                          <Card className="p-4">
+                    {event.poc && (
+                      <div>
+                        <h2 className="text-2xl font-black mb-4 dark:text-white">Points of Contact</h2>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <Card className="p-4 dark:bg-gray-700 dark:border-gray-600">
                             <div className="flex items-center gap-3 mb-3">
                               <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                                 <UserIcon className="w-6 h-6 text-white" />
                               </div>
                               <div>
-                                <h3 className="font-black">{event.poc.name}</h3>
-                                <p className="text-sm text-gray-500">Organizer</p>
-                               </div>
-                             </div>
-                             <div className="space-y-2 text-sm">
-                               {event.poc.contact && (
-                                 <div className="flex items-center gap-2 text-gray-600">
-                                   <Phone className="w-4 h-4" />
-                                   {event.poc.contact}
-                                 </div>
-                               )}
-                               {event.poc.email && (
-                                 <div className="flex items-center gap-2 text-gray-600">
-                                   <Mail className="w-4 h-4" />
-                                   {event.poc.email}
-                                 </div>
-                               )}
-                             </div>
-                           </Card>
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-black flex items-center gap-2">
-                        <Star className="w-6 h-6 fill-yellow-500 text-yellow-500" />
-                        Reviews & Ratings
-                      </h2>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl font-black">{averageRating}</span>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-5 h-5 ${
-                                star <= Math.round(parseFloat(averageRating))
-                                  ? 'fill-yellow-500 text-yellow-500'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
+                                <h3 className="font-black dark:text-white">{event.poc.name}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Organizer</p>
+                              </div>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              {event.poc.contact && (
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                  <Phone className="w-4 h-4" />
+                                  {event.poc.contact}
+                                </div>
+                              )}
+                              {event.poc.email && (
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                  <Mail className="w-4 h-4" />
+                                  {event.poc.email}
+                                </div>
+                              )}
+                            </div>
+                          </Card>
                         </div>
-                        <span className="text-gray-500">({reviews.length} reviews)</span>
                       </div>
-                    </div>
+                    )}
 
-                    {isAuthenticated && (
-                      <Card className="p-6 mb-6 bg-gradient-to-br from-purple-50 to-pink-50">
-                        <h3 className="font-black mb-4">Rate This Event</h3>
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-sm font-semibold">Your Rating:</span>
-                          <div className="flex gap-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-black flex items-center gap-2 dark:text-white">
+                          <Star className="w-6 h-6 fill-yellow-500 text-yellow-500" />
+                          Reviews & Ratings
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl font-black dark:text-white">{averageRating}</span>
+                          <div className="flex">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <button
+                              <Star
                                 key={star}
-                                type="button"
-                                onClick={() => setNewRating(star)}
-                                onMouseEnter={() => setHoverRating(star)}
-                                onMouseLeave={() => setHoverRating(0)}
-                                className="transition-transform hover:scale-110"
-                              >
-                                <Star
-                                  className={`w-8 h-8 ${
-                                    star <= (hoverRating || newRating)
-                                      ? 'fill-yellow-500 text-yellow-500'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              </button>
+                                className={`w-5 h-5 ${
+                                  star <= Math.round(parseFloat(averageRating))
+                                    ? 'fill-yellow-500 text-yellow-500'
+                                    : 'text-gray-300 dark:text-gray-600'
+                                }`}
+                              />
                             ))}
                           </div>
-                          {newRating > 0 && (
-                            <span className="text-sm text-gray-600 ml-2">
-                              {newRating} {newRating === 1 ? 'star' : 'stars'}
-                            </span>
-                          )}
+                          <span className="text-gray-500 dark:text-gray-400">({reviews.length} reviews)</span>
                         </div>
+                      </div>
 
-                        <Textarea
-                          placeholder="Share your experience with this event..."
-                          value={newReview}
-                          onChange={(e) => setNewReview(e.target.value)}
-                          className="mb-4 min-h-24"
-                        />
-                        
-                        <Button
-                          onClick={handleSubmitReview}
-                          disabled={!newRating || !newReview.trim()}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Submit Review
-                        </Button>
-                      </Card>
-                    )}
+                      {isAuthenticated && (
+                        <Card className="p-6 mb-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 dark:border-purple-900/50">
+                          <h3 className="font-black mb-4 dark:text-white">Rate This Event</h3>
+                          <div className="flex items-center gap-2 mb-4">
+                            <span className="text-sm font-semibold dark:text-gray-300">Your Rating:</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setNewRating(star)}
+                                  onMouseEnter={() => setHoverRating(star)}
+                                  onMouseLeave={() => setHoverRating(0)}
+                                  className="transition-transform hover:scale-110"
+                                >
+                                  <Star
+                                    className={`w-8 h-8 ${
+                                      star <= (hoverRating || newRating)
+                                        ? 'fill-yellow-500 text-yellow-500'
+                                        : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            {newRating > 0 && (
+                              <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                                {newRating} {newRating === 1 ? 'star' : 'stars'}
+                              </span>
+                            )}
+                          </div>
 
-                    {!isAuthenticated && (
-                      <Alert className="mb-6">
-                        <AlertDescription>
-                          Please <Link to="/login" className="font-semibold underline">login</Link> to rate and review this event
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    <div className="space-y-4">
-                      {reviews.length === 0 ? (
-                        <Card className="p-8 text-center text-gray-500">
-                          <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                          <p>No reviews yet. Be the first to review this event!</p>
+                          <Textarea
+                            placeholder="Share your experience with this event..."
+                            value={newReview}
+                            onChange={(e) => setNewReview(e.target.value)}
+                            className="mb-4 min-h-24 dark:bg-gray-900 dark:border-gray-700"
+                          />
+                          
+                          <Button
+                            onClick={handleSubmitReview}
+                            disabled={!newRating || !newReview.trim()}
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            Submit Review
+                          </Button>
                         </Card>
-                      ) : (
-                        reviews.map((review) => (
-                          <Card key={review._id} className="p-6">
-                            <div className="flex items-start gap-4">
-                              <Avatar className="w-12 h-12 border-2 border-purple-200">
-                                <AvatarImage src={review.by?.profile?.profilePic} />
-                                <AvatarFallback>
-                                  {review.by?.profile?.name?.charAt(0).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div>
-                                    <h4 className="font-black">{review.by?.profile?.name || 'Anonymous'}</h4>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                          <Star
-                                            key={star}
-                                            className={`w-4 h-4 ${
-                                              star <= review.rating
-                                                ? 'fill-yellow-500 text-yellow-500'
-                                                : 'text-gray-300'
-                                            }`}
-                                          />
-                                        ))}
+                      )}
+
+                      {!isAuthenticated && (
+                        <Alert className="mb-6 dark:bg-gray-800 dark:border-gray-700">
+                          <AlertDescription className="dark:text-gray-300">
+                            Please <Link to="/login" className="font-semibold underline">login</Link> to rate and review this event
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="space-y-4">
+                        {reviews.length === 0 ? (
+                          <Card className="p-8 text-center text-gray-500 dark:bg-gray-800 dark:border-gray-700">
+                            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                            <p className="dark:text-gray-400">No reviews yet. Be the first to review this event!</p>
+                          </Card>
+                        ) : (
+                          reviews.map((review) => (
+                            <Card key={review._id} className="p-6 dark:bg-gray-800 dark:border-gray-700">
+                              <div className="flex items-start gap-4">
+                                <Avatar className="w-12 h-12 border-2 border-purple-200 dark:border-purple-800">
+                                  <AvatarImage src={review.by?.profile?.profilePic} />
+                                  <AvatarFallback>
+                                    {review.by?.profile?.name?.charAt(0).toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div>
+                                      <h4 className="font-black dark:text-white">{review.by?.profile?.name || 'Anonymous'}</h4>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex">
+                                          {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                              key={star}
+                                              className={`w-4 h-4 ${
+                                                star <= review.rating
+                                                  ? 'fill-yellow-500 text-yellow-500'
+                                                  : 'text-gray-300 dark:text-gray-600'
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                                          {new Date(review.createdAt).toLocaleDateString()}
+                                        </span>
                                       </div>
-                                      <span className="text-sm text-gray-500">
-                                        {new Date(review.createdAt).toLocaleDateString()}
-                                      </span>
                                     </div>
                                   </div>
+                                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{review.review}</p>
                                 </div>
-                                <p className="text-gray-700 leading-relaxed">{review.review}</p>
+                              </div>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'timeline' && (
+                  <div className="p-6 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                      <Clock className="w-6 h-6" />
+                      Event Timeline
+                    </h2>
+                    {event.timeline && event.timeline.length > 0 ? (
+                      <div className="space-y-4">
+                        {event.timeline.map((item, idx) => (
+                          <Card key={idx} className="p-4 dark:bg-gray-700 dark:border-gray-600">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Badge variant="outline" className="dark:text-gray-300 dark:border-gray-500">{new Date(item.date).toLocaleDateString()}</Badge>
+                                  <Badge variant="outline" className="dark:text-gray-300 dark:border-gray-500">{item.duration.from} - {item.duration.to}</Badge>
+                                </div>
+                                <h4 className="font-semibold dark:text-white">{item.title}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                              </div>
+                              {isEventOrganizer && item.checkInRequired && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedTimelineId(item._id);
+                                    setCheckInDialogOpen(true);
+                                  }}
+                                  className="dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600"
+                                >
+                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  Check-in
+                                </Button>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert className="dark:bg-gray-700 dark:border-gray-600">
+                        <AlertDescription className="dark:text-gray-300">No timeline available for this event</AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'announcements' && (
+                  <div className="p-6 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                      <Megaphone className="w-6 h-6" />
+                      Announcements
+                    </h2>
+                    {announcements.length > 0 ? (
+                      <div className="space-y-4">
+                        {announcements.map((announcement) => (
+                          <Card key={announcement._id} className="p-6 dark:bg-gray-700 dark:border-gray-600">
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <Megaphone className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                  {new Date(announcement.date).toLocaleDateString()} at {announcement.time}
+                                </p>
+                                <p className="text-gray-700 dark:text-gray-300">{announcement.message}</p>
                               </div>
                             </div>
                           </Card>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="timeline" className="p-6">
-                  <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                    <Clock className="w-6 h-6" />
-                    Event Timeline
-                  </h2>
-                  {event.timeline && event.timeline.length > 0 ? (
-                    <div className="space-y-4">
-                      {event.timeline.map((item, idx) => (
-                        <Card key={idx} className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <Badge variant="outline">{new Date(item.date).toLocaleDateString()}</Badge>
-                                <Badge variant="outline">{item.duration.from} - {item.duration.to}</Badge>
-                              </div>
-                              <h4 className="font-semibold">{item.title}</h4>
-                              <p className="text-sm text-gray-600">{item.description}</p>
-                            </div>
-                            {isEventOrganizer && item.checkInRequired && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedTimelineId(item._id);
-                                  setCheckInDialogOpen(true);
-                                }}
-                              >
-                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                Check-in
-                              </Button>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert>
-                      <AlertDescription>No timeline available for this event</AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="announcements" className="p-6">
-                  <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                    <Megaphone className="w-6 h-6" />
-                    Announcements
-                  </h2>
-                  {announcements.length > 0 ? (
-                    <div className="space-y-4">
-                      {announcements.map((announcement) => (
-                        <Card key={announcement._id} className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Megaphone className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm text-gray-500 mb-3">
-                                {new Date(announcement.date).toLocaleDateString()} at {announcement.time}
-                              </p>
-                              <p className="text-gray-700">{announcement.message}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert>
-                      <AlertDescription>No announcements available yet</AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="chatroom" className="p-6">
-                  <Card className="h-[600px] flex flex-col">
-                    <div className="p-4 border-b">
-                      <h2 className="text-xl font-black flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5" />
-                        Event Chatroom
-                      </h2>
-                      <p className="text-sm text-gray-500">Connect with other participants</p>
-                    </div>
-
-                    <ScrollArea className="flex-1 p-4 overflow-hidden">
-                      <div className="space-y-4">
-                        {(chatMessages || []).map((msg) => (
-                          <div
-                            key={msg._id}
-                            className={`flex items-start gap-3 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}
-                          >
-                            {msg.sender?._id !== user.id && (
-                              <Avatar className="w-8 h-8 border-2 border-purple-200">
-                                <AvatarFallback>{msg.sender?.profile?.name?.charAt(0) || '?'}</AvatarFallback>
-                              </Avatar>
-                            )}
-                            <div className={`flex-1 max-w-xs md:max-w-md ${msg.sender?._id === user.id ? 'text-right' : ''}`}>
-                              <div className={`flex items-center gap-2 mb-1 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}>
-                                <span className="font-semibold text-sm">{msg.sender?.profile?.name || 'User'}</span>
-                                {msg.sender?.role && (
-                                  <Badge variant="outline" className="text-xs capitalize">
-                                    {msg.sender.role}
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-gray-500">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              </div>
-                              <div className={`p-3 rounded-lg ${msg.sender?._id === user.id ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>
-                                <p className="text-sm">{msg.message}</p>
-                              </div>
-                            </div>
-                          </div>
                         ))}
-                        <div ref={chatEndRef} />
-                      </div>
-                    </ScrollArea>
-
-                    {isAuthenticated ? (
-                      <div className="p-4 border-t">
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Type your message..."
-                            value={chatMessage}
-                            onChange={(e) => setChatMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                          />
-                          <Button onClick={handleSendMessage} disabled={!chatMessage.trim()}>
-                            <Send className="w-4 h-4" />
-                          </Button>
-                        </div>
                       </div>
                     ) : (
-                      <div className="p-4 border-t">
-                        <Alert>
-                          <AlertDescription>
-                            Please <Link to="/login" className="font-semibold underline">login</Link> to participate in the chat
+                      <Alert className="dark:bg-gray-700 dark:border-gray-600">
+                        <AlertDescription className="dark:text-gray-300">No announcements available yet</AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'chatroom' && (
+                  <div className="p-6 animate-fade-in">
+                    <Card className="h-[600px] flex flex-col dark:bg-gray-800 dark:border-gray-700">
+                      <div className="p-4 border-b dark:border-gray-700">
+                        <h2 className="text-xl font-black flex items-center gap-2 dark:text-white">
+                          <MessageSquare className="w-5 h-5" />
+                          Event Chatroom
+                        </h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Connect with other participants</p>
+                      </div>
+
+                      <ScrollArea className="flex-1 p-4 overflow-hidden">
+                        <div className="space-y-4">
+                          {(chatMessages || []).map((msg) => (
+                            <div
+                              key={msg._id}
+                              className={`flex items-start gap-3 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}
+                            >
+                              {msg.sender?._id !== user.id && (
+                                <Avatar className="w-8 h-8 border-2 border-purple-200 dark:border-purple-800">
+                                  <AvatarFallback>{msg.sender?.profile?.name?.charAt(0) || '?'}</AvatarFallback>
+                                </Avatar>
+                              )}
+                              <div className={`flex-1 max-w-xs md:max-w-md ${msg.sender?._id === user.id ? 'text-right' : ''}`}>
+                                <div className={`flex items-center gap-2 mb-1 ${msg.sender?._id === user.id ? 'justify-end' : ''}`}>
+                                  <span className="font-semibold text-sm dark:text-gray-300">{msg.sender?.profile?.name || 'User'}</span>
+                                  {msg.sender?.role && (
+                                    <Badge variant="outline" className="text-xs capitalize dark:text-gray-400 dark:border-gray-600">
+                                      {msg.sender.role}
+                                    </Badge>
+                                  )}
+                                  <span className="text-xs text-gray-500 dark:text-gray-500">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <div className={`p-3 rounded-lg ${msg.sender?._id === user.id ? 'bg-purple-600 text-white' : 'bg-gray-100 dark:bg-gray-700 dark:text-gray-200'}`}>
+                                  <p className="text-sm">{msg.message}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={chatEndRef} />
+                        </div>
+                      </ScrollArea>
+
+                      {isAuthenticated ? (
+                        <div className="p-4 border-t dark:border-gray-700">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Type your message..."
+                              value={chatMessage}
+                              onChange={(e) => setChatMessage(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                              className="dark:bg-gray-900 dark:border-gray-600"
+                            />
+                            <Button onClick={handleSendMessage} disabled={!chatMessage.trim()}>
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 border-t dark:border-gray-700">
+                          <Alert className="dark:bg-gray-900 dark:border-gray-600">
+                            <AlertDescription className="dark:text-gray-300">
+                              Please <Link to="/login" className="font-semibold underline">login</Link> to participate in the chat
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+                )}
+
+                {activeTab === 'registration' && (
+                  <div className="p-6 animate-fade-in">
+                    <Card className="p-8 dark:bg-gray-800 dark:border-gray-700">
+                      <h2 className="text-2xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                        <FormInput className="w-6 h-6" />
+                        Event Registration
+                      </h2>
+
+                      {!isAuthenticated ? (
+                        <Alert className="dark:bg-gray-700 dark:border-gray-600">
+                          <AlertDescription className="dark:text-gray-300">
+                            Please <Link to="/login" className="font-semibold underline">login</Link> to register for this event
                           </AlertDescription>
                         </Alert>
-                      </div>
-                    )}
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="registration">
-                  <Card className="p-8">
-                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                      <FormInput className="w-6 h-6" />
-                      Event Registration
-                    </h2>
-
-                    {!isAuthenticated ? (
-                      <Alert>
-                        <AlertDescription>
-                          Please <Link to="/login" className="font-semibold underline">login</Link> to register for this event
-                        </AlertDescription>
-                      </Alert>
-                    ) : user?.role !== 'student' ? (
-                      <Alert>
-                        <AlertDescription>
-                          Only students can register for events
-                        </AlertDescription>
-                      </Alert>                    
-                    ) : registrationStatus ? (
-                      <div className="text-center p-4 border border-dashed rounded-lg">
-                        {registrationStatus.registrationStatus === 'confirmed' && (
-                          <>
-                            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold">You are Registered!</h3>
-                            <p className="text-muted-foreground">Your registration is confirmed. Your check-in code will be sent to your inbox.</p>
-                          </>
-                        )}
-                        {registrationStatus.registrationStatus === 'pending' && (
-                          <>
-                            <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold">Registration Pending</h3>
-                            <p className="text-muted-foreground">Your registration is awaiting approval from the organizers.</p>
-                          </>
-                        )}
-                        {registrationStatus.registrationStatus === 'cancelled' && (
-                          <>
-                            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold">Registration Cancelled</h3>
-                            <p className="text-muted-foreground">Your registration for this event has been cancelled.</p>
-                          </>
-                        )}
-                        <p className="text-sm mt-4">Payment Status: <Badge variant="outline">{registrationStatus.paymentStatus}</Badge></p>
-                      </div>
-                    ) : (                      
-                      <form onSubmit={handleRegistrationSubmit} className="space-y-6">                        
-                        {event?.config?.registrationType === 'Team' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="teamName">Team Name *</Label>
-                            <Input
-                              id="teamName"
-                              required
-                              placeholder="Enter your team name"
-                              onChange={(e) => handleRegistrationFormChange('teamName', e.target.value)}
-                            />
-                            {event?.config?.teamSizeRange && (
-                              <p className="text-sm text-gray-500">
-                                Team size: {event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {event?.config?.fees > 0 && (
-                          <div className="space-y-4 border-t pt-4">
-                            <div className="flex items-center justify-between">
-                              <Label>Registration Fee</Label>
-                              <span className="text-2xl font-black">₹{event.config.fees}</span>
-                            </div>
-                            
-                            {event.config.qrCodeUrl && (
-                              <div className="flex justify-center py-4">
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                                  <img
-                                    src={event.config.qrCodeUrl}
-                                    alt="Payment QR Code"
-                                    className="w-48 h-48 object-contain"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
+                      ) : user?.role !== 'student' ? (
+                        <Alert className="dark:bg-gray-700 dark:border-gray-600">
+                          <AlertDescription className="dark:text-gray-300">
+                            Only students can register for events
+                          </AlertDescription>
+                        </Alert>                    
+                      ) : registrationStatus ? (
+                        <div className="text-center p-4 border border-dashed rounded-lg dark:border-gray-600">
+                          {registrationStatus.registrationStatus === 'confirmed' && (
+                            <>
+                              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                              <h3 className="text-xl font-bold dark:text-white">You are Registered!</h3>
+                              <p className="text-muted-foreground dark:text-gray-400">Your registration is confirmed. Your check-in code will be sent to your inbox.</p>
+                            </>
+                          )}
+                          {registrationStatus.registrationStatus === 'pending' && (
+                            <>
+                              <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+                              <h3 className="text-xl font-bold dark:text-white">Registration Pending</h3>
+                              <p className="text-muted-foreground dark:text-gray-400">Your registration is awaiting approval from the organizers.</p>
+                            </>
+                          )}
+                          {registrationStatus.registrationStatus === 'cancelled' && (
+                            <>
+                              <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                              <h3 className="text-xl font-bold dark:text-white">Registration Cancelled</h3>
+                              <p className="text-muted-foreground dark:text-gray-400">Your registration for this event has been cancelled.</p>
+                            </>
+                          )}
+                          <p className="text-sm mt-4 dark:text-gray-300">Payment Status: <Badge variant="outline" className="dark:text-gray-300 dark:border-gray-500">{registrationStatus.paymentStatus}</Badge></p>
+                        </div>
+                      ) : (                      
+                        <form onSubmit={handleRegistrationSubmit} className="space-y-6">                        
+                          {event?.config?.registrationType === 'Team' && (
                             <div className="space-y-2">
-                              <Label htmlFor="paymentProof">Upload Payment Proof *</Label>
-                              <Input 
-                                id="paymentProof"
-                                type="url"
+                              <Label htmlFor="teamName" className="dark:text-gray-300">Team Name *</Label>
+                              <Input
+                                id="teamName"
                                 required
-                                placeholder="https://your-payment-proof-url.com/image.jpg"
-                                onChange={(e) => handleRegistrationFormChange('paymentProof', e.target.value)}
+                                placeholder="Enter your team name"
+                                onChange={(e) => handleRegistrationFormChange('teamName', e.target.value)}
+                                className="dark:bg-gray-900 dark:border-gray-600"
                               />
+                              {event?.config?.teamSizeRange && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  Team size: {event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members
+                                </p>
+                              )}
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {event?.config?.registrationFields?.map((field, idx) => (
-                          <div key={idx} className="space-y-2">
-                            <Label htmlFor={`field-${idx}`}>
-                              {field.title} {field.required && '*'}
-                            </Label>
-                            {field.description && <p className="text-sm text-gray-500">{field.description}</p>}
-                            {field.inputType === 'text' && (
-                              <Input
-                                id={`field-${idx}`}
-                                required={field.required}
-                                onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
-                              />
-                            )}
-                            {field.inputType === 'textarea' && (
-                              <Textarea
-                                id={`field-${idx}`}
-                                required={field.required}
-                                onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
-                              />
-                            )}
-                            {['number', 'date', 'time'].includes(field.inputType) && (
-                              <Input id={`field-${idx}`} type={field.inputType} required={field.required} onChange={(e) => handleCustomFieldChange(field.title, e.target.value)} />
-                            )}
-                            {field.inputType === 'file' && (
-                              <Input
-                                id={`field-${idx}`}
-                                type="file"
-                                required={field.required}
-                                onChange={(e) => handleRegistrationFormChange(field.title, e.target.files?.[0])}
-                              />
-                            )}
-                          </div>
-                        ))}
-
-                        <Button
-                          type="submit"
-                          disabled={registering}
-                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                        >
-                          {registering ? 'Registering...' : 'Register for Event'}
-                        </Button>
-                      </form>
-                    )}
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="sponsors" className="p-6">
-                  <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                    <Building2 className="w-6 h-6" />
-                    Event Sponsors
-                  </h2>
-                  
-                  {sponsors.length > 0 ? (
-                    <div className="space-y-4">
-                      {sponsors.map((sponsor) => (
-                        <Card key={sponsor.sponsor?._id} className="p-6">
-                          <div className="flex items-start gap-4">
-                            <img
-                              src={sponsor.sponsor?.profile?.firmLogo}
-                              alt={sponsor.sponsor?.profile?.name}
-                              className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                            />
-                            <div className="flex-1">
-                              <h3 className="font-black text-xl mb-2">{sponsor.sponsor?.profile?.name}</h3>
-                              <p className="text-gray-600 mb-3">{sponsor.sponsor?.profile?.firmDescription}</p>
+                          {event?.config?.fees > 0 && (
+                            <div className="space-y-4 border-t pt-4 dark:border-gray-700">
+                              <div className="flex items-center justify-between">
+                                <Label className="dark:text-gray-300">Registration Fee</Label>
+                                <span className="text-2xl font-black dark:text-white">₹{event.config.fees}</span>
+                              </div>
                               
-                              <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  {sponsor.sponsor?.sponsorDetails?.stallLocation || 'N/A'}
+                              {event.config.qrCodeUrl && (
+                                <div className="flex justify-center py-4">
+                                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 dark:border-gray-600">
+                                    <img
+                                      src={event.config.qrCodeUrl}
+                                      alt="Payment QR Code"
+                                      className="w-48 h-48 object-contain"
+                                    />
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <Mail className="w-4 h-4" />
-                                  {sponsor.sponsor?.email}
-                                </div>
-                              </div>
+                              )}
 
-                              <div className="flex gap-3">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => navigate(`/sponsors/${sponsor.sponsor?._id}`)}
-                                >
-                                  <UserIcon className="w-4 h-4 mr-2" />
-                                  View Profile
-                                </Button>
+                              <div className="space-y-2">
+                                <Label htmlFor="paymentProof" className="dark:text-gray-300">Upload Payment Proof *</Label>
+                                <Input 
+                                  id="paymentProof"
+                                  type="url"
+                                  required
+                                  placeholder="https://your-payment-proof-url.com/image.jpg"
+                                  onChange={(e) => handleRegistrationFormChange('paymentProof', e.target.value)}
+                                  className="dark:bg-gray-900 dark:border-gray-600"
+                                />
                               </div>
                             </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Alert>
-                      <AlertDescription>No sponsors for this event yet</AlertDescription>
-                    </Alert>
-                  )}
-                </TabsContent>
+                          )}
 
-                <TabsContent value="map" className="p-6">
-                   <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-                    <MapPin className="w-6 h-6" />
-                    Event Map
-                  </h2>
-                  <Card className="overflow-hidden">
-                    <AnnotatedMapView eventId={id} />
-                  </Card>
-                </TabsContent>
-              </Tabs>
+                          {event?.config?.registrationFields?.map((field, idx) => (
+                            <div key={idx} className="space-y-2">
+                              <Label htmlFor={`field-${idx}`} className="dark:text-gray-300">
+                                {field.title} {field.required && '*'}
+                              </Label>
+                              {field.description && <p className="text-sm text-gray-500 dark:text-gray-400">{field.description}</p>}
+                              {field.inputType === 'text' && (
+                                <Input
+                                  id={`field-${idx}`}
+                                  required={field.required}
+                                  onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
+                                  className="dark:bg-gray-900 dark:border-gray-600"
+                                />
+                              )}
+                              {field.inputType === 'textarea' && (
+                                <Textarea
+                                  id={`field-${idx}`}
+                                  required={field.required}
+                                  onChange={(e) => handleCustomFieldChange(field.title, e.target.value)}
+                                  className="dark:bg-gray-900 dark:border-gray-600"
+                                />
+                              )}
+                              {['number', 'date', 'time'].includes(field.inputType) && (
+                                <Input 
+                                  id={`field-${idx}`} 
+                                  type={field.inputType} 
+                                  required={field.required} 
+                                  onChange={(e) => handleCustomFieldChange(field.title, e.target.value)} 
+                                  className="dark:bg-gray-900 dark:border-gray-600"
+                                />
+                              )}
+                              {field.inputType === 'file' && (
+                                <Input
+                                  id={`field-${idx}`}
+                                  type="file"
+                                  required={field.required}
+                                  onChange={(e) => handleRegistrationFormChange(field.title, e.target.files?.[0])}
+                                  className="dark:bg-gray-900 dark:border-gray-600"
+                                />
+                              )}
+                            </div>
+                          ))}
+
+                          <Button
+                            type="submit"
+                            disabled={registering}
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                          >
+                            {registering ? 'Registering...' : 'Register for Event'}
+                          </Button>
+                        </form>
+                      )}
+                    </Card>
+                  </div>
+                )}
+
+                {activeTab === 'sponsors' && (
+                  <div className="p-6 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                      <Building2 className="w-6 h-6" />
+                      Event Sponsors
+                    </h2>
+                    
+                    {sponsors.length > 0 ? (
+                      <div className="space-y-4">
+                        {sponsors.map((sponsor) => (
+                          <Card key={sponsor.sponsor?._id} className="p-6 dark:bg-gray-700 dark:border-gray-600">
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={sponsor.sponsor?.profile?.firmLogo}
+                                alt={sponsor.sponsor?.profile?.name}
+                                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1">
+                                <h3 className="font-black text-xl mb-2 dark:text-white">{sponsor.sponsor?.profile?.name}</h3>
+                                <p className="text-gray-600 mb-3 dark:text-gray-300">{sponsor.sponsor?.profile?.firmDescription}</p>
+                                
+                                <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-4 h-4" />
+                                    {sponsor.sponsor?.sponsorDetails?.stallLocation || 'N/A'}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-4 h-4" />
+                                    {sponsor.sponsor?.email}
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => navigate(`/sponsors/${sponsor.sponsor?._id}`)}
+                                    className="dark:text-gray-300 dark:border-gray-500 dark:hover:bg-gray-600"
+                                  >
+                                    <UserIcon className="w-4 h-4 mr-2" />
+                                    View Profile
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert className="dark:bg-gray-700 dark:border-gray-600">
+                        <AlertDescription className="dark:text-gray-300">No sponsors for this event yet</AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'map' && (
+                  <div className="p-6 animate-fade-in">
+                    <h2 className="text-2xl font-black mb-6 flex items-center gap-2 dark:text-white">
+                      <MapPin className="w-6 h-6" />
+                      Event Map
+                    </h2>
+                    <Card className="overflow-hidden dark:border-gray-600">
+                      <AnnotatedMapView eventId={id} />
+                    </Card>
+                  </div>
+                )}
+              </div>
             </Card>
 
             <div className="flex justify-center pt-6">
               <Button
                 variant="outline"
                 onClick={() => setReportDialogOpen(true)}
-                className="border-red-300 text-red-600 hover:bg-red-50"
+                className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
               >
                 <Flag className="w-4 h-4 mr-2" />
                 Report
@@ -949,38 +960,38 @@ useEffect(() => {
           </div>
 
           <div className="space-y-6">
-            <Card className="p-6 sticky top-24">
+            <Card className="p-6 sticky top-24 dark:bg-gray-800 dark:border-gray-700">
               <div className="space-y-4">                
                 {event.timeline?.[0] && (
                   <>
                     <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-purple-600" />
+                      <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Starts On</p>
-                        <p className="font-semibold">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Starts On</p>
+                        <p className="font-semibold dark:text-white">
                           {new Date(event.timeline[0].date).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
                   </>
                 )}
 
                 <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-purple-600" />
+                  <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   <div>
-                    <p className="text-sm text-gray-500">Registrations</p>
-                    <p className="font-semibold">{event.registrations?.length || 0}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Registrations</p>
+                    <p className="font-semibold dark:text-white">{event.registrations?.length || 0}</p>
                   </div>
                 </div>
 
                 {event.config?.fees && (
                   <>
-                    <Separator />
+                    <Separator className="dark:bg-gray-700" />
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Entry Fee</span>
-                      <span className="text-2xl font-black">₹{event.config.fees}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Entry Fee</span>
+                      <span className="text-2xl font-black dark:text-white">₹{event.config.fees}</span>
                     </div>
                   </>
                 )}
@@ -1000,16 +1011,16 @@ useEffect(() => {
             <SponsorAdCarousel sponsors={sponsors} />
 
             {event.createdBy && (
-              <Card className="p-6">
-                <h3 className="font-black mb-4">Organized By</h3>
+              <Card className="p-6 dark:bg-gray-800 dark:border-gray-700">
+                <h3 className="font-black mb-4 dark:text-white">Organized By</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
                       <Users className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold">{event.createdBy.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-semibold dark:text-white">{event.createdBy.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {event.createdBy.members?.length || 0} members
                       </p>
                     </div>
@@ -1022,20 +1033,21 @@ useEffect(() => {
       </div>
 
       <Dialog open={checkInDialogOpen} onOpenChange={setCheckInDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle>Check-in to Timeline Event</DialogTitle>
-            <DialogDescription>Enter the check-in code to confirm attendance</DialogDescription>
+            <DialogTitle className="dark:text-white">Check-in to Timeline Event</DialogTitle>
+            <DialogDescription className="dark:text-gray-400">Enter the check-in code to confirm attendance</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
               placeholder="Enter check-in code"
               value={checkInCode}
               onChange={(e) => setCheckInCode(e.target.value)}
+              className="dark:bg-gray-900 dark:border-gray-600"
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckInDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setCheckInDialogOpen(false)} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
               Cancel
             </Button>
             <Button onClick={handleCheckIn} disabled={!checkInCode.trim()}>
@@ -1046,10 +1058,10 @@ useEffect(() => {
       </Dialog>
 
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle>Report Event</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="dark:text-white">Report Event</DialogTitle>
+            <DialogDescription className="dark:text-gray-400">
               Please describe the issue you're reporting. Our team will review it shortly.
             </DialogDescription>
           </DialogHeader>
@@ -1058,11 +1070,11 @@ useEffect(() => {
               placeholder="Describe the issue..."
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
-              className="min-h-32"
+              className="min-h-32 dark:bg-gray-900 dark:border-gray-600"
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)} className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
               Cancel
             </Button>
             <Button

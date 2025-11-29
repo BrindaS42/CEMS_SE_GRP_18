@@ -10,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Alert, AlertDescription } from '../../Components/ui/alert.jsx';
 import { Tabs, TabsList, TabsTrigger } from '../../Components/ui/tabs.jsx';
 import { loginUser, clearError } from '../../Store/auth.slice.js';
+import { SegmentedControl } from '../../Components/ui/segmented-control';
+
 import { toast } from 'sonner';
 
 const LoginPage = () => {
@@ -73,34 +75,34 @@ const LoginPage = () => {
   const roleColors = {
     student: {
       gradient: 'from-purple-500 via-pink-500 to-orange-400',
-      bg: 'from-purple-50 via-pink-50 to-orange-50',
+      bg: 'from-purple-50 via-pink-50 to-orange-50 dark:from-slate-900 dark:via-purple-950/30 dark:to-slate-900',
       button: 'from-purple-600 to-pink-600',
-      text: 'text-purple-600',
+      text: 'text-purple-600 dark:text-purple-400',
     },
     organizer: {
       gradient: 'from-blue-600 via-indigo-600 to-purple-600',
-      bg: 'from-blue-50 via-indigo-50 to-purple-50',
+      bg: 'from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-indigo-950/30 dark:to-slate-900',
       button: 'from-blue-600 to-indigo-600',
-      text: 'text-blue-600',
+      text: 'text-blue-600 dark:text-blue-400',
     },
     sponsor: {
       gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
-      bg: 'from-emerald-50 via-teal-50 to-cyan-50',
+      bg: 'from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-emerald-950/30 dark:to-slate-900',
       button: 'from-emerald-600 to-teal-600',
-      text: 'text-emerald-600',
+      text: 'text-emerald-600 dark:text-emerald-400',
     },
     admin: {
-      gradient: 'from-slate-700 via-gray-800 to-zinc-900',
-      bg: 'from-slate-50 via-gray-50 to-zinc-50',
-      button: 'from-slate-700 to-gray-800',
-      text: 'text-slate-700',
+      gradient: 'from-slate-700 via-gray-800 to-zinc-900 dark:from-slate-100 dark:via-gray-200 dark:to-zinc-300',
+      bg: 'from-slate-50 via-gray-50 to-zinc-50 dark:from-gray-900 dark:via-zinc-900 dark:to-black',
+      button: 'from-slate-700 to-gray-800 dark:from-slate-600 dark:to-gray-700',
+      text: 'text-slate-700 dark:text-slate-400',
     },
   };
 
   const currentColors = roleColors[selectedRole];
 
   return (
-    <div className={`min-h-screen pt-20 pb-12 bg-gradient-to-br ${currentColors.bg}`}>
+    <div className={`min-h-screen pt-20 pb-12 bg-gradient-to-br ${currentColors.bg} transition-colors duration-500`}>
       <div className="max-w-md mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -111,39 +113,32 @@ const LoginPage = () => {
             <h1 className={`text-5xl mb-4 font-black bg-gradient-to-r ${currentColors.gradient} bg-clip-text text-transparent`}>
               Welcome Back
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Sign in to access your event management dashboard
             </p>
           </div>
 
-          <Card className="shadow-2xl border-2">
+          <Card className="shadow-2xl border-2 dark:border-gray-800 dark:bg-card/95 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Sign In</CardTitle>
               <CardDescription>Choose your role and sign in to continue</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <Alert className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-                <AlertDescription>
-                  <p className="font-semibold text-purple-900 mb-2">🎯 Demo Credentials:</p>
-                  <ul className="text-sm space-y-1 text-purple-800">
-                    <li><strong>Student:</strong> student</li>
-                    <li><strong>Organizer:</strong> organizer</li>
-                    <li><strong>Sponsor:</strong> sponsor</li>
-                    <li><strong>Admin:</strong> admin</li>
-                    <li className="text-xs text-purple-600 mt-2">Password: any text (3+ characters)</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-              
-              <Tabs value={selectedRole} onValueChange={setSelectedRole} className="mb-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="student">Student</TabsTrigger>
-                  <TabsTrigger value="organizer">Organizer</TabsTrigger>
-                  <TabsTrigger value="sponsor">Sponsor</TabsTrigger>
-                  <TabsTrigger value="admin">Admin</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="mb-6">
+                <SegmentedControl
+                  options={[
+                    { value: 'student', label: 'Student' },
+                    { value: 'organizer', label: 'Organizer' },
+                    { value: 'sponsor', label: 'Sponsor' },
+                    { value: 'admin', label: 'Admin' },
+                  ]}
+                  value={selectedRole}
+                  onChange={setSelectedRole}
+                  variant={selectedRole}
+                  isFullWidth={true} 
+                />
+              </div>
 
               {error && (
                 <Alert variant="destructive" className="mb-4">
@@ -155,7 +150,7 @@ const LoginPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                     <Input
                       id="email"
                       name="email"
@@ -163,7 +158,7 @@ const LoginPage = () => {
                       placeholder="you@college.edu"
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 dark:bg-gray-900/50 dark:border-gray-700"
                       required
                     />
                   </div>
@@ -172,7 +167,7 @@ const LoginPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-gray-500" />
                     <Input
                       id="password"
                       name="password"
@@ -180,7 +175,7 @@ const LoginPage = () => {
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10"
+                      className="pl-10 dark:bg-gray-900/50 dark:border-gray-700"
                       required
                     />
                   </div>
@@ -197,7 +192,7 @@ const LoginPage = () => {
 
                 <Button
                   type="submit"
-                  className={`w-full bg-gradient-to-r ${currentColors.button} hover:opacity-90`}
+                  className={`w-full bg-gradient-to-r ${currentColors.button} hover:opacity-90 text-white border-0`}
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -216,15 +211,10 @@ const LoginPage = () => {
             </CardContent>
 
             <CardFooter className="flex flex-col space-y-2">
-              <div className="text-center text-sm">
+              <div className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
-                <Link to="/register" className={`${currentColors.text} hover:underline`}>
+                <Link to="/register" className={`${currentColors.text} hover:underline font-medium`}>
                   Sign up
-                </Link>
-              </div>
-              <div className="text-center text-sm">
-                <Link to="/change-password" className="text-gray-500 hover:underline">
-                  Change Password
                 </Link>
               </div>
             </CardFooter>

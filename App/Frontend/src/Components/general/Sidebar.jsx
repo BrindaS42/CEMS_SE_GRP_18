@@ -1,270 +1,220 @@
 import PropTypes from 'prop-types';
 import { LayoutDashboard, Settings, Inbox, User, Wrench, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../ui/utils';
-import { motion } from 'motion/react';
-import { useRef, useLayoutEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-export function Sidebar({ isCollapsed, onToggleCollapse, activePage, onNavigate }) {
+export function Sidebar({ isCollapsed, onToggleCollapse, onNavigate, role }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
-  const currentRole = user?.role || 'organizer';
-  // Get role-specific color
-  const getRoleColor = () => {
-    switch (currentRole) {
-      case 'student':
-        return 'var(--student-primary)';
-      case 'sponsor':
-        return 'var(--sponsor-primary)';
-      case 'admin':
-        return 'var(--admin-primary)';
-      case 'organizer':
-        return 'var(--organizer-primary)';
-      default:
-        return 'var(--primary)';
-    }
-  };
-
-  // Get icon color based on type
-  const getIconColor = (iconType) => {
-    switch (iconType) {
-      case 'dashboard':
-        return '#14b8a6'; // Teal for dashboard
-      case 'admin':
-        return '#f59e0b'; // Amber for admin panel
-      case 'inbox':
-        return '#3b82f6'; // Blue for inbox
-      case 'profile':
-        return '#8b5cf6'; // Purple for profile
-      case 'settings':
-        return '#64748b'; // Slate for settings
-      default:
-        return 'currentColor';
-    }
-  };
-
-  // Get background color for selected state
-  const getBackgroundColor = (iconType) => {
-    return getIconColor(iconType);
-  };
+  const currentRole = role || user?.role || 'organizer';
 
   // Define menu items based on role
   const getMenuItems = () => {
-    if (currentRole === 'admin') {
-      return [
-        { icon: LayoutDashboard, label: 'Control Panel', href: '/admin/control-panel', id: 'control-panel', iconType: 'dashboard' },
-        { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
-        { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-      ];
-    }
-
-    if (currentRole === 'student') {
-      return [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/student/dashboard', id: 'dashboard', iconType: 'dashboard' },
-        { icon: Users, label: 'Admin Panel', href: '/student/admin', id: 'admin', iconType: 'admin' },
-        { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
-        { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-      ];
-    }
-
-    if (currentRole === 'sponsor') {
-      return [
-        { icon: Wrench, label: 'Admin Panel', href: '/sponsor/admin', id: 'admin', iconType: 'admin' },
-        { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
-        { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
-      ];
-    }
-
-    // Default to organizer menu items
-    return [
-      { icon: LayoutDashboard, label: 'Dashboard', href: '/organizer/dashboard', id: 'dashboard', iconType: 'dashboard' },
-      { icon: Wrench, label: 'Admin Panel', href: '/organizer/admin', id: 'admin', iconType: 'admin' },
+    // Common items visible to all roles
+    const commonItems = [
       { icon: Inbox, label: 'Inbox', href: '/inbox', id: 'inbox', iconType: 'inbox' },
       { icon: User, label: 'Profile', href: '/profile', id: 'profile', iconType: 'profile' },
+      { icon: Settings, label: 'Settings', href: '/settings', id: 'settings', iconType: 'settings' },
     ];
+
+    let roleSpecificItems = [];
+
+    switch (currentRole) {
+      case 'admin':
+        roleSpecificItems = [
+          { icon: LayoutDashboard, label: 'Control Panel', href: '/admin/control-panel', id: 'control-panel', iconType: 'dashboard' },
+        ];
+        break;
+
+      case 'student':
+        roleSpecificItems = [
+          { icon: LayoutDashboard, label: 'Dashboard', href: '/student/dashboard', id: 'dashboard', iconType: 'dashboard' },
+          { icon: Users, label: 'Admin Panel', href: '/student/admin', id: 'admin', iconType: 'admin' },
+        ];
+        break;
+
+      case 'sponsor':
+        roleSpecificItems = [
+          { icon: Wrench, label: 'Admin Panel', href: '/sponsor/admin', id: 'admin', iconType: 'admin' },
+        ];
+        break;
+
+      case 'organizer':
+      default:
+        roleSpecificItems = [
+          { icon: LayoutDashboard, label: 'Dashboard', href: '/organizer/dashboard', id: 'dashboard', iconType: 'dashboard' },
+          { icon: Wrench, label: 'Admin Panel', href: '/organizer/admin', id: 'admin', iconType: 'admin' },
+        ];
+        break;
+    }
+
+    return [...roleSpecificItems, ...commonItems];
   };
 
   const menuItems = getMenuItems();
 
-  const buttonRefs = useRef([]);
-  const [indicatorStyle, setIndicatorStyle] = useState(null);
+  // Determine active page based on current path
+  const getActivePageId = () => {
+    const path = location.pathname;
+    
+    // Exact matches first
+    const exactMatch = menuItems.find(item => item.href === path);
+    if (exactMatch) return exactMatch.id;
 
-  const activeIndex = menuItems.findIndex(item => item.id === activePage);
+    // Prefix matches for sub-pages (e.g. /profile/123 -> profile)
+    if (path.startsWith('/profile')) return 'profile';
+    if (path.startsWith('/inbox')) return 'inbox';
+    if (path.startsWith('/settings')) return 'settings';
+    if (path.startsWith('/student/dashboard')) return 'dashboard';
+    if (path.startsWith('/student/admin')) return 'admin';
+    if (path.startsWith('/organizer/dashboard')) return 'dashboard';
+    if (path.startsWith('/organizer/admin')) return 'admin';
+    if (path.startsWith('/sponsor/admin')) return 'admin';
+    if (path.startsWith('/admin/control-panel')) return 'control-panel';
 
-  useLayoutEffect(() => {
-    if (activeIndex !== -1 && buttonRefs.current[activeIndex]) {
-      const button = buttonRefs.current[activeIndex];
-      if (button) {
-        // Get the parent nav element to calculate relative position
-        const nav = button.closest('nav');
-        const navRect = nav?.getBoundingClientRect();
-        const buttonRect = button.getBoundingClientRect();
-        
-        if (navRect) {
-          setIndicatorStyle({
-            top: buttonRect.top - navRect.top,
-            height: button.offsetHeight,
-          });
-        }
-      }
-    }
-  }, [activeIndex, activePage, isCollapsed]);
+    return '';
+  };
 
-  const handleNavigation = (e, pageId) => {
-    // Prevent any event bubbling
+  const activePageId = getActivePageId();
+
+  const handleNavigation = (e, item) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
-    // Find the menu item to know the target href
-    const menuItem = menuItems.find(item => item.id === pageId);
-
-    // Call the optional onNavigate callback (do not short-circuit navigation)
     if (onNavigate) {
       try {
-        onNavigate(pageId);
+        onNavigate(item.id);
       } catch (err) {
-        // swallow callback errors to avoid breaking navigation
-        // eslint-disable-next-line no-console
         console.error('onNavigate callback error:', err);
       }
     }
 
-    // Always perform router navigation when an href is available
-    if (menuItem && menuItem.href) {
-      navigate(menuItem.href);
+    if (item.href) {
+      navigate(item.href);
     }
   };
 
+  // Animation Variants
+  const sidebarVariants = {
+    expanded: { width: "16rem", transition: { type: "spring", stiffness: 300, damping: 30 } },
+    collapsed: { width: "5rem", transition: { type: "spring", stiffness: 300, damping: 30 } }
+  };
+
+  const labelVariants = {
+    expanded: { opacity: 1, x: 0, display: "block", transition: { duration: 0.3, delay: 0.1 } },
+    collapsed: { opacity: 0, x: -10, transitionEnd: { display: "none" }, transition: { duration: 0.2 } }
+  };
+
   return (
-    <aside
+    <motion.aside
+      initial={false}
+      animate={isCollapsed ? "collapsed" : "expanded"}
+      variants={sidebarVariants}
       className={cn(
-        'bg-sidebar border-r border-sidebar-border flex flex-col relative gpu-accelerate overflow-hidden',
-        'transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        isCollapsed ? 'w-20' : 'w-64'
+        'bg-blue-50 dark:bg-slate-900 border-r border-blue-100 dark:border-gray-800 flex flex-col relative z-40 overflow-hidden',
+        'h-full flex-shrink-0'
       )}
     >
       {/* Menu Items */}
-      <nav className="flex-1 py-6 relative">
-        {/* Animated Background Indicator */}
-        {activeIndex !== -1 && indicatorStyle && (() => {
-          const activeItem = menuItems[activeIndex];
+      <nav className="flex-1 py-6 px-3 space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activePageId === item.id;
+          
           return (
-            <motion.div
-              className="absolute left-3 right-3 rounded-lg z-0"
-              style={{ 
-                backgroundColor: getBackgroundColor(activeItem.iconType),
-              }}
-              initial={false}
-              animate={{
-                top: indicatorStyle.top,
-                height: indicatorStyle.height,
-              }}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-              }}
-            />
-          );
-        })()}
+            <button
+              key={item.id}
+              onClick={(e) => handleNavigation(e, item)}
+              className={cn(
+                'w-full h-10 flex items-center rounded-lg overflow-hidden group relative',
+                'transition-colors duration-200',
+                isActive
+                  ? 'text-blue-600 dark:text-blue-400 font-medium' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-blue-100/50 dark:hover:bg-gray-800/50'
+              )}
+            >
+              {/* Active State Background (White Highlight) */}
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active-bg"
+                  className="absolute inset-0 bg-white dark:bg-gray-800 shadow-sm border border-blue-100 dark:border-gray-700 rounded-lg z-0"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
 
-        <div className="space-y-1 px-3 relative z-10">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = activePage === item.id;
-            
-            return (
-              <button
-                key={item.id}
-                ref={(el) => (buttonRefs.current[index] = el)}
-                onClick={(e) => handleNavigation(e, item.id)}
-                type="button"
-                className={cn(
-                  'w-full h-10 flex items-center rounded-lg overflow-hidden',
-                  'transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
-                  'relative z-10',
-                  isActive
-                    ? 'text-white'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                )}
+              {/* Active Indicator Bar (Blue Pill) */}
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active-pill"
+                  className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 dark:bg-blue-500 rounded-r-full z-20"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+
+              {/* Icon Container */}
+              <div className="w-[calc(5rem-1.5rem)] flex items-center justify-center flex-shrink-0 h-full relative z-10">
+                <Icon 
+                  className={cn(
+                    'w-5 h-5 transition-transform duration-300',
+                    isActive && 'scale-110',
+                    !isActive && 'group-hover:scale-105'
+                  )}
+                />
+              </div>
+              
+              {/* Text Label */}
+              <motion.span
+                variants={labelVariants}
+                className="whitespace-nowrap font-medium relative z-10"
               >
-                {/* Fixed width icon container - always centered */}
-                <div className="w-14 h-10 flex items-center justify-center flex-shrink-0">
-                  <Icon 
-                    className={cn(
-                      'w-5 h-5',
-                      'transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
-                      isActive && 'scale-110'
-                    )}
-                    style={{ 
-                      stroke: isActive ? 'currentColor' : getIconColor(item.iconType),
-                      fill: 'none'
-                    }}
-                  />
-                </div>
-                {/* Text label that fades out */}
-                {!isCollapsed && (
-                  <span className="whitespace-nowrap overflow-hidden pr-3">
-                    {item.label}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                {item.label}
+              </motion.span>
+            </button>
+          );
+        })}
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="p-3 border-t border-blue-100 dark:border-gray-800">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggleCollapse();
           }}
-          type="button"
           className={cn(
-            'w-full h-10 flex items-center gap-3 px-3 rounded-lg',
-            'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            'transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',
-            'micro-interact',
-            isCollapsed ? 'justify-center' : 'justify-start'
+            'w-full h-10 flex items-center rounded-lg transition-all duration-200',
+            'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+            'hover:bg-blue-100/50 dark:hover:bg-gray-800/50'
           )}
         >
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <>
-              <ChevronLeft className="w-5 h-5" />
-              <motion.span
-                initial={false}
-                animate={{
-                  opacity: isCollapsed ? 0 : 1,
-                  width: isCollapsed ? 0 : 'auto',
-                }}
-                transition={{
-                  duration: 0.2,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="whitespace-nowrap overflow-hidden"
-              >
-                Collapse
-              </motion.span>
-            </>
-          )}
+          <div className="w-[calc(5rem-1.5rem)] flex items-center justify-center flex-shrink-0">
+            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </div>
+          <motion.span
+            variants={labelVariants}
+            className="whitespace-nowrap text-sm font-medium"
+          >
+            Collapse
+          </motion.span>
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
 
 Sidebar.propTypes = {
   isCollapsed: PropTypes.bool.isRequired,
   onToggleCollapse: PropTypes.func.isRequired,
-  activePage: PropTypes.string,
   onNavigate: PropTypes.func,
+  role: PropTypes.string,
 };
 
 Sidebar.defaultProps = {
-  activePage: 'dashboard',
   onNavigate: () => {},
+  role: 'organizer',
 };

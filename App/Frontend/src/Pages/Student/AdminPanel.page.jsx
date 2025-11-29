@@ -3,8 +3,12 @@ import { useState } from 'react';
 import { Sidebar } from '../../Components/general/Sidebar';
 import { TeamsTab } from '../../Components/Students/Admin/TeamsTab';
 
-export default function StudentAdminPanel({ onNavigate }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+export default function StudentAdminPanel({ 
+  onNavigate, 
+  isSidebarCollapsed, // Accept from parent
+  onToggleSidebar     // Accept from parent
+}) {
+  // Removed local sidebar state
   const [openCreateTeamModal, setOpenCreateTeamModal] = useState(false);
   const [activePage, setActivePage] = useState('admin');
 
@@ -18,8 +22,8 @@ export default function StudentAdminPanel({ onNavigate }) {
   return (
     <div className="flex h-screen bg-background pt-16">
       <Sidebar 
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isCollapsed={isSidebarCollapsed} // Use prop
+        onToggleCollapse={onToggleSidebar} // Use prop
         activePage={activePage}
         onNavigate={handleNavigation}
         role="student"
@@ -51,4 +55,6 @@ export default function StudentAdminPanel({ onNavigate }) {
 
 StudentAdminPanel.propTypes = {
   onNavigate: PropTypes.func,
+  isSidebarCollapsed: PropTypes.bool,
+  onToggleSidebar: PropTypes.func,
 };

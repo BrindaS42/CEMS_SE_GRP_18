@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-// import { Toaster } from './Components/ui/toaster';
+import { Toaster } from './Components/ui/sonner';
 import { Navbar } from './Components/general/Navbar.jsx';
+import { ThemeProvider } from './utils/ThemeContext';
 import { HomePage } from './Pages/HomePage.jsx';
 import { LoginPage } from './Pages/Authentication/LoginPage.jsx';
 import { RegisterPage } from './Pages/Authentication/RegisterPage.jsx';
@@ -11,6 +12,7 @@ import ChangePasswordPage from './Pages/Authentication/ChangePasswordPage.jsx';
 import { CollegeRegistrationPage } from './Pages/Authentication/CollegeRegistrationPage.jsx';
 import { InboxPage } from './Pages/InboxPage.jsx';
 import { ProfilePage } from './Pages/ProfilePage.jsx';
+import { SettingsPage } from './Pages/SettingsPage.jsx';
 import { fetchAuthProfile } from './Store/auth.slice.js';
 import StudentDashboard from './Pages/Student/Dashboard.page.jsx';
 import StudentAdminPanel from './Pages/Student/AdminPanel.page.jsx';
@@ -31,18 +33,15 @@ import { SponsorDetailsPage } from './Pages/SponsorListings/SponsorDetailsPage.j
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // If allowedRoles is specified, check if user has the required role
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on user role
     const roleRedirects = {
       student: '/student/dashboard',
       organizer: '/organizer/dashboard',
-      sponsor: '/sponsor/dashboard',
+      sponsor: '/sponsor/admin',
       admin: '/admin/control-panel',
     };
     return <Navigate to={roleRedirects[user.role] || '/'} replace />;
@@ -51,24 +50,27 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   return <>{children}</>;
 };
 
-
-
-// App Layout for new UI
+// App Layout
 const AppLayout = ({ children }) => {
   return (
     <>
       <Navbar />
       <main>{children}</main>
-      {/* <Toaster /> */}
+      <Toaster />
     </>
   );
 };
 
-
-
 // App Routes Component
 const AppRoutes = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  // Global Sidebar State
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
 
   return (
     <Routes>
@@ -99,7 +101,10 @@ const AppRoutes = () => {
         path="/inbox"
         element={
           <ProtectedRoute>
-            <InboxPage />
+            <InboxPage 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
           </ProtectedRoute>
         }
       />
@@ -107,7 +112,10 @@ const AppRoutes = () => {
         path="/profile"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            <ProfilePage 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
           </ProtectedRoute>
         }
       />
@@ -115,7 +123,21 @@ const AppRoutes = () => {
         path="/profile/:id"
         element={
           <ProtectedRoute>
-            <ProfilePage />
+            <ProfilePage 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
           </ProtectedRoute>
         }
       />
@@ -125,7 +147,10 @@ const AppRoutes = () => {
         path="/student/dashboard"
         element={
           <ProtectedRoute allowedRoles={['student']}>
-            <StudentDashboard />
+            <StudentDashboard 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
           </ProtectedRoute>
         }
       />
@@ -133,7 +158,10 @@ const AppRoutes = () => {
         path="/student/admin"
         element={
           <ProtectedRoute allowedRoles={['student']}>
-            <StudentAdminPanel />
+            <StudentAdminPanel 
+              isSidebarCollapsed={isSidebarCollapsed}
+              onToggleSidebar={toggleSidebar}
+            />
           </ProtectedRoute>
         }
       />
@@ -143,7 +171,10 @@ const AppRoutes = () => {
         path="/organizer/dashboard"
         element={
           <ProtectedRoute allowedRoles={['organizer']}>
-            <OrganizerDashboard />
+            <OrganizerDashboard 
+              isSidebarCollapsed={isSidebarCollapsed} 
+              onToggleSidebar={toggleSidebar} 
+            />
           </ProtectedRoute>
         }
       />
@@ -151,7 +182,10 @@ const AppRoutes = () => {
         path="/organizer/admin"
         element={
           <ProtectedRoute allowedRoles={['organizer']}>
-            <OrganizerAdminPanel />
+            <OrganizerAdminPanel 
+              isSidebarCollapsed={isSidebarCollapsed} 
+              onToggleSidebar={toggleSidebar} 
+            />
           </ProtectedRoute>
         }
       />
@@ -161,7 +195,10 @@ const AppRoutes = () => {
         path="/sponsor/admin"
         element={
           <ProtectedRoute allowedRoles={['sponsor']}>
-            <SponsorAdminPanel />
+            <SponsorAdminPanel 
+              isSidebarCollapsed={isSidebarCollapsed} 
+              onToggleSidebar={toggleSidebar} 
+            />
           </ProtectedRoute>
         }
       />
@@ -171,7 +208,10 @@ const AppRoutes = () => {
         path="/admin/control-panel"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <AdminControlPanel />
+            <AdminControlPanel 
+              isSidebarCollapsed={isSidebarCollapsed} 
+              onToggleSidebar={toggleSidebar} 
+            />
           </ProtectedRoute>
         }
       />
@@ -203,12 +243,9 @@ const AppRoutes = () => {
   );
 };
 
-// Main App Component
 export default function App() {
-  const { isAuthenticated } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
 
-  // Check for existing token on app load
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (token) {
@@ -216,19 +253,9 @@ export default function App() {
     }
   }, [dispatch]);
 
-  // ===== SIMPLIFIED: Socket is now auto-connecting from socket.js =====
-  // Just add debug listeners
   useEffect(() => {
-    console.log('[App.jsx] ✅ App mounted. Socket instance exists.');
-    console.log('[App.jsx] Socket connected?', socket.connected);
-    
-    const handleConnect = () => {
-      console.log('[App.jsx] ✅ Socket connected to server!');
-    };
-
-    const handleDisconnect = () => {
-      console.log('[App.jsx] ❌ Socket disconnected from server');
-    };
+    const handleConnect = () => console.log('[App.jsx] ✅ Socket connected');
+    const handleDisconnect = () => console.log('[App.jsx] ❌ Socket disconnected');
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
@@ -236,14 +263,15 @@ export default function App() {
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
-      // Don't disconnect here - let socket persist
     };
   }, []);
 
   return (
-    <AppLayout>
-      <AppRoutes />
-    </AppLayout>
+    <ThemeProvider>
+      <AppLayout>
+        <AppRoutes />
+      </AppLayout>
+    </ThemeProvider>
   );
 }
 

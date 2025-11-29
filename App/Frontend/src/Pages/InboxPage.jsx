@@ -4,27 +4,24 @@ import {motion} from 'motion/react';
 import {
   Inbox,
   Mail,
-  MailOpen,
+  Send,
+  FileText,
+  Edit3,
+  Plus,
   CheckCircle2,
   XCircle,
   Clock,
   User,
   Calendar,
-  Filter,
   Search,
   Trash2,
-  Eye,
-  Send,
-  FileText,
-  Edit3,
-  Plus,
-  Archive,
 } from 'lucide-react';
 import { Button } from '../Components/ui/button';
 import { Card } from '../Components/ui/card';
 import { Badge } from '../Components/ui/badge';
 import { Input } from '../Components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../Components/ui/tabs';
+import { SegmentedControl } from '../Components/ui/segmented-control'; 
 import {
   Select,
   SelectContent,
@@ -70,11 +67,11 @@ import {
 } from '../Store/inbox.slice';
 
 
-const InboxPage = () => {
+const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props here
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { arrivals, sent, drafts, status: loading } = useSelector((state) => state.inbox) || { arrivals: [], sent: [], drafts: [], status: 'idle' };
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  
   const [activePage, setActivePage] = useState('inbox');
   const handleNavigation = (page) => setActivePage(page);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -87,7 +84,7 @@ const InboxPage = () => {
   });
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
   const [composeForm, setComposeForm] = useState({
-    _id: null, // To track editing
+    _id: null, 
     type: 'message',
     title: '',
     description: '',
@@ -96,6 +93,8 @@ const InboxPage = () => {
   });
   const [currentRecipient, setCurrentRecipient] = useState({ email: '', role: 'student' });
   const [broadcastType, setBroadcastType] = useState('specific');
+
+  const [activeTab, setActiveTab] = useState('inbox');
 
 
   useEffect(() => {
@@ -176,21 +175,23 @@ const InboxPage = () => {
     }
 
     try {
-      const payload = { ...composeForm };
+      const payload = { 
+        ...composeForm,
+        to: finalRecipients 
+      };
 
       payload.to = finalTo;
       if (saveAs === 'Draft') {
-        delete payload._id; // Don't send _id in the body for create/update
+        delete payload._id; 
         const thunk = composeForm._id ? updateDraft({ draftId: composeForm._id, payload }) : createDraft(payload);
         await dispatch(thunk).unwrap();
         toast.success('Saved as draft');
-      } else { // 'Sent'
+      } else { 
         if (composeForm._id) {
           // It's an existing draft, so update it then send it
           const updatedDraft = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
           await dispatch(sendMessage(updatedDraft)).unwrap();
         } else {
-          // It's a new message, send it directly
           await dispatch(sendDirectMessage(payload)).unwrap();
         }
         toast.success('Message sent successfully');
@@ -321,8 +322,8 @@ const InboxPage = () => {
           >
             <Card
               className={`p-4 cursor-pointer transition-all border-l-4 ${selectedMessage?._id === message._id
-                  ? 'border-l-purple-600 bg-purple-50'
-                  : 'border-l-transparent hover:border-l-purple-300'
+                  ? 'border-l-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                  : 'border-l-transparent hover:border-l-purple-300 dark:bg-gray-800'
                 }`}
               onClick={() => setSelectedMessage(message)}
             >
@@ -332,26 +333,37 @@ const InboxPage = () => {
                     {getMessageIcon(message.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-black truncate">{message.title}</h3>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-black truncate dark:text-gray-200">{message.title}</h3>
                       {message.status && getApprovalBadge(message.status)}
+                      <Badge variant="outline" className="text-xs">
+                        {message.type.replace('_', ' ')}
+                      </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {message.from ? `From: ${message.from.profile?.name}` : 'From: [Deleted User]'}
                       {message.to && message.to.length > 0 ? ` → To: ${message.to[0]?.profile?.name}` : ''}
                     </p>
-                    <p className="text-sm text-gray-500 line-clamp-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-500 line-clamp-2">
                       {message.description || message.message}
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span className="text-xs text-gray-400 px-[1px] py-[0px]">
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
                     {new Date(message.createdAt).toLocaleDateString()}
                   </span>
-                  <Badge variant="outline" className="text-xs whitespace-normal break-words leading-tight max-w-[120px]">
-                    {message.type.replace('_', ' ')}
-                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMessage(message._id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -364,10 +376,10 @@ const InboxPage = () => {
   const renderMessageDetail = () => {
     if (!selectedMessage) {
       return (
-        <Card className="p-12 text-center h-full flex items-center justify-center">
+        <Card className="p-12 text-center h-full flex items-center justify-center dark:bg-gray-800 dark:border-gray-700">
           <div>
-            <Mail className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500">Select a message to view details</p>
+            <Mail className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <p className="text-gray-500 dark:text-gray-400">Select a message to view details</p>
           </div>
         </Card>
       );
@@ -384,12 +396,12 @@ const InboxPage = () => {
 
 
     return (
-      <Card className="h-full flex flex-col">
-        <div className="p-6 border-b">
+      <Card className="h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
+        <div className="p-6 border-b dark:border-gray-700">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h2 className="text-2xl font-black mb-2">{selectedMessage.title}</h2>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
+              <h2 className="text-2xl font-black mb-2 dark:text-white">{selectedMessage.title}</h2>
+              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-1">
                   <User className="w-4 h-4" />
                   From: {selectedMessage.from?.profile?.name || '[Deleted User]'}
@@ -416,7 +428,7 @@ const InboxPage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleDeleteMessage(selectedMessage._id)}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -433,16 +445,16 @@ const InboxPage = () => {
           <div>
             {selectedMessage.description && (
               <>
-                <h3 className="font-semibold mb-2">Message</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.description}</p>
+                <h3 className="font-semibold mb-2 dark:text-gray-200">Message</h3>
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{selectedMessage.description}</p>
               </>
             )}
           </div>
         </ScrollArea>
 
         {needsApproval && (
-          <div className="p-6 border-t bg-gray-50">
-            <p className="text-sm text-gray-600 mb-4">This request requires your action</p>
+          <div className="p-6 border-t bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">This request requires your action</p>
             <div className="flex gap-3">
               <Button
                 onClick={() => setActionDialog({ open: true, type: 'accept', messageId: selectedMessage._id })}
@@ -454,7 +466,7 @@ const InboxPage = () => {
               <Button
                 onClick={() => setActionDialog({ open: true, type: 'reject', messageId: selectedMessage._id })}
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
               >
                 <XCircle className="w-4 h-4 mr-2" />
                 Reject
@@ -466,17 +478,12 @@ const InboxPage = () => {
     );
   };
 
-
-  console.log('Arrivals:', arrivals);
-  console.log('Sent:', sent);
-  console.log('Drafts:', drafts);
-
   return (
     <div className="flex h-screen bg-background pt-16">
-
+      {/* Pass global sidebar props */}
       <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={onToggleSidebar}
         activePage={activePage}
         onNavigate={handleNavigation}
         role={user?.role}
@@ -488,10 +495,10 @@ const InboxPage = () => {
             <h1 className="text-4xl md:text-5xl font-black mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Inbox
             </h1>
-            <p className="text-gray-600">Manage your messages and notifications</p>
+            <p className="text-gray-600 dark:text-gray-400">Manage your messages and notifications</p>
           </div>
 
-          <Card className="p-4 mb-6">
+          <Card className="p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -500,12 +507,12 @@ const InboxPage = () => {
                     placeholder="Search messages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 dark:bg-gray-900 dark:border-gray-600"
                   />
                 </div>
               </div>
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full md:w-64">
+                <SelectTrigger className="w-full md:w-64 dark:bg-gray-900 dark:border-gray-600">
                   <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -530,49 +537,51 @@ const InboxPage = () => {
 
           <div className="grid lg:grid-cols-5 gap-6">
             <div className="lg:col-span-2">
-              <Tabs defaultValue="inbox" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="inbox" className="flex items-center gap-2">
-                    <Inbox className="w-4 h-4" />
-                    Inbox
-                    {arrivals.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">
-                        {arrivals.length}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="sent" className="flex items-center gap-2">
-                    <Send className="w-4 h-4" />
-                    Sent
-                    {sent.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">
-                        {sent.length}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="draft" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Draft
-                    {drafts.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">
-                        {drafts.length}
-                      </Badge>
-                    )}
-                  </TabsTrigger>
-                </TabsList>
+              <div className="mb-4">
+                 <SegmentedControl
+                    options={[
+                      { 
+                        value: 'inbox', 
+                        label: (
+                          <div className="flex items-center justify-center gap-2">
+                            <Inbox className="w-4 h-4" />
+                            <span>Inbox</span>
+                            {arrivals.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{arrivals.length}</Badge>}
+                          </div>
+                        )
+                      },
+                      { 
+                        value: 'sent', 
+                        label: (
+                          <div className="flex items-center justify-center gap-2">
+                            <Send className="w-4 h-4" />
+                            <span>Sent</span>
+                            {sent.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{sent.length}</Badge>}
+                          </div>
+                        )
+                      },
+                      { 
+                        value: 'draft', 
+                        label: (
+                          <div className="flex items-center justify-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <span>Draft</span>
+                            {drafts.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">{drafts.length}</Badge>}
+                          </div>
+                        )
+                      },
+                    ]}
+                    value={activeTab}
+                    onChange={setActiveTab}
+                    variant={user?.role || 'blue'}
+                  />
+              </div>
 
-                <TabsContent value="inbox">
-                  {renderMessageList(arrivals, 'No messages in inbox')}
-                </TabsContent>
-
-                <TabsContent value="sent">
-                  {renderMessageList(sent, 'No sent messages')}
-                </TabsContent>
-
-                <TabsContent value="draft">
-                  {renderMessageList(drafts, 'No draft messages')}
-                </TabsContent>
-              </Tabs>
+              <div className="tab-transition">
+                {activeTab === 'inbox' && renderMessageList(arrivals, 'No messages in inbox')}
+                {activeTab === 'sent' && renderMessageList(sent, 'No sent messages')}
+                {activeTab === 'draft' && renderMessageList(drafts, 'No draft messages')}
+              </div>
             </div>
 
             <div className="lg:col-span-3">
@@ -582,19 +591,19 @@ const InboxPage = () => {
         </div>
 
         <Dialog open={composeDialogOpen} onOpenChange={setComposeDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl dark:bg-gray-800 dark:border-gray-700">
             <DialogHeader>
               <DialogTitle>Compose New Message</DialogTitle>
               <DialogDescription>Create a new message or save as draft</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="type">Message Type</Label>
                 <Select
                   value={composeForm.type}
                   onValueChange={(value) => setComposeForm({ ...composeForm, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -641,9 +650,10 @@ const InboxPage = () => {
                     onChange={(e) => setCurrentRecipient(prev => ({ ...prev, email: e.target.value }))}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
                     disabled={broadcastType !== 'specific'}
+                    className="dark:bg-gray-900 dark:border-gray-600"
                   />
                   <Select value={currentRecipient.role} onValueChange={(value) => setCurrentRecipient(prev => ({ ...prev, role: value }))}>
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className="w-[150px] dark:bg-gray-900 dark:border-gray-600">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent disabled={broadcastType !== 'specific'}>
@@ -656,7 +666,7 @@ const InboxPage = () => {
                   <Button type="button" onClick={handleAddRecipient} disabled={broadcastType !== 'specific'}><Plus className="w-4 h-4" /></Button>
                 </div>
                 {composeForm.to.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md">
+                  <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md dark:border-gray-700">
                     {composeForm.to.map((recipient, index) => (
                       <Badge key={index} variant="secondary" className="gap-1.5">
                         {recipient.email} ({recipient.role})
@@ -673,24 +683,25 @@ const InboxPage = () => {
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
                   placeholder="Enter message title"
                   value={composeForm.title}
                   onChange={(e) => setComposeForm({ ...composeForm, title: e.target.value })}
+                  className="dark:bg-gray-900 dark:border-gray-600"
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="message">Message *</Label>
                 <Textarea
                   id="message"
                   placeholder="Type your message here..."
                   value={composeForm.description}
                   onChange={(e) => setComposeForm({ ...composeForm, description: e.target.value })}
-                  className="min-h-32"
+                  className="min-h-32 dark:bg-gray-900 dark:border-gray-600"
                 />
               </div>
 
@@ -700,6 +711,7 @@ const InboxPage = () => {
                 variant="outline"
                 onClick={() => handleComposeMessage('Draft')}
                 disabled={loading === 'loading' || !composeForm.title.trim()}
+                className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Save as Draft
@@ -720,17 +732,17 @@ const InboxPage = () => {
           open={actionDialog.open}
           onOpenChange={(open) => setActionDialog({ ...actionDialog, open })}
         >
-          <AlertDialogContent>
+          <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
             <AlertDialogHeader>
-              <AlertDialogTitle>
+              <AlertDialogTitle className="dark:text-white">
                 {actionDialog.type === 'accept' ? 'Accept Request' : 'Reject Request'}
               </AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogDescription className="dark:text-gray-400">
                 Are you sure you want to {actionDialog.type} this request? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => handleApprovalAction(actionDialog.type)}
                 className={

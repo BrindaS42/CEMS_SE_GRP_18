@@ -5,31 +5,28 @@ import { EventsTab } from '../../Components/Organizers/EventsTab';
 import { AnalyticsTab } from '../../Components/Organizers/AnalyticsTab';
 import { TeamsTab } from '../../Components/Organizers/TeamsTab';
 import { Button } from '../../Components/ui/button';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+
 import { Plus } from 'lucide-react';
 import { SegmentedControl } from '../../Components/ui/segmented-control';
 
 export default function OrganizerDashboard({ onNavigate, isSidebarCollapsed, onToggleSidebar }) {
+  const navigate = useNavigate(); // Initialize navigation hook
   const [activeTab, setActiveTab] = useState('events');
 
   const handleCreateEvent = () => {
-    // Navigate to admin panel and open create event modal
-    if (onNavigate) {
-      onNavigate('admin', { openCreateEventModal: true });
-    }
+    // Navigate to admin panel and pass state to open create event modal
+    navigate('/organizer/admin', { state: { openCreateEventModal: true } });
   };
 
   const handleCreateTeam = () => {
-    // Navigate to admin panel and open create team modal
-    if (onNavigate) {
-      onNavigate('admin', { openCreateTeamModal: true });
-    }
+    // Navigate to admin panel and pass state to open create team modal
+    navigate('/organizer/admin', { state: { openCreateTeamModal: true } });
   };
 
   const handleViewEvent = (eventId) => {
     // Navigate to admin panel and highlight the event
-    if (onNavigate) {
-      onNavigate('admin', { highlightEventId: eventId });
-    }
+    navigate('/organizer/admin', { state: { highlightEventId: eventId } });
   };
 
   return (

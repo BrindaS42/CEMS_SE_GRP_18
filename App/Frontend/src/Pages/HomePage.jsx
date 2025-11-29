@@ -68,15 +68,8 @@ export const HomePage = () => {
     },
   ];
 
-  const stats = [
-    { label: 'Active Events', value: '500+', icon: Calendar },
-    { label: 'Students', value: '10K+', icon: Users },
-    { label: 'Organizers', value: '200+', icon: Sparkles },
-    { label: 'Success Rate', value: '98%', icon: Trophy },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
       <section className="relative overflow-hidden pt-24 pb-20 px-4">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
@@ -85,7 +78,7 @@ export const HomePage = () => {
               scale: [1, 1.2, 1],
             }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl"
+            className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl dark:opacity-20"
           />
           <motion.div
             animate={{
@@ -93,14 +86,14 @@ export const HomePage = () => {
               scale: [1, 1.3, 1],
             }}
             transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-            className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl"
+            className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl dark:opacity-20"
           />
           <motion.div
             animate={{
               y: [0, -30, 0],
             }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-40 right-1/4 w-24 h-24 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full blur-2xl"
+            className="absolute top-40 right-1/4 w-24 h-24 bg-gradient-to-br from-orange-400/30 to-red-400/30 rounded-full blur-2xl dark:opacity-20"
           />
         </div>
 
@@ -118,7 +111,7 @@ export const HomePage = () => {
                     ease: 'easeInOut',
                   }}
                 >
-                  <Icon className="w-8 h-8 text-purple-500" />
+                  <Icon className="w-8 h-8 text-purple-500 dark:text-purple-400" />
                 </motion.div>
               ))}
             </div>
@@ -129,11 +122,11 @@ export const HomePage = () => {
               transition={{ duration: 0.8 }}
             >
               <h1 className="text-6xl md:text-8xl font-black mb-6">
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 dark:from-purple-400 dark:via-pink-400 dark:to-orange-400 bg-clip-text text-transparent">
                   College Events
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 dark:from-blue-400 dark:via-cyan-400 dark:to-teal-400 bg-clip-text text-transparent">
                   Made Easy!
                 </span>
               </h1>
@@ -143,7 +136,7 @@ export const HomePage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto"
             >
               The ultimate platform for organizing, discovering, and participating in
               amazing college events. Join thousands of students today! 🎉
@@ -159,7 +152,7 @@ export const HomePage = () => {
                 <>
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg px-8 py-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg px-8 py-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all border-0"
                     asChild
                   >
                     <Link to="/events">
@@ -169,7 +162,7 @@ export const HomePage = () => {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg px-8 py-6 rounded-2xl border-2 border-purple-600 hover:bg-purple-50"
+                    className="text-lg px-8 py-6 rounded-2xl border-2 border-purple-600 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-300 dark:hover:bg-purple-900/30 dark:hover:text-white"
                     asChild
                   >
                     <Link to={`/${user?.role}/dashboard`}>
@@ -181,7 +174,7 @@ export const HomePage = () => {
                 <>
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg px-8 py-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-lg px-8 py-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all border-0"
                     asChild
                   >
                     <Link to="/register">
@@ -191,7 +184,7 @@ export const HomePage = () => {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg px-8 py-6 rounded-2xl border-2 border-purple-600 hover:bg-purple-50"
+                    className="text-lg px-8 py-6 rounded-2xl border-2 border-purple-600 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-300 dark:hover:bg-purple-900/30 dark:hover:text-white"
                     asChild
                   >
                     <Link to="/events">
@@ -205,33 +198,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="p-6 text-center border-2 hover:border-purple-400 transition-all hover:shadow-lg">
-                    <Icon className="w-10 h-10 mx-auto mb-3 text-purple-600" />
-                    <div className="text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="text-gray-600">{stat.label}</div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -241,11 +207,11 @@ export const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-5xl md:text-6xl font-black mb-4">
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
                 Amazing Features
               </span>
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               Everything you need to make your events successful ✨
             </p>
           </motion.div>
@@ -262,12 +228,12 @@ export const HomePage = () => {
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -10, scale: 1.02 }}
                 >
-                  <Card className="p-6 h-full border-2 hover:border-purple-400 transition-all hover:shadow-xl">
+                  <Card className="p-6 h-full border-2 hover:border-purple-400 dark:border-gray-700 dark:bg-gray-800/80 dark:hover:border-purple-500 transition-all hover:shadow-xl">
                     <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4`}>
                       <Icon className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-black mb-2">{feature.title}</h3>
-                    <p className="text-gray-600">{feature.description}</p>
+                    <h3 className="text-xl font-black mb-2 dark:text-white">{feature.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
                   </Card>
                 </motion.div>
               );
@@ -276,7 +242,7 @@ export const HomePage = () => {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100">
+      <section className="py-20 px-4 bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-gray-900 dark:via-purple-950/30 dark:to-gray-900">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -285,11 +251,11 @@ export const HomePage = () => {
             className="text-center mb-16"
           >
             <h2 className="text-5xl md:text-6xl font-black mb-4">
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
                 How It Works
               </span>
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               Get started in just 3 simple steps! 🚀
             </p>
           </motion.div>
@@ -324,12 +290,12 @@ export const HomePage = () => {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.2 }}
                 >
-                  <Card className="p-8 text-center border-2 hover:border-purple-400 transition-all hover:shadow-xl">
-                    <div className="text-6xl font-black text-purple-200 mb-4">{item.step}</div>
-                    <Icon className="w-16 h-16 mx-auto mb-4 text-purple-600" />
-                    <h3 className="text-2xl font-black mb-3">{item.title}</h3>
-                    <p className="text-gray-600">{item.description}</p>
-                    <CheckCircle2 className="w-8 h-8 mx-auto mt-4 text-green-500" />
+                  <Card className="p-8 text-center border-2 hover:border-purple-400 dark:border-gray-700 dark:bg-gray-800/80 dark:hover:border-purple-500 transition-all hover:shadow-xl">
+                    <div className="text-6xl font-black text-purple-200 dark:text-purple-900 mb-4">{item.step}</div>
+                    <Icon className="w-16 h-16 mx-auto mb-4 text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-2xl font-black mb-3 dark:text-white">{item.title}</h3>
+                    <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+                    <CheckCircle2 className="w-8 h-8 mx-auto mt-4 text-green-500 dark:text-green-400" />
                   </Card>
                 </motion.div>
               );
@@ -345,7 +311,7 @@ export const HomePage = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            <Card className="p-12 text-center bg-gradient-to-br from-purple-600 via-pink-600 to-orange-600 text-white border-0 shadow-2xl">
+            <Card className="p-12 text-center bg-gradient-to-br from-purple-600 via-pink-600 to-orange-600 dark:from-purple-900 dark:via-pink-900 dark:to-orange-900 text-white border-0 shadow-2xl">
               <Sparkles className="w-16 h-16 mx-auto mb-6" />
               <h2 className="text-4xl md:text-5xl font-black mb-6">
                 Ready to Get Started?
@@ -368,44 +334,44 @@ export const HomePage = () => {
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-100 via-teal-100 to-cyan-100">
+      <section className="py-20 px-4 bg-gradient-to-br from-emerald-100 via-teal-100 to-cyan-100 dark:from-gray-900 dark:via-emerald-950/20 dark:to-gray-900">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Card className="p-12 text-center border-4 border-emerald-600 shadow-2xl bg-white">
+            <Card className="p-12 text-center border-4 border-emerald-600 dark:border-emerald-800 shadow-2xl bg-white dark:bg-gray-800">
               <motion.div
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
               >
-                <Building2 className="w-20 h-20 mx-auto mb-6 text-emerald-600" />
+                <Building2 className="w-20 h-20 mx-auto mb-6 text-emerald-600 dark:text-emerald-400" />
               </motion.div>
-              <h2 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+              <h2 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
                 Is Your College on CEMS?
               </h2>
-              <p className="text-xl mb-8 text-gray-700">
+              <p className="text-xl mb-8 text-gray-700 dark:text-gray-300">
                 Register your college now and unlock the power of seamless event management for your entire campus! 
                 Join the growing network of institutions transforming their event experience.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <span>Free Registration</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <span>Quick Approval</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <span>Full Support</span>
                 </div>
               </div>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-lg px-10 py-7 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-lg px-10 py-7 rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all border-0"
                 asChild
               >
                 <Link to="/register-college">
@@ -414,9 +380,13 @@ export const HomePage = () => {
                   <ArrowRight className="ml-2 w-6 h-6" />
                 </Link>
               </Button>
-              <p className="mt-6 text-sm text-gray-500">
-                Already have an account? <Link to="/login" className="text-emerald-600 hover:underline font-semibold">Login here</Link>
-              </p>
+              
+              {/* Condition added to hide login link if authenticated */}
+              {!isAuthenticated && (
+                <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+                  Already have an account? <Link to="/login" className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Login here</Link>
+                </p>
+              )}
             </Card>
           </motion.div>
         </div>

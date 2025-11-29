@@ -6,9 +6,13 @@ import { TeamsTab } from '../../Components/Students/TeamsTab';
 import { ActivityCenterTab } from '../../Components/Students/ActivityCenterTab';
 import { SegmentedControl } from '../../Components/ui/segmented-control';
 
-export default function StudentDashboard({ onNavigate }) {
+// Updated to accept isSidebarCollapsed and onToggleSidebar props
+export default function StudentDashboard({ 
+  onNavigate, 
+  isSidebarCollapsed, 
+  onToggleSidebar 
+}) {
   const [activeTab, setActiveTab] = useState('events');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
 
   const handleNavigation = (page) => {
@@ -21,8 +25,8 @@ export default function StudentDashboard({ onNavigate }) {
   return (
     <div className="flex h-screen bg-background pt-16">
       <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={onToggleSidebar}
         activePage={activePage}
         onNavigate={handleNavigation}
       />
@@ -47,7 +51,7 @@ export default function StudentDashboard({ onNavigate }) {
               ]}
               value={activeTab}
               onChange={(value) => setActiveTab(value)}
-              variant="blue"
+              variant="student"
             />
           </div>
 
@@ -65,4 +69,6 @@ export default function StudentDashboard({ onNavigate }) {
 
 StudentDashboard.propTypes = {
   onNavigate: PropTypes.func,
+  isSidebarCollapsed: PropTypes.bool.isRequired,
+  onToggleSidebar: PropTypes.func.isRequired,
 };
