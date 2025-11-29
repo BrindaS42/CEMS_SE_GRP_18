@@ -129,12 +129,18 @@ async def generate_answer(state: State) -> State:
         
         if not result or (isinstance(result, list) and len(result) == 0):
              return {**state, "answer": "I searched the database but couldn't find any matching data for that query."}
+        
+        
 
         prompt_text = (
             f"User Question: {state.get('question')}\n\n"
             f"Mongo Query: {state.get('mongo_query')}\n\n"
-            f"Mongo Result (sample): {str(result)[:1000]}\n\n"
-            "Answer the user clearly and concisely based on the result. If the result contains documents, summarize key fields and list up to 5 matches."
+            f"Mongo Result: {result}\n\n"
+            "Instructions:\n"
+            "1. Answer the user clearly based ONLY on the Mongo Result provided.\n"
+            "2. If the result is a list of documents, analyze the entire structure (including nested fields like 'timeline' or 'config').\n"
+            "3. Summarize key details relevant to the question.\n"
+            "4. If the retrieved data does not answer the specific question, state 'No relevant data found'."
         )
         response = llm.invoke(prompt_text)
         answer = getattr(response, "content", None) or str(response)

@@ -163,6 +163,7 @@ def recommend_events_for_user(profile_id: str, top_k=5):
     print("USER GENOME:", user_genome)
 
     user_embedding = get_embedding(user_genome)
+    print("USER EMBEDDING:", user_embedding)
 
     # VECTOR SEARCH (not .query)
     res = qdrant_client.search(
