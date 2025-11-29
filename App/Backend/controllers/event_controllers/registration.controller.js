@@ -39,110 +39,133 @@ export const getRegistrationForm = async (req, res) => {
 };
 
 
+// registration.controller.js
+
 export const submitRegistration = async (req, res) => {
   try {
-    const { eventId, teamName, paymentProof, registrationData } = req.body;
-    const event = await Event.findById(eventId);
-    console.log("body", req.body);
-    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
+    const { eventId, teamName, paymentProof, registrationData } = req.body;
+    const event = await Event.findById(eventId);
+    
+    if (!event) return res.status(404).json({ success: false, message: "Event not found" });
 
-    let teamId = null;
-    if (event.config.registrationType === 'Team' && !teamName) {
-      return res.status(400).json({ success: false, message: "Team name is required for this event." });
-    }
-    if (event.config.registrationType === 'Team' && teamName) {
-      const team = await StudentTeam.findById(teamName);
-      if (!team) {
-        console.log("Team not found");
-        return res.status(404).json({ success: false, message: `Team with name "${teamName}" not found.` });
-      }
-      teamId = team._id;
-    }
+    let teamId = null;
+    if (event.config.registrationType === 'Team') {
+      if (!teamName) {
+        return res.status(400).json({ success: false, message: "Team name is required for this event." });
+      }
+      
+      // FIX: Find the team by its name field (string), not its ID
+      const team = await StudentTeam.findOne({ name: teamName });
+        
+      if (!team) {
+        console.log("Team not found or unauthorized");
+        return res.status(404).json({ success: false, message: `Team with name "${teamName}" not found.` });
+      }
+      
+      // SECURITY CHECK: Ensure the currently logged-in user is the team leader
+      if (team.leader.toString() !== req.user.id.toString()) {
+        return res.status(403).json({ success: false, message: "Only the designated team leader can submit the registration." });
+      }
 
-    if (teamId) {
-      const team = await StudentTeam.findById(teamId).lean();
-      const memberIds = team.members.map(m => m.member);
-      memberIds.push(team.leader);
+      teamId = team._id;
+    }
 
-      const existingRegistration = await Registration.findOne({ eventId, userId: { $in: memberIds } });
-      if (existingRegistration) {
-        return res.status(400).json({ success: false, message: "A member of your team is already registered for this event." });
-      }
-    } else {
-      // Individual registration check
-      const existing = await Registration.findOne({ eventId, userId: req.user.id });
-      if (existing) return res.status(400).json({ success: false, message: "You are already registered for this event." });
-    }
+    if (teamId) {
+      // If team registration, check if any member is already registered
+      const team = await StudentTeam.findById(teamId).lean();
+      const memberIds = team.members.map(m => m.member.toString());
+      memberIds.push(team.leader.toString());
 
-    const checkInCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+      const existingRegistration = await Registration.findOne({ 
+        eventId, 
+        userId: { $in: memberIds },
+      });
+      
+      if (existingRegistration) {
+        return res.status(400).json({ success: false, message: "A member of your team is already registered for this event." });
+      }
+    } else {
+      // Individual registration check
+      const existing = await Registration.findOne({ eventId, userId: req.user.id });
+      if (existing) return res.status(400).json({ success: false, message: "You are already registered for this event." });
+    }
 
-    const checkIns = (event.timeline || []).map((t) => ({
-      timelineRef: t._id,
-      checkedInAt: null,
-      status: "absent",
-    }));
+    const checkInCode = crypto.randomBytes(4).toString("hex").toUpperCase();
 
-    let paymentStatus = "not_required";
-    let status = "confirmed";
+    const checkIns = (event.timeline || []).map((t) => ({
+      timelineRef: t._id,
+      checkedInAt: null,
+      status: "absent",
+    }));
+
+    let paymentStatus = event.config?.fees > 0 ? "pending" : "not_required";
+    let status = event.config?.fees > 0 ? "pending" : "confirmed";
 
 
-    if (event.config?.fees > 0) {
-      paymentStatus = "pending";
-      status = "pending";
+    if (paymentStatus === "pending") {
+      // Find the organizer team to notify the leader and members
+      const team = await Team.findById(event.createdBy).lean();
+      let notificationRecipients = [];
+      if (team) {
+        notificationRecipients.push(team.leader);
+        team.members.forEach(member => notificationRecipients.push(member.member));
+      }
 
-      // Find the organizer team to notify the leader and members
-      const team = await Team.findById(event.createdBy).lean();
-      let notificationRecipients = [];
-      if (team) {
-        notificationRecipients.push(team.leader);
-        team.members.forEach(member => notificationRecipients.push(member.member));
-      }
-      console.log("notificationRecipients", notificationRecipients);
-      await notify({
-        type: "registration_approval_request",
-        from: req.user.id,
-        to: notificationRecipients, // organizer team or user
-        eventId,
-        title: `Registration approval required for ${event.title}`,
-        description: `A new participant has registered and payment proof needs verification. \n payment proof link: ${paymentProof}`,
-        role: "Organizer",
-      });
-    }
-  
+      await notify({
+        type: "registration_approval_request",
+        from: req.user.id,
+        to: notificationRecipients, 
+        eventId,
+        title: `Registration approval required for ${event.title}`,
+        description: `A new participant has registered and payment proof needs verification. \n Payment proof link: ${paymentProof || 'N/A'}`,
+        role: "Organizer",
+      });
+    }
+  
 
-    const registration = await Registration.create({
-      eventId,
-      userId: req.user.id,
-      teamName: teamId,
-      paymentProof,
-      registrationData,
-      paymentStatus,
-      status,
-      checkInCode,
-      checkIns,
-    });
+    const registration = await Registration.create({
+      eventId,
+      userId: req.user.id,
+      teamName: teamId, // Use the actual teamId if it was a team registration
+      paymentProof,
+      registrationData,
+      paymentStatus,
+      status,
+      checkInCode,
+      checkIns,
+    });
 
-    if (event.config.fees === 0 || paymentStatus === "not_required") {
-      event.registrations.push(registration._id);
-      await event.save();
-      await notify({
-        type: "announcement",
-        from: event.createdBy,
-        to: [req.user.id],
-        eventId,
-        title: `Registration Successful for ${event.title}`,
-        description: `🎉 You have successfully registered for "${event.title}". Your check-in code is: ${checkInCode}`,
-      });
-    }
+    if (status === "confirmed") {
+      // Only push to event.registrations if status is confirmed (no payment/auto-approved)
+      event.registrations.push(registration._id);
+      await event.save();
+      
+      await notify({
+        type: "announcement",
+        from: event.createdBy,
+        to: [req.user.id],
+        eventId,
+        title: `Registration Successful for ${event.title}`,
+        description: `🎉 You have successfully registered for "${event.title}". Your check-in code is: ${checkInCode}`,
+        role: "Student",
+      });
+    }
 
-    res.status(201).json({
-      success: true,
-      message: "Registration submitted successfully",
-      registration,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to submit registration", error: error.message });
-  }
+    res.status(201).json({
+      success: true,
+      message: paymentStatus === "pending" 
+        ? "Registration submitted successfully. Awaiting payment verification."
+        : "Registration submitted and confirmed successfully.",
+      registration,
+    });
+  } catch (error) {
+    console.error("Registration submission failed:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to submit registration due to a server error.", 
+      error: error.message 
+    });
+  }
 };
 
 
@@ -163,6 +186,28 @@ export const submitRegistration = async (req, res) => {
     }
   };
 
+
+
+export const getStudentTeams = async (req, res) => {
+    try {
+        const studentId = req.user.id;
+        // Fetch teams where the student is the leader OR a member
+        const teams = await StudentTeam.find({
+            $or: [
+                { leader: studentId },
+                { 'members.member': studentId, 'members.status': 'Approved' }
+            ]
+        }).select('_id name'); // Select only ID and name
+
+        res.status(200).json({
+            success: true,
+            teams,
+        });
+    } catch (error) {
+        console.error("❌ Failed to fetch student teams:", error.message);
+        res.status(500).json({ success: false, message: "Failed to fetch student teams", error: error.message });
+    }
+};
 
   export const markCheckIn = async (req, res) => {
     try {
