@@ -68,13 +68,6 @@ export const HomePage = () => {
     },
   ];
 
-  const stats = [
-    { label: 'Active Events', value: '500+', icon: Calendar },
-    { label: 'Students', value: '10K+', icon: Users },
-    { label: 'Organizers', value: '200+', icon: Sparkles },
-    { label: 'Success Rate', value: '98%', icon: Trophy },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
       <section className="relative overflow-hidden pt-24 pb-20 px-4">
@@ -201,33 +194,6 @@ export const HomePage = () => {
                 </>
               )}
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 px-4 bg-white/50 backdrop-blur-sm dark:bg-gray-900/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="p-6 text-center border-2 hover:border-purple-400 dark:border-gray-700 dark:hover:border-purple-500 dark:bg-gray-800/80 transition-all hover:shadow-lg">
-                    <Icon className="w-10 h-10 mx-auto mb-3 text-purple-600 dark:text-purple-400" />
-                    <div className="text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent mb-2">
-                      {stat.value}
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-300">{stat.label}</div>
-                  </Card>
-                </motion.div>
-              );
-            })}
           </div>
         </div>
       </section>

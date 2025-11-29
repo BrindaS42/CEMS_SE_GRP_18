@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { motion, AnimatePresence } from 'motion/react'; // Added AnimatePresence
 import {
   Settings,
-  User,
-  Bell,
   Lock,
   Globe,
   Moon,
   Sun,
-  Mail,
   Shield,
-  Monitor, // Added Monitor icon
-  Save,
+  Monitor, 
+  Check, // Added Check
+  X, // Added X
+  Info // Added Info
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { Sidebar } from '../components/general/Sidebar';
 import { SegmentedControl } from '../components/ui/segmented-control';
-import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group'; // Added RadioGroup
-import { useTheme } from '../utils/ThemeContext'; // Added useTheme hook
+import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
+import { useTheme } from '../utils/ThemeContext';
 import {
   Select,
   SelectContent,
@@ -32,49 +30,117 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import { requestPasswordReset, verifyOtpAndResetPassword } from '../store/auth.slice'; // Imported auth actions
 
 export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }) => {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { theme, setTheme } = useTheme(); // Use theme context
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(isSidebarCollapsed ?? true);
+  const { theme, setTheme } = useTheme(); 
   const [activePage, setActivePage] = useState('settings');
 
   const handleNavigation = (page) => setActivePage(page);
 
-  const handleToggleSidebar = () => {
-    if (onToggleSidebar) onToggleSidebar();
-    else setSidebarCollapsed((s) => !s);
-  };
-
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [eventReminders, setEventReminders] = useState(true);
-
-  const [activeTab, setActiveTab] = useState('general');
+  // Default to 'privacy'
+  const [activeTab, setActiveTab] = useState('privacy');
   const isStudentView = user?.role === 'student';
 
-  const handleSaveSettings = () => {
-    toast.success('Settings saved successfully!');
+  // --- Password Change State ---
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const [passwordCriteria, setPasswordCriteria] = useState({
+    length: false,
+    upper: false,
+    lower: false,
+    number: false,
+  });
+
+  // Dynamic Password Check
+  useEffect(() => {
+    setPasswordCriteria({
+      length: newPassword.length >= 8,
+      upper: /[A-Z]/.test(newPassword),
+      lower: /[a-z]/.test(newPassword),
+      number: /\d/.test(newPassword),
+    });
+  }, [newPassword]);
+
+  const handleSendOtp = async () => {
+    setLoading(true);
+    try {
+      // Assuming the API handles logged-in users by token, but passing email/role explicitly 
+      // ensures clarity if the backend expects it in the body.
+      await dispatch(requestPasswordReset({ email: user.email, role: user.role })).unwrap();
+      setOtpSent(true);
+      toast.success(`OTP sent to ${user.email}`);
+    } catch (error) {
+      toast.error(error || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSubmitChange = async () => {
+    if (!otp || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (!Object.values(passwordCriteria).every(Boolean)) {
+      toast.error('Please ensure password meets all requirements');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await dispatch(verifyOtpAndResetPassword({
+        otp,
+        newPassword,
+        email: user.email,
+        role: user.role
+      })).unwrap();
+      
+      toast.success('Password changed successfully!');
+      // Reset state
+      setOtpSent(false);
+      setOtp('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast.error(error || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper component for password rules
+  const PasswordRule = ({ satisfied, label }) => (
+    <div className={`flex items-center gap-2 text-sm transition-colors duration-200 ${satisfied ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-500'}`}>
+      {satisfied ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+      <span>{label}</span>
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-background pt-16">
       <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={onToggleSidebar}
         activePage={activePage}
         onNavigate={handleNavigation}
         role={user?.role}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50/50 dark:bg-black/20">
         <main className="flex-1 overflow-y-auto smooth-scroll p-6 page-transition">
-          <div
-            className={`max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
-              isStudentView
-                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950'
-                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950'
-            }`}
-          >
+          <div className={`max-w-4xl transition-colors duration-300`}>
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -83,7 +149,7 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
             >
               <div className="flex items-center gap-3 mb-2">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
                     isStudentView
                       ? 'bg-gradient-to-br from-purple-500 to-pink-500'
                       : 'bg-gradient-to-br from-indigo-600 to-purple-600'
@@ -91,13 +157,15 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                 >
                   <Settings className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  Settings
-                </h1>
+                <div>
+                  <h1 className="text-3xl font-black bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                    Settings
+                  </h1>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">
+                    Manage your account preferences and configurations
+                  </p>
+                </div>
               </div>
-              <p className="text-gray-600 dark:text-gray-300">
-                Manage your account settings and preferences
-              </p>
             </motion.div>
 
             {/* Settings Tabs */}
@@ -109,8 +177,6 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
             >
               <SegmentedControl
                 options={[
-                  { value: 'general', label: <div className="flex items-center justify-center gap-2"><User className="w-4 h-4" /> General</div> },
-                  { value: 'notifications', label: <div className="flex items-center justify-center gap-2"><Bell className="w-4 h-4" /> Notifications</div> },
                   { value: 'privacy', label: <div className="flex items-center justify-center gap-2"><Lock className="w-4 h-4" /> Privacy</div> },
                   { value: 'preferences', label: <div className="flex items-center justify-center gap-2"><Globe className="w-4 h-4" /> Preferences</div> },
                 ]}
@@ -119,213 +185,130 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
                 variant={user?.role || 'blue'}
               />
 
-              {/* General Settings */}
-              {activeTab === 'general' && (
-                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
-                  <h3 className="text-xl font-black mb-4 dark:text-white">General Settings</h3>
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="username" className="dark:text-gray-300">Username</Label>
-                      <Input
-                        id="username"
-                        placeholder="Enter your username"
-                        defaultValue={user?.username}
-                        className="dark:bg-gray-900 dark:border-gray-600"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="dark:text-gray-300">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        defaultValue={user?.email}
-                        className="dark:bg-gray-900 dark:border-gray-600"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="language" className="dark:text-gray-300">Language</Label>
-                      <Select defaultValue="en">
-                        <SelectTrigger id="language" className="dark:bg-gray-900 dark:border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="es">Spanish</SelectItem>
-                          <SelectItem value="fr">French</SelectItem>
-                          <SelectItem value="de">German</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
-                      <Button
-                        onClick={handleSaveSettings}
-                        className={
-                          isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
-                        }
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              {/* Notifications Settings */}
-              {activeTab === 'notifications' && (
-                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
-                  <h3 className="text-xl font-black mb-4 dark:text-white">
-                    Notification Preferences
-                  </h3>
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                          <Label className="dark:text-gray-300">Email Notifications</Label>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Receive email updates about your events
-                        </p>
-                      </div>
-                      <Switch
-                        checked={emailNotifications}
-                        onCheckedChange={setEmailNotifications}
-                      />
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                          <Label className="dark:text-gray-300">Push Notifications</Label>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Get notified about important updates
-                        </p>
-                      </div>
-                      <Switch
-                        checked={pushNotifications}
-                        onCheckedChange={setPushNotifications}
-                      />
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                          <Label className="dark:text-gray-300">Event Reminders</Label>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Receive reminders before events start
-                        </p>
-                      </div>
-                      <Switch
-                        checked={eventReminders}
-                        onCheckedChange={setEventReminders}
-                      />
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
-                      <Button
-                        onClick={handleSaveSettings}
-                        className={
-                          isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
-                        }
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
               {/* Privacy Settings */}
               {activeTab === 'privacy' && (
-                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
-                  <h3 className="text-xl font-black mb-4 dark:text-white">Privacy & Security</h3>
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label className="dark:text-gray-300">Profile Visibility</Label>
-                      <Select defaultValue="public">
-                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                          <SelectItem value="public">Public</SelectItem>
-                          <SelectItem value="private">Private</SelectItem>
-                          <SelectItem value="friends">Friends Only</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Choose who can see your profile
-                      </p>
+                <Card className="border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl bg-white dark:bg-gray-900 overflow-hidden animate-fade-in">
+                  <div className="p-6 md:p-8 space-y-8">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 dark:text-white">Privacy & Security</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Control your data and account security.</p>
                     </div>
 
-                    <Separator className="dark:bg-gray-700" />
+                    <div className="space-y-8">
+                      {/* Change Password Section */}
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium dark:text-gray-300 flex items-center gap-2">
+                          Change Password
+                          {otpSent && <span className="text-xs font-normal text-muted-foreground">(Step 2 of 2)</span>}
+                        </Label>
+                        
+                        <div className="border rounded-xl p-6 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-950/30">
+                          {!otpSent ? (
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                  <Lock className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-foreground">Secure Password Change</p>
+                                  <p>We'll send a verification code to <strong>{user?.email}</strong> to confirm it's you.</p>
+                                </div>
+                              </div>
+                              <Button onClick={handleSendOtp} disabled={loading} className="w-full sm:w-auto">
+                                {loading ? 'Sending...' : 'Send Verification Code'}
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="grid md:grid-cols-2 gap-8 animate-fade-in">
+                              {/* Left: Form */}
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label>Verification Code</Label>
+                                  <Input 
+                                    value={otp} 
+                                    onChange={(e) => setOtp(e.target.value)} 
+                                    placeholder="Enter 6-digit code" 
+                                    maxLength={6}
+                                    className="dark:bg-gray-950/50"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>New Password</Label>
+                                  <Input 
+                                    type="password" 
+                                    value={newPassword} 
+                                    onChange={(e) => setNewPassword(e.target.value)} 
+                                    placeholder="Enter new password"
+                                    className="dark:bg-gray-950/50"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Confirm Password</Label>
+                                  <Input 
+                                    type="password" 
+                                    value={confirmPassword} 
+                                    onChange={(e) => setConfirmPassword(e.target.value)} 
+                                    placeholder="Confirm new password"
+                                    className="dark:bg-gray-950/50"
+                                  />
+                                </div>
+                                <div className="flex gap-3 pt-2">
+                                  <Button 
+                                    onClick={handleSubmitChange} 
+                                    disabled={loading}
+                                    className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0 hover:opacity-90"
+                                  >
+                                    {loading ? 'Updating...' : 'Change Password'}
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => {
+                                      setOtpSent(false);
+                                      setOtp('');
+                                      setNewPassword('');
+                                      setConfirmPassword('');
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
 
-                    <div className="space-y-4">
-                      <Label className="dark:text-gray-300">Password</Label>
-                      <div className="grid gap-4">
-                        <Input type="password" placeholder="Current password" className="dark:bg-gray-900 dark:border-gray-600" />
-                        <Input type="password" placeholder="New password" className="dark:bg-gray-900 dark:border-gray-600" />
-                        <Input
-                          type="password"
-                          placeholder="Confirm new password"
-                          className="dark:bg-gray-900 dark:border-gray-600"
-                        />
+                              {/* Right: Requirements */}
+                              <div className="bg-white dark:bg-black/20 p-5 rounded-xl border dark:border-gray-700 h-fit shadow-sm">
+                                <div className="flex items-center gap-2 mb-4 text-blue-600 dark:text-blue-400">
+                                  <Info className="w-5 h-5" />
+                                  <h4 className="font-semibold">Password Requirements</h4>
+                                </div>
+                                <div className="space-y-3">
+                                  <PasswordRule satisfied={passwordCriteria.length} label="At least 8 characters" />
+                                  <PasswordRule satisfied={passwordCriteria.upper} label="One uppercase letter (A-Z)" />
+                                  <PasswordRule satisfied={passwordCriteria.lower} label="One lowercase letter (a-z)" />
+                                  <PasswordRule satisfied={passwordCriteria.number} label="One number (0-9)" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <Separator className="dark:bg-gray-700" />
+                      <Separator className="bg-gray-100 dark:bg-gray-800" />
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-900/20 dark:border-red-800/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
-                        <h4 className="font-semibold text-red-900 dark:text-red-300">
-                          Danger Zone
-                        </h4>
+                      {/* Danger Zone */}
+                      <div className="bg-red-50 border border-red-100 rounded-xl p-4 dark:bg-red-900/10 dark:border-red-900/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
+                          <h4 className="font-semibold text-red-900 dark:text-red-300">
+                            Danger Zone
+                          </h4>
+                        </div>
+                        <p className="text-sm text-red-700 dark:text-red-400 mb-4">
+                          Once you delete your account, there is no going back. Please be certain.
+                        </p>
+                        <Button variant="destructive" className="rounded-lg bg-red-600 hover:bg-red-700 border-0">
+                          Delete Account
+                        </Button>
                       </div>
-                      <p className="text-sm text-red-700 dark:text-red-300/80 mb-3">
-                        Delete your account and all associated data
-                      </p>
-                      <Button variant="destructive" size="sm">
-                        Delete Account
-                      </Button>
-                    </div>
-
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
-                      <Button
-                        onClick={handleSaveSettings}
-                        className={
-                          isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
-                        }
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -333,158 +316,94 @@ export const SettingsPage = ({ onNavigate, isSidebarCollapsed, onToggleSidebar }
 
               {/* Preferences Settings */}
               {activeTab === 'preferences' && (
-                <Card className="p-6 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
-                  <h3 className="text-xl font-black mb-4 dark:text-white">
-                    Appearance & Preferences
-                  </h3>
-                  <div className="space-y-6">
-                    {/* Theme Selection */}
-                    <div className="space-y-3">
-                      <Label className="dark:text-gray-300 text-base">Theme Mode</Label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Choose how the application looks on your device
-                      </p>
-                      
-                      <RadioGroup 
-                        value={theme} 
-                        onValueChange={(value) => setTheme(value)} 
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2"
-                      >
-                        {/* Light Theme Option */}
-                        <label
-                          htmlFor="light"
-                          className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 ${
-                            theme === 'light' 
-                              ? 'border-primary bg-accent/50 dark:bg-accent/10' 
-                              : 'border-border dark:border-gray-700'
-                          }`}
+                <Card className="border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl bg-white dark:bg-gray-900 overflow-hidden animate-fade-in">
+                  <div className="p-6 md:p-8 space-y-8">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 dark:text-white">
+                        Appearance & Preferences
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Customize how CEMS looks and feels for you.</p>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {/* Theme Selection */}
+                      <div className="space-y-3">
+                        <Label className="text-base font-medium dark:text-gray-300">Theme Mode</Label>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Select your preferred interface appearance.
+                        </p>
+                        
+                        <RadioGroup 
+                          value={theme} 
+                          onValueChange={(value) => setTheme(value)} 
+                          className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2"
                         >
-                          <RadioGroupItem value="light" id="light" className="sr-only" />
-                          <div className="w-full aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center mb-2 overflow-hidden">
-                            <div className="w-3/4 h-3/4 bg-white rounded shadow-sm flex flex-col gap-2 p-2">
-                              <div className="w-1/2 h-2 bg-gray-200 rounded" />
-                              <div className="w-full h-2 bg-gray-100 rounded" />
-                              <div className="w-full h-2 bg-gray-100 rounded" />
+                          {/* Light Theme Option */}
+                          <label
+                            htmlFor="light"
+                            className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                              theme === 'light' 
+                                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                          >
+                            <RadioGroupItem value="light" id="light" className="sr-only" />
+                            <div className="w-full aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center mb-2 overflow-hidden">
+                              <div className="w-3/4 h-3/4 bg-white rounded shadow-sm flex flex-col gap-2 p-2">
+                                <div className="w-1/2 h-2 bg-gray-200 rounded" />
+                                <div className="w-full h-2 bg-gray-100 rounded" />
+                                <div className="w-full h-2 bg-gray-100 rounded" />
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Sun className="w-4 h-4 text-orange-500" />
-                            <span className="font-medium dark:text-gray-200">Light</span>
-                          </div>
-                        </label>
-
-                        {/* Dark Theme Option */}
-                        <label
-                          htmlFor="dark"
-                          className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 ${
-                            theme === 'dark' 
-                              ? 'border-primary bg-accent/50 dark:bg-accent/10' 
-                              : 'border-border dark:border-gray-700'
-                          }`}
-                        >
-                          <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                          <div className="w-full aspect-video bg-gray-900 rounded-lg border border-gray-800 flex items-center justify-center mb-2 overflow-hidden">
-                             <div className="w-3/4 h-3/4 bg-gray-800 rounded shadow-sm flex flex-col gap-2 p-2">
-                              <div className="w-1/2 h-2 bg-gray-700 rounded" />
-                              <div className="w-full h-2 bg-gray-700 rounded" />
-                              <div className="w-full h-2 bg-gray-700 rounded" />
+                            <div className="flex items-center gap-2">
+                              <Sun className={`w-4 h-4 ${theme === 'light' ? 'text-blue-500' : 'text-gray-400'}`} />
+                              <span className={`font-medium ${theme === 'light' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>Light</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Moon className="w-4 h-4 text-indigo-400" />
-                            <span className="font-medium dark:text-gray-200">Dark</span>
-                          </div>
-                        </label>
+                          </label>
 
-                        {/* System Theme Option */}
-                        <label
-                          htmlFor="system"
-                          className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 ${
-                            theme === 'system' 
-                              ? 'border-primary bg-accent/50 dark:bg-accent/10' 
-                              : 'border-border dark:border-gray-700'
-                          }`}
-                        >
-                          <RadioGroupItem value="system" id="system" className="sr-only" />
-                          <div className="w-full aspect-video bg-gradient-to-br from-gray-100 to-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center mb-2">
-                             <Monitor className="w-8 h-8 text-gray-500 dark:text-gray-400" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Monitor className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium dark:text-gray-200">System</span>
-                          </div>
-                        </label>
-                      </RadioGroup>
-                    </div>
+                          {/* Dark Theme Option */}
+                          <label
+                            htmlFor="dark"
+                            className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                              theme === 'dark' 
+                                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                          >
+                            <RadioGroupItem value="dark" id="dark" className="sr-only" />
+                            <div className="w-full aspect-video bg-gray-900 rounded-lg border border-gray-800 flex items-center justify-center mb-2 overflow-hidden">
+                               <div className="w-3/4 h-3/4 bg-gray-800 rounded shadow-sm flex flex-col gap-2 p-2">
+                                <div className="w-1/2 h-2 bg-gray-700 rounded" />
+                                <div className="w-full h-2 bg-gray-700 rounded" />
+                                <div className="w-full h-2 bg-gray-700 rounded" />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Moon className={`w-4 h-4 ${theme === 'dark' ? 'text-blue-500' : 'text-gray-400'}`} />
+                              <span className={`font-medium ${theme === 'dark' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>Dark</span>
+                            </div>
+                          </label>
 
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="space-y-2">
-                      <Label className="dark:text-gray-300">Timezone</Label>
-                      <Select defaultValue="utc">
-                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                          <SelectItem value="utc">UTC</SelectItem>
-                          <SelectItem value="est">Eastern Time</SelectItem>
-                          <SelectItem value="pst">Pacific Time</SelectItem>
-                          <SelectItem value="ist">
-                            Indian Standard Time
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="space-y-2">
-                      <Label className="dark:text-gray-300">Date Format</Label>
-                      <Select defaultValue="mdy">
-                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                          <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
-                          <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
-                          <SelectItem value="ymd">YYYY/MM/DD</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="space-y-2">
-                      <Label className="dark:text-gray-300">Default View</Label>
-                      <Select defaultValue="grid">
-                        <SelectTrigger className="dark:bg-gray-900 dark:border-gray-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
-                          <SelectItem value="grid">Grid View</SelectItem>
-                          <SelectItem value="list">List View</SelectItem>
-                          <SelectItem value="compact">
-                            Compact View
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Separator className="dark:bg-gray-700" />
-
-                    <div className="flex justify-end gap-3">
-                      <Button variant="outline" className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Cancel</Button>
-                      <Button
-                        onClick={handleSaveSettings}
-                        className={
-                          isStudentView
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0'
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-0'
-                        }
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                      </Button>
+                          {/* System Theme Option */}
+                          <label
+                            htmlFor="system"
+                            className={`relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                              theme === 'system' 
+                                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-700'
+                            }`}
+                          >
+                            <RadioGroupItem value="system" id="system" className="sr-only" />
+                            <div className="w-full aspect-video bg-gradient-to-br from-gray-100 to-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center mb-2">
+                               <Monitor className={`w-8 h-8 ${theme === 'system' ? 'text-blue-500' : 'text-gray-400'}`} />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Monitor className={`w-4 h-4 ${theme === 'system' ? 'text-blue-500' : 'text-gray-400'}`} />
+                              <span className={`font-medium ${theme === 'system' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>System</span>
+                            </div>
+                          </label>
+                        </RadioGroup>
+                      </div>
                     </div>
                   </div>
                 </Card>

@@ -1,37 +1,17 @@
-// ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'motion/react';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Linkedin,
-  Github,
-  Edit,
-  Save,
-  X,
-  Plus,
-  Trophy,
-  FileText,
-  Camera,
-  Building,
-  Link as LinkIcon,
-  Briefcase,
-  Flag,
-  AlertTriangle,
-  XCircle,
+  User, Mail, Phone, MapPin, Calendar, Linkedin, Github, Edit, Save, X, Plus, Trophy, FileText, Camera, Building, Link as LinkIcon, Briefcase, Flag, AlertTriangle, XCircle,
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Badge } from '../components/ui/badge';
-import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { SegmentedControl } from '../components/ui/segmented-control'; // UPDATED: Imported SegmentedControl
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SegmentedControl } from '@/components/ui/segmented-control'; 
 import {
   Dialog,
   DialogContent,
@@ -39,22 +19,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu';
 import { Sidebar } from '@/components/general/Sidebar';
-import { updateAuthProfile } from '../store/auth.slice.js';
+import { updateAuthProfile } from '@/store/auth.slice.js';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { createReport } from '../store/admin.slice.js';
+import { createReport } from '@/store/admin.slice.js';
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const ProfilePage = () => {
+export const ProfilePage = ({ isSidebarCollapsed, onToggleSidebar }) => {
   const dispatch = useDispatch();
   const { user: loggedInUser } = useSelector((state) => state.auth || {});
   const { id: userIdFromUrl } = useParams();
@@ -72,7 +52,6 @@ export const ProfilePage = () => {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
 
-  // UPDATED: State for Segmented Control
   const [activeTab, setActiveTab] = useState('info');
 
   const isOwnProfile = !userIdFromUrl || userIdFromUrl === loggedInUser?.id;
@@ -82,7 +61,6 @@ export const ProfilePage = () => {
   const isOrganizerView = displayUser?.role === 'organizer';
   const isSponsorView = displayUser?.role === 'sponsor';
 
-  // Fetch profile if viewing someone else's
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (userIdFromUrl && !isOwnProfile) {
@@ -101,7 +79,6 @@ export const ProfilePage = () => {
     fetchUserProfile();
   }, [userIdFromUrl, isOwnProfile]);
 
-  // Profile is now loaded with auth, sync to local state when it changes
   useEffect(() => {
     if (displayUser) {
       setProfileData({
@@ -131,14 +108,8 @@ export const ProfilePage = () => {
       toast.error('Please fill in all required fields');
       return;
     }
-
     const updatedAchievements = [...(profileData.pastAchievements || []), newAchievement];
-
-    setProfileData({
-      ...profileData,
-      pastAchievements: updatedAchievements,
-    });
-
+    setProfileData({ ...profileData, pastAchievements: updatedAchievements });
     setNewAchievement({ title: '', description: '', proof: '' });
     setAchievementDialog(false);
     toast.success('Achievement added! Remember to save your profile.');
@@ -146,51 +117,31 @@ export const ProfilePage = () => {
 
   const handleRemoveAchievement = (index) => {
     const updatedAchievements = (profileData.pastAchievements || []).filter((_, i) => i !== index);
-    setProfileData({
-      ...profileData,
-      pastAchievements: updatedAchievements,
-    });
+    setProfileData({ ...profileData, pastAchievements: updatedAchievements });
   };
 
   const handleAddInterest = (interest) => {
     if (!interest || !interest.trim()) return;
-
     const updatedInterests = [...(profileData.areasOfInterest || []), interest.trim()];
-
-    setProfileData({
-      ...profileData,
-      areasOfInterest: updatedInterests,
-    });
+    setProfileData({ ...profileData, areasOfInterest: updatedInterests });
   };
 
   const handleRemoveInterest = (index) => {
     const updatedInterests = (profileData.areasOfInterest || []).filter((_, i) => i !== index);
-    setProfileData({
-      ...profileData,
-      areasOfInterest: updatedInterests,
-    });
+    setProfileData({ ...profileData, areasOfInterest: updatedInterests });
   };
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const url = URL.createObjectURL(file);
-    setProfileData({
-      ...profileData,
-      profilePic: url,
-    });
+    setProfileData({ ...profileData, profilePic: url });
     toast.success('Profile picture uploaded!');
   };
 
   const getInitials = () => {
     if (profileData?.name) {
-      return profileData.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2);
+      return profileData.name.split(' ').map((n) => n[0]).join('').toUpperCase().substring(0, 2);
     }
     return (displayUser?.email?.substring(0, 2).toUpperCase()) || 'U';
   };
@@ -204,7 +155,6 @@ export const ProfilePage = () => {
 
   const handleSubmitReport = async () => {
     if (!reportReason.trim()) return;
-
     try {
       await dispatch(createReport({ modelType: 'user', id: userIdFromUrl, reason: reportReason })).unwrap();
       toast.success('User reported successfully. Our team will review it shortly.');
@@ -226,24 +176,23 @@ export const ProfilePage = () => {
   return (
     <div className="flex h-screen bg-background pt-16">
       <Sidebar
-        isCollapsed={true}
-        onToggleCollapse={() => {}}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={onToggleSidebar}
         activePage={'profile'}
         onNavigate={() => {}}
         role={loggedInUser?.role}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-y-auto smooth-scroll p-6 page-transition">
-          <div
-            className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${
-              isStudentView
-                ? 'bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950'
-                : 'bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-950 dark:via-indigo-950/20 dark:to-gray-950'
-            }`}
-          >
+        <main className={`flex-1 overflow-y-auto smooth-scroll page-transition transition-colors duration-300 ${
+            isStudentView
+              ? 'bg-gradient-to-br from-purple-50/50 via-pink-50/50 to-orange-50/50 dark:from-gray-950 dark:via-purple-950/10 dark:to-gray-950'
+              : 'bg-gradient-to-br from-indigo-50/50 via-purple-50/50 to-pink-50/50 dark:from-gray-950 dark:via-indigo-950/10 dark:to-gray-950'
+        }`}>
+          <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+            
             {/* Profile Header */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="p-8 mb-8 border-2 shadow-lg dark:bg-gray-800 dark:border-gray-700">
+              <Card className="p-8 border-2 border-white/50 dark:border-gray-700 shadow-lg dark:bg-gray-800 rounded-3xl backdrop-blur-sm bg-white/80">
                 <div className="flex flex-col md:flex-row items-start gap-8">
                   {/* Profile Picture */}
                   <div className="relative">
@@ -273,7 +222,7 @@ export const ProfilePage = () => {
                   {/* Profile Info */}
                   <div className="flex-1">
                     {isEditing ? (
-                      <div className="space-y-4">
+                      <div className="space-y-4 max-w-md">
                         <div>
                           <Label htmlFor="name">Full Name</Label>
                           <Input
@@ -339,7 +288,7 @@ export const ProfilePage = () => {
               </Card>
             </motion.div>
 
-            {/* UPDATED: Replaced Tabs with SegmentedControl */}
+            {/* Navigation and Content */}
             <div className="space-y-6">
               <div className="flex justify-center md:justify-start">
                 <SegmentedControl
@@ -351,31 +300,29 @@ export const ProfilePage = () => {
                   value={activeTab}
                   onChange={setActiveTab}
                   variant={loggedInUser?.role || 'student'}
-                  //className="w-full max-w-md"
                 />
               </div>
 
-              {/* Content Switching based on activeTab */}
               <div className="tab-transition">
                 {activeTab === 'info' && (
-                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <Card className="p-8 border-2 border-white/50 dark:border-gray-700 shadow-md dark:bg-gray-800 rounded-3xl backdrop-blur-sm bg-white/80 animate-fade-in">
                     <h2 className="text-2xl font-black mb-6 dark:text-white">Contact Information</h2>
-                    {/* ... existing Info content ... */}
-                    <div className="grid md:grid-cols-2 gap-6">
+                    
+                    <div className="grid md:grid-cols-2 gap-8">
                       <div>
-                        <Label htmlFor="email" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                        <Label htmlFor="email" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <Mail className="w-4 h-4" />
                           Email
                         </Label>
                         {isEditing ? (
                           <Input id="email" type="email" value={displayUser?.email || ''} disabled className="bg-gray-100 dark:bg-gray-900 dark:border-gray-600 dark:text-gray-400" />
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">{displayUser?.email || 'Not provided'}</p>
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">{displayUser?.email || 'Not provided'}</p>
                         )}
                       </div>
 
                       <div>
-                        <Label htmlFor="phone" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                        <Label htmlFor="phone" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <Phone className="w-4 h-4" />
                           Phone Number
                         </Label>
@@ -389,12 +336,12 @@ export const ProfilePage = () => {
                             className="dark:bg-gray-900 dark:border-gray-600"
                           />
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">{profileData?.contactNo || 'Not provided'}</p>
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">{profileData?.contactNo || 'Not provided'}</p>
                         )}
                       </div>
 
-                      <div>
-                        <Label htmlFor="dob" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                       <div>
+                        <Label htmlFor="dob" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <Calendar className="w-4 h-4" />
                           Date of Birth
                         </Label>
@@ -407,14 +354,14 @@ export const ProfilePage = () => {
                             className="dark:bg-gray-900 dark:border-gray-600"
                           />
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">
                             {profileData?.dob ? new Date(profileData.dob).toLocaleDateString() : 'Not provided'}
                           </p>
                         )}
                       </div>
 
-                      <div>
-                        <Label htmlFor="address" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                       <div>
+                        <Label htmlFor="address" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <MapPin className="w-4 h-4" />
                           Address
                         </Label>
@@ -427,12 +374,12 @@ export const ProfilePage = () => {
                             className="dark:bg-gray-900 dark:border-gray-600"
                           />
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">{profileData?.address || 'Not provided'}</p>
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">{profileData?.address || 'Not provided'}</p>
                         )}
                       </div>
 
                       <div>
-                        <Label htmlFor="linkedin" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                        <Label htmlFor="linkedin" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <Linkedin className="w-4 h-4" />
                           LinkedIn Profile
                         </Label>
@@ -449,17 +396,17 @@ export const ProfilePage = () => {
                             href={ensureAbsoluteUrl(profileData.linkedin)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400 text-lg"
                           >
-                            View Profile <LinkIcon className="w-3 h-3" />
+                            View Profile <LinkIcon className="w-4 h-4" />
                           </a>
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">Not provided</p>
                         )}
                       </div>
 
                       <div>
-                        <Label htmlFor="github" className="flex items-center gap-2 mb-2 dark:text-gray-300">
+                        <Label htmlFor="github" className="flex items-center gap-2 mb-2 dark:text-gray-300 text-base">
                           <Github className="w-4 h-4" />
                           GitHub Profile
                         </Label>
@@ -476,27 +423,26 @@ export const ProfilePage = () => {
                             href={ensureAbsoluteUrl(profileData.github)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400"
+                            className="text-blue-600 hover:underline flex items-center gap-1 dark:text-blue-400 text-lg"
                           >
-                            View Profile <LinkIcon className="w-3 h-3" />
+                            View Profile <LinkIcon className="w-4 h-4" />
                           </a>
                         ) : (
-                          <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                          <p className="text-gray-700 dark:text-gray-300 text-lg">Not provided</p>
                         )}
                       </div>
                     </div>
 
                     {/* Sponsor-specific fields */}
                     {isSponsorView && (
-                      <div className="mt-8 pt-8 border-t dark:border-gray-700">
+                      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
                         <h3 className="text-xl font-black mb-6 flex items-center gap-2 dark:text-white">
                           <Building className="w-5 h-5" />
                           Sponsor Details
                         </h3>
-                        {/* ... Sponsor specific fields (same as before) ... */}
                          <div className="grid md:grid-cols-2 gap-6">
                         <div className="md:col-span-2">
-                          <Label htmlFor="firmDescription" className="dark:text-gray-300">Firm Description</Label>
+                          <Label htmlFor="firmDescription" className="dark:text-gray-300 text-base mb-2 block">Firm Description</Label>
                           {isEditing ? (
                             <Textarea
                               id="firmDescription"
@@ -511,12 +457,12 @@ export const ProfilePage = () => {
                               className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : (
-                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.firmDescription || 'Not provided'}</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed">{profileData?.sponsorDetails?.firmDescription || 'Not provided'}</p>
                           )}
                         </div>
 
                         <div>
-                          <Label htmlFor="firmLogo" className="dark:text-gray-300">Firm Logo URL</Label>
+                          <Label htmlFor="firmLogo" className="dark:text-gray-300 text-base mb-2 block">Firm Logo URL</Label>
                           {isEditing ? (
                             <Input
                               id="firmLogo"
@@ -531,118 +477,16 @@ export const ProfilePage = () => {
                               className="dark:bg-gray-900 dark:border-gray-600"
                             />
                           ) : profileData?.sponsorDetails?.firmLogo ? (
-                            <div className="w-24 h-24 rounded-lg overflow-hidden border bg-gray-50 dark:bg-gray-900 dark:border-gray-600">
+                            <div className="w-24 h-24 rounded-xl overflow-hidden border bg-gray-50 dark:bg-gray-900 dark:border-gray-600 p-2">
                               <img src={profileData.sponsorDetails.firmLogo} alt="Firm Logo" className="w-full h-full object-contain" />
                             </div>
                           ) : (
-                            <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-lg">Not provided</p>
                           )}
                         </div>
 
-                        <div>
-                          <Label htmlFor="pocName" className="dark:text-gray-300">Point of Contact Name</Label>
-                          {isEditing ? (
-                            <Input
-                              id="pocName"
-                              value={profileData?.sponsorDetails?.poc?.name || ''}
-                              onChange={(e) =>
-                                setProfileData({
-                                  ...profileData,
-                                  sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, name: e.target.value } },
-                                })
-                              }
-                              placeholder="e.g., Jane Doe"
-                              className="dark:bg-gray-900 dark:border-gray-600"
-                            />
-                          ) : (
-                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.name || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label htmlFor="pocEmail" className="dark:text-gray-300">Point of Contact Email</Label>
-                          {isEditing ? (
-                            <Input
-                              id="pocEmail"
-                              type="email"
-                              value={profileData?.sponsorDetails?.poc?.email || ''}
-                              onChange={(e) =>
-                                setProfileData({
-                                  ...profileData,
-                                  sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, email: e.target.value } },
-                                })
-                              }
-                              placeholder="e.g., jane.doe@company.com"
-                              className="dark:bg-gray-900 dark:border-gray-600"
-                            />
-                          ) : (
-                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.email || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label htmlFor="pocContactNo" className="dark:text-gray-300">Point of Contact Phone</Label>
-                          {isEditing ? (
-                            <Input
-                              id="pocContactNo"
-                              type="tel"
-                              value={profileData?.sponsorDetails?.poc?.contactNo || ''}
-                              onChange={(e) =>
-                                setProfileData({
-                                  ...profileData,
-                                  sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, contactNo: e.target.value } },
-                                })
-                              }
-                              placeholder="e.g., +91 1234567890"
-                              className="dark:bg-gray-900 dark:border-gray-600"
-                            />
-                          ) : (
-                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.contactNo || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label htmlFor="pocRole" className="dark:text-gray-300">Point of Contact Role</Label>
-                          {isEditing ? (
-                            <Input
-                              id="pocRole"
-                              value={profileData?.sponsorDetails?.poc?.role || ''}
-                              onChange={(e) =>
-                                setProfileData({
-                                  ...profileData,
-                                  sponsorDetails: { ...profileData.sponsorDetails, poc: { ...profileData.sponsorDetails?.poc, role: e.target.value } },
-                                })
-                              }
-                              placeholder="e.g., Marketing Manager"
-                              className="dark:bg-gray-900 dark:border-gray-600"
-                            />
-                          ) : (
-                            <p className="text-gray-700 dark:text-gray-300">{profileData?.sponsorDetails?.poc?.role || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div className="md:col-span-2">
-                          <Label htmlFor="banner" className="dark:text-gray-300">Banner Image URL</Label>
-                          {isEditing ? (
-                            <Input
-                              id="banner"
-                              value={profileData?.sponsorDetails?.banner || ''}
-                              onChange={(e) =>
-                                setProfileData({
-                                  ...profileData,
-                                  sponsorDetails: { ...profileData.sponsorDetails, banner: e.target.value },
-                                })
-                              }
-                              placeholder="URL for a large banner image"
-                              className="dark:bg-gray-900 dark:border-gray-600"
-                            />
-                          ) : (
-                            <p className="text-gray-700 dark:text-gray-300 truncate">{profileData?.sponsorDetails?.banner || 'Not provided'}</p>
-                          )}
-                        </div>
-
-                        <div className="md:col-span-2">
-                          <Label htmlFor="links" className="dark:text-gray-300">Website & Social Links</Label>
+                         <div className="md:col-span-2">
+                          <Label htmlFor="links" className="dark:text-gray-300 text-base mb-2 block">Website & Social Links</Label>
                           {isEditing ? (
                             <Textarea
                               id="links"
@@ -661,7 +505,7 @@ export const ProfilePage = () => {
                               {profileData.sponsorDetails.links.map((link, idx) => (
                                 link.trim() && (
                                   <a key={idx} href={ensureAbsoluteUrl(link)} target="_blank" rel="noopener noreferrer">
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-300">
+                                    <Badge variant="outline" className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 dark:border-gray-600 dark:text-gray-300 py-1.5 px-3 text-sm">
                                       <LinkIcon className="w-3 h-3 mr-1.5" />
                                       Link {idx + 1}
                                     </Badge>
@@ -670,7 +514,7 @@ export const ProfilePage = () => {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-gray-700 dark:text-gray-300">Not provided</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-lg">Not provided</p>
                           )}
                         </div>
                       </div>
@@ -679,14 +523,14 @@ export const ProfilePage = () => {
 
                     {/* Resume Section - Students Only */}
                     {isStudentView && (
-                      <div className="mt-8 pt-8 border-t dark:border-gray-700">
-                        <Label className="flex items-center gap-2 mb-2 dark:text-gray-300">
-                          <FileText className="w-4 h-4" />
+                      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+                        <Label className="flex items-center gap-2 mb-4 dark:text-gray-300 text-base">
+                          <FileText className="w-5 h-5" />
                           Resume
                         </Label>
                         {isOwnProfile && profileData?.resume ? (
                           <div className="flex items-center gap-3">
-                            <Button variant="outline" asChild className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                            <Button variant="outline" asChild className="dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 h-11">
                               <a href={profileData?.resume} target="_blank" rel="noopener noreferrer">
                                 View Resume
                               </a>
@@ -711,7 +555,7 @@ export const ProfilePage = () => {
                             className="dark:bg-gray-900 dark:border-gray-600"
                           />
                         ) : (
-                          <p className="text-gray-500 dark:text-gray-400">No resume uploaded</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-lg">No resume uploaded</p>
                         )}
                       </div>
                     )}
@@ -719,7 +563,7 @@ export const ProfilePage = () => {
                 )}
 
                 {activeTab === 'achievements' && (
-                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <Card className="p-8 border-2 border-white/50 dark:border-gray-700 shadow-md dark:bg-gray-800 rounded-3xl backdrop-blur-sm bg-white/80 animate-fade-in">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-2xl font-black dark:text-white">Past Achievements</h2>
                       {isOwnProfile && isEditing && (
@@ -734,15 +578,15 @@ export const ProfilePage = () => {
                       <div className="space-y-4">
                         {profileData.pastAchievements.map((achievement, index) => (
                           <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                            <Card className="p-6 border-l-4 border-purple-500 dark:bg-gray-700 dark:border-t-0 dark:border-r-0 dark:border-b-0">
+                            <Card className="p-6 border-l-4 border-purple-500 dark:bg-gray-700 dark:border-t-0 dark:border-r-0 dark:border-b-0 shadow-sm">
                               <div className="flex items-start justify-between">
                                 <div className="flex gap-4 flex-1">
                                   <Trophy className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                                   <div className="flex-1">
-                                    <h3 className="font-black mb-1 dark:text-white">{achievement.title}</h3>
+                                    <h3 className="font-black mb-1 dark:text-white text-lg">{achievement.title}</h3>
                                     <p className="text-gray-600 dark:text-gray-300 mb-2">{achievement.description}</p>
                                     {achievement.proof && (
-                                      <Button variant="link" size="sm" asChild className="p-0 h-auto dark:text-blue-400">
+                                      <Button variant="link" size="sm" asChild className="p-0 h-auto dark:text-blue-400 font-semibold">
                                         <a href={achievement.proof} target="_blank" rel="noopener noreferrer">
                                           View Proof
                                         </a>
@@ -763,7 +607,7 @@ export const ProfilePage = () => {
                     ) : (
                       <div className="text-center py-12">
                         <Trophy className="w-16 h-16 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-                        <p className="text-gray-500 dark:text-gray-400">No achievements added yet</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg">No achievements added yet</p>
                         {isOwnProfile && isEditing && (
                           <Button onClick={() => setAchievementDialog(true)} variant="outline" className="mt-4 dark:text-gray-300 dark:border-gray-600">
                             Add Your First Achievement
@@ -775,13 +619,13 @@ export const ProfilePage = () => {
                 )}
 
                 {activeTab === 'interests' && (
-                  <Card className="p-8 dark:bg-gray-800 dark:border-gray-700 animate-fade-in">
+                  <Card className="p-8 border-2 border-white/50 dark:border-gray-700 shadow-md dark:bg-gray-800 rounded-3xl backdrop-blur-sm bg-white/80 animate-fade-in">
                     <h2 className="text-2xl font-black mb-6 dark:text-white">Areas of Interest</h2>
 
                     {profileData?.areasOfInterest && profileData.areasOfInterest.length > 0 ? (
                       <div className="flex flex-wrap gap-3">
                         {profileData.areasOfInterest.map((interest, index) => (
-                          <Badge key={index} variant="outline" className="text-base py-2 px-4 dark:text-gray-300 dark:border-gray-600">
+                          <Badge key={index} variant="outline" className="text-base py-2 px-4 dark:text-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-900/50">
                             {interest}
                             {isOwnProfile && isEditing && (
                               <button onClick={() => handleRemoveInterest(index)} className="ml-2 hover:text-red-600 dark:hover:text-red-400">
@@ -792,13 +636,13 @@ export const ProfilePage = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">No interests added yet</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-4 text-lg">No interests added yet</p>
                     )}
 
                     {isOwnProfile && isEditing && (
-                      <div className="mt-6">
-                        <Label htmlFor="new-interest" className="dark:text-gray-300">Add Interest</Label>
-                        <div className="flex gap-2 mt-2">
+                      <div className="mt-8">
+                        <Label htmlFor="new-interest" className="dark:text-gray-300 mb-2 block">Add Interest</Label>
+                        <div className="flex gap-3 mt-2">
                           <Input
                             id="new-interest"
                             placeholder="e.g., Web Development, Photography"
@@ -909,11 +753,10 @@ export const ProfilePage = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
           </div>
         </main>
       </div>
     </div>
   );
 };
-
-export default ProfilePage;

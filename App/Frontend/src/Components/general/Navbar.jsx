@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-// Corrected import from framer-motion
 import { motion, AnimatePresence } from 'framer-motion'; 
 import {
   Bell,
@@ -13,7 +12,8 @@ import {
   LogOut,
   Settings,
   Search,     
-  Briefcase,  
+  Briefcase,
+  LayoutDashboard, 
 } from 'lucide-react';
 import { logoutSuccess } from '../../store/auth.slice.js';
 import { Button } from '../ui/button.jsx';
@@ -47,7 +47,6 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-
   const handleLogout = () => {
     dispatch(logoutSuccess());
     navigate('/login');
@@ -61,11 +60,50 @@ export const Navbar = () => {
     }
   };
 
+  // Helper to determine dashboard path based on role
+  const getDashboardRoute = () => {
+    if (!user?.role) return '/';
+    switch (user.role) {
+      case 'student':
+        return '/student/dashboard';
+      case 'organizer':
+        return '/organizer/dashboard';
+      case 'sponsor':
+        return '/sponsor/admin'; 
+      case 'admin':
+        return '/admin/control-panel';
+      default:
+        return '/';
+    }
+  };
+
+  // Helper to check if we are currently inside "My Space"
+  // This checks if the current path starts with the user's role root path
+  const isMySpaceActive = () => {
+    if (!isAuthenticated) return false;
+    
+    const path = location.pathname;
+
+    // 1. Check shared "My Space" pages
+    if (path.startsWith('/inbox') || 
+        path.startsWith('/profile') || 
+        path.startsWith('/settings')) {
+      return true;
+    }
+
+    // 2. Check role-specific dashboard paths
+    if (user?.role) {
+      return path.startsWith(`/${user.role}`) || 
+             (user.role === 'admin' && path.startsWith('/admin'));
+    }
+
+    return false;
+  };
+
   const navLinks = [
     { path: '/', label: 'Home', icon: Home },
     { path: '/events', label: 'Events', icon: Calendar },
     { path: '/sponsors', label: 'Sponsors', icon: Briefcase }, 
-    
   ];
 
   const isActive = (path) => {
@@ -84,10 +122,10 @@ export const Navbar = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-blue-100 dark:border-gray-800 ${
         scrolled
-          ? 'bg-white/80 backdrop-blur-lg shadow-lg dark:bg-gray-900/80'
-          : 'bg-transparent'
+          ? 'bg-blue-50/95 backdrop-blur-md shadow-sm dark:bg-slate-900/95'
+          : 'bg-blue-50/80 backdrop-blur-md dark:bg-slate-900/80'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +136,7 @@ export const Navbar = () => {
               transition={{ duration: 0.6 }}
               className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                 isStudentView
-                  ? 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500'
+                  ? 'bg-gradient-to-br from-purple-50 via-pink-500 to-orange-500'
                   : 'bg-gradient-to-br from-indigo-600 to-purple-600'
               }`}
             >
@@ -121,7 +159,8 @@ export const Navbar = () => {
                 >
                   <motion.div
                     whileHover={{ y: -2 }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
                       active
                         ? isStudentView
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
@@ -140,8 +179,28 @@ export const Navbar = () => {
                 </Link>
               );
             })}
+
+            {/* My Space Button */}
+            {isAuthenticated && (
+              <Link to={getDashboardRoute()}>
+                <motion.div
+                   whileHover={{ y: -2 }}
+                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
+                     isMySpaceActive()
+                       ? isStudentView
+                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800/50'
+                   }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="text-sm font-medium">My Space</span>
+                </motion.div>
+              </Link>
+            )}
             
-            {/* <-- ADDED Search Bar --> */}
+            {/* Search Bar */}
             {isAuthenticated && (
               <form onSubmit={handleSearch} className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -166,7 +225,6 @@ export const Navbar = () => {
                   onClick={() => navigate('/inbox')}
                 >
                   <Bell className="w-5 h-5" />
-
                 </Button>
 
                 <DropdownMenu>
@@ -196,6 +254,12 @@ export const Navbar = () => {
                       <Link to="/profile" className="cursor-pointer">
                         <User className="w-4 h-4 mr-2" />
                         Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to={getDashboardRoute()} className="cursor-pointer">
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        My Space
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -252,7 +316,7 @@ export const Navbar = () => {
                     key={link.path}
                     to={link.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
                       active
                         ? isStudentView
                           ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
@@ -270,6 +334,24 @@ export const Navbar = () => {
                   </Link>
                 );
               })}
+              
+              {/* Mobile My Space Link */}
+              {isAuthenticated && (
+                <Link
+                  to={getDashboardRoute()}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
+                    isMySpaceActive()
+                      ? isStudentView
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  <span>My Space</span>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

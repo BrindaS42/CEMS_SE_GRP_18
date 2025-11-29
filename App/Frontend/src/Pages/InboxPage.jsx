@@ -4,28 +4,23 @@ import {motion} from 'motion/react';
 import {
   Inbox,
   Mail,
-  MailOpen,
+  Send,
+  FileText,
+  Edit3,
+  Plus,
   CheckCircle2,
   XCircle,
   Clock,
   User,
   Calendar,
-  Filter,
   Search,
   Trash2,
-  Eye,
-  Send,
-  FileText,
-  Edit3,
-  Plus,
-  Archive,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
-// Removed Tabs imports
-import { SegmentedControl } from '../components/ui/segmented-control'; // UPDATED
+import { SegmentedControl } from '../components/ui/segmented-control'; 
 import {
   Select,
   SelectContent,
@@ -56,7 +51,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/ui/skeleton';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { toast } from 'sonner';
-import {Sidebar} from '../components/general/Sidebar';
+import { Sidebar } from '../components/general/Sidebar';
 import {
   fetchArrivals,
   fetchSent,
@@ -71,11 +66,11 @@ import {
 } from '../store/inbox.slice';
 
 
-const InboxPage = () => {
+const InboxPage = ({ isSidebarCollapsed, onToggleSidebar }) => { // Accept props here
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { arrivals, sent, drafts, status: loading } = useSelector((state) => state.inbox) || { arrivals: [], sent: [], drafts: [], status: 'idle' };
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  
   const [activePage, setActivePage] = useState('inbox');
   const handleNavigation = (page) => setActivePage(page);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -88,7 +83,7 @@ const InboxPage = () => {
   });
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
   const [composeForm, setComposeForm] = useState({
-    _id: null, // To track editing
+    _id: null, 
     type: 'message',
     title: '',
     description: '',
@@ -97,7 +92,6 @@ const InboxPage = () => {
   });
   const [currentRecipient, setCurrentRecipient] = useState({ email: '', role: 'student' });
 
-  // UPDATED: State for Segmented Control
   const [activeTab, setActiveTab] = useState('inbox');
 
 
@@ -145,26 +139,41 @@ const InboxPage = () => {
       return;
     }
 
-    if (saveAs === 'Sent' && composeForm.to.length === 0) {
-      toast.error('Please specify a recipient');
+    // Prepare recipients: Use existing list OR add the current input if valid
+    let finalRecipients = [...composeForm.to];
+    
+    // If user typed an email but didn't click "+", add it automatically
+    if (currentRecipient.email.trim()) {
+      // Check if already added to avoid duplicates
+      const exists = finalRecipients.some(
+        r => r.email === currentRecipient.email && r.role === currentRecipient.role
+      );
+      if (!exists) {
+        finalRecipients.push(currentRecipient);
+      }
+    }
+
+    if (saveAs === 'Sent' && finalRecipients.length === 0) {
+      toast.error('Please specify at least one recipient');
       return;
     }
 
     try {
-      const payload = { ...composeForm };
+      const payload = { 
+        ...composeForm,
+        to: finalRecipients 
+      };
 
       if (saveAs === 'Draft') {
-        delete payload._id; // Don't send _id in the body for create/update
+        delete payload._id; 
         const thunk = composeForm._id ? updateDraft({ draftId: composeForm._id, payload }) : createDraft(payload);
         await dispatch(thunk).unwrap();
         toast.success('Saved as draft');
-      } else { // 'Sent'
+      } else { 
         if (composeForm._id) {
-          // It's an existing draft, so update it then send it
           const draftResult = await dispatch(updateDraft({ draftId: composeForm._id, payload })).unwrap();
           await dispatch(sendMessage(draftResult._id)).unwrap();
         } else {
-          // It's a new message, send it directly
           await dispatch(sendDirectMessage(payload)).unwrap();
         }
         toast.success('Message sent successfully');
@@ -306,9 +315,12 @@ const InboxPage = () => {
                     {getMessageIcon(message.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-black truncate dark:text-gray-200">{message.title}</h3>
                       {message.status && getApprovalBadge(message.status)}
+                      <Badge variant="outline" className="text-xs">
+                        {message.type.replace('_', ' ')}
+                      </Badge>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {message.from ? `From: ${message.from.profile?.name}` : 'From: [Deleted User]'}
@@ -320,12 +332,20 @@ const InboxPage = () => {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span className="text-xs text-gray-400 px-[1px] py-[0px]">
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
                     {new Date(message.createdAt).toLocaleDateString()}
                   </span>
-                  <Badge variant="outline" className="text-xs whitespace-normal break-words leading-tight max-w-[120px]">
-                    {message.type.replace('_', ' ')}
-                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMessage(message._id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -442,10 +462,10 @@ const InboxPage = () => {
 
   return (
     <div className="flex h-screen bg-background pt-16">
-
+      {/* Pass global sidebar props */}
       <Sidebar
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={onToggleSidebar}
         activePage={activePage}
         onNavigate={handleNavigation}
         role={user?.role}
@@ -499,7 +519,6 @@ const InboxPage = () => {
 
           <div className="grid lg:grid-cols-5 gap-6">
             <div className="lg:col-span-2">
-              {/* UPDATED: Replaced Tabs with SegmentedControl */}
               <div className="mb-4">
                  <SegmentedControl
                     options={[
@@ -537,11 +556,9 @@ const InboxPage = () => {
                     value={activeTab}
                     onChange={setActiveTab}
                     variant={user?.role || 'blue'}
-                    //className="w-full"
                   />
               </div>
 
-              {/* Content Switching */}
               <div className="tab-transition">
                 {activeTab === 'inbox' && renderMessageList(arrivals, 'No messages in inbox')}
                 {activeTab === 'sent' && renderMessageList(sent, 'No sent messages')}
@@ -562,7 +579,7 @@ const InboxPage = () => {
               <DialogDescription>Create a new message or save as draft</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="type">Message Type</Label>
                 <Select
                   value={composeForm.type}
@@ -582,7 +599,7 @@ const InboxPage = () => {
                 </Select>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label>To</Label>
                 <div className="flex gap-2">
                   <Input
@@ -623,7 +640,7 @@ const InboxPage = () => {
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
@@ -634,7 +651,7 @@ const InboxPage = () => {
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="message">Message *</Label>
                 <Textarea
                   id="message"
@@ -658,7 +675,7 @@ const InboxPage = () => {
               </Button>
               <Button
                 onClick={() => handleComposeMessage('Sent')}
-                disabled={loading === 'loading' || !composeForm.title.trim() || composeForm.to.length === 0}
+                disabled={loading === 'loading' || !composeForm.title.trim()}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 <Send className="w-4 h-4 mr-2" />

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 import { Sidebar } from '../../components/general/Sidebar';
 import { TeamsAdminTab } from '../../components/Organizers/Admin/TeamsAdminTab';
 import { CreateTeamModal } from '../../components/Organizers/Admin/CreateTeamModal';
@@ -23,8 +24,19 @@ export default function AdminPanel({
   onToggleSidebar,
 }) {
   const dispatch = useDispatch();
+  const location = useLocation(); // Hook to access navigation state
+  const navigationState = location.state || {}; // Safe access to state
+
+  // Determine effective values (props take precedence if passed, otherwise check navigation state)
+  // Note: In the App.jsx, these props are defaults, so state will drive the behavior when navigating.
+  const effectiveOpenCreateTeam = navigationState.openCreateTeamModal || openCreateTeamModal;
+  const effectiveOpenCreateEvent = navigationState.openCreateEventModal || openCreateEventModal;
+  const effectiveHighlightEventId = navigationState.highlightEventId || highlightEventId;
+  const effectiveHighlightTeamId = navigationState.highlightTeamId || highlightTeamId;
+  const effectiveEditTeamId = navigationState.editTeamId || editTeamId;
+
   const [activeTab, setActiveTab] = useState('teams');
-  const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(openCreateTeamModal);
+  const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(effectiveOpenCreateTeam);
   const [scrollToRegistrationId, setScrollToRegistrationId] = useState(null);
 
   // Redux state
@@ -37,33 +49,27 @@ export default function AdminPanel({
     }
   }, [dispatch, isAuthenticated]);
 
-  // Open modal when openCreateTeamModal prop changes
+  // Open Create Team modal when triggered via prop or navigation state
   useEffect(() => {
-    if (openCreateTeamModal) {
+    if (effectiveOpenCreateTeam) {
       setIsCreateTeamModalOpen(true);
-    }
-  }, [openCreateTeamModal]);
-
-  // Switch to teams tab and highlight when highlightTeamId is provided
-  useEffect(() => {
-    if (highlightTeamId) {
       setActiveTab('teams');
     }
-  }, [highlightTeamId]);
+  }, [effectiveOpenCreateTeam]);
 
-  // Switch to teams tab when editTeamId is provided
+  // Switch to teams tab and highlight/edit when needed
   useEffect(() => {
-    if (editTeamId) {
+    if (effectiveHighlightTeamId || effectiveEditTeamId) {
       setActiveTab('teams');
     }
-  }, [editTeamId]);
+  }, [effectiveHighlightTeamId, effectiveEditTeamId]);
 
-  // Switch to events tab when openCreateEventModal or highlightEventId is provided
+  // Switch to events tab when Create Event modal or Highlight Event is requested
   useEffect(() => {
-    if (openCreateEventModal || highlightEventId) {
+    if (effectiveOpenCreateEvent || effectiveHighlightEventId) {
       setActiveTab('events');
     }
-  }, [openCreateEventModal, highlightEventId]);
+  }, [effectiveOpenCreateEvent, effectiveHighlightEventId]);
 
   // Clear highlight when switching away from respective tabs
   useEffect(() => {
@@ -120,15 +126,15 @@ export default function AdminPanel({
               {activeTab === 'teams' && (
                 <TeamsAdminTab 
                   onCreateTeam={handleCreateTeam} 
-                  highlightTeamId={highlightTeamId} 
-                  editTeamId={editTeamId} 
+                  highlightTeamId={effectiveHighlightTeamId} 
+                  editTeamId={effectiveEditTeamId} 
                   onClearHighlight={onClearHighlight} 
                 />
               )}
               {activeTab === 'events' && (
                 <EventsAdminTab
-                  openCreateEventModal={openCreateEventModal}
-                  highlightEventId={highlightEventId}
+                  openCreateEventModal={effectiveOpenCreateEvent}
+                  highlightEventId={effectiveHighlightEventId}
                   onClearHighlight={onClearHighlight}
                   onNavigateToRegistration={handleNavigateToRegistration}
                 />

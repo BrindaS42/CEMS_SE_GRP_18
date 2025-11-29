@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Lock, LogIn, Mail } from 'lucide-react';
+import { Lock, LogIn, Mail } from 'lucide-react';
 import { Button } from '../../components/ui/button.jsx';
 import { Input } from '../../components/ui/input.jsx';
 import { Label } from '../../components/ui/label.jsx';
@@ -123,19 +123,6 @@ const LoginPage = () => {
             </CardHeader>
 
             <CardContent>
-              <Alert className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 dark:from-purple-950/30 dark:to-pink-950/30 dark:border-purple-800/50">
-                <AlertDescription>
-                  <p className="font-semibold text-purple-900 dark:text-purple-200 mb-2">🎯 Demo Credentials:</p>
-                  <ul className="text-sm space-y-1 text-purple-800 dark:text-purple-300">
-                    <li><strong>Student:</strong> student</li>
-                    <li><strong>Organizer:</strong> organizer</li>
-                    <li><strong>Sponsor:</strong> sponsor</li>
-                    <li><strong>Admin:</strong> admin</li>
-                    <li className="text-xs text-purple-600 dark:text-purple-400 mt-2">Password: any text (3+ characters)</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-              
               <div className="mb-6">
                 <SegmentedControl
                   options={[
@@ -147,7 +134,7 @@ const LoginPage = () => {
                   value={selectedRole}
                   onChange={setSelectedRole}
                   variant={selectedRole}
-                  isFullWidth={true} // Updated to force full width
+                  isFullWidth={true} 
                 />
               </div>
 
@@ -226,11 +213,6 @@ const LoginPage = () => {
                 Don't have an account?{' '}
                 <Link to="/register" className={`${currentColors.text} hover:underline font-medium`}>
                   Sign up
-                </Link>
-              </div>
-              <div className="text-center text-sm">
-                <Link to="/change-password" className="text-gray-500 dark:text-gray-400 hover:underline">
-                  Change Password
                 </Link>
               </div>
             </CardFooter>
