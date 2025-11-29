@@ -44,10 +44,23 @@ export const markCheckIn = createAsyncThunk('registration/checkIn', async (check
   }
 })
 
+export const fetchMyLeadTeams = createAsyncThunk('registration/fetchMyLeadTeams', async (_, { rejectWithValue }) => {
+  try {
+    console.log("Fetching teams where user is leader");
+    const res = await axios.get(`${API_BASE}/registrations/teams/my`)
+    console.log("Fetched teams:", res.data.teams);
+    return res.data.teams
+  } catch (err) {
+    return rejectWithValue(err?.response?.data?.error || 'Failed to fetch teams')
+  }
+})
+
 const initialState = {
   form: null,
   status: null,
+  myLeadTeams: [], // Add state for teams where user is leader
   loading: false,
+  teamsLoading: false,
   error: null,
 }
 
@@ -62,6 +75,9 @@ const registrationSlice = createSlice({
       .addCase(getRegistrationForm.rejected, (state, action) => { state.loading = false; state.error = action.payload })
       .addCase(submitRegistration.fulfilled, (state, action) => { state.status = action.payload })
       .addCase(getRegistrationStatus.fulfilled, (state, action) => { state.status = action.payload })
+      .addCase(fetchMyLeadTeams.pending, (state) => { state.teamsLoading = true; })
+      .addCase(fetchMyLeadTeams.fulfilled, (state, action) => { state.teamsLoading = false; state.myLeadTeams = action.payload; })
+      .addCase(fetchMyLeadTeams.rejected, (state, action) => { state.teamsLoading = false; state.error = action.payload; })
       .addCase(markCheckIn.fulfilled, (state, action) => { state.status = action.payload })
   }
 })

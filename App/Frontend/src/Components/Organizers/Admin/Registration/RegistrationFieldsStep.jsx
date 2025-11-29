@@ -26,7 +26,7 @@ export function RegistrationFieldsStep({ config, updateConfig }) {
   const handleAddField = () => {
     const newField = {
       id: `field-${Date.now()}`,
-      type: 'text',
+      inputType: 'text',
       title: '',
       description: '',
       required: false,

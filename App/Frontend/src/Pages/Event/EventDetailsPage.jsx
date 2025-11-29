@@ -31,6 +31,10 @@ import {
   ChevronRight,
   Star,
   Eye,
+  Search, // Added
+  X,      // Added
+  Shield, // Added
+  Check   // Added
 } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import { Card } from '@/Components/ui/card';
@@ -65,11 +69,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/Components/ui/dropdown-menu';
-import { SegmentedControl } from '@/Components/ui/segmented-control'; // Added SegmentedControl
+import { SegmentedControl } from '@/Components/ui/segmented-control';
 import { fetchEventDetails, addEventRating } from '@/Store/studentEvents.slice';
 import { createReport } from '@/Store/admin.slice';
-import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/Store/event.interaction.slice';
-import { submitRegistration, getRegistrationStatus, markCheckIn } from '@/Store/registration.slice';
+import { fetchAllMessages, sendMessage, clearMessages, addMessage } from '@/Store/event.interaction.slice'
+import { submitRegistration, getRegistrationStatus, markCheckIn, fetchMyLeadTeams } from '@/Store/registration.slice'
 import { toast } from 'sonner';
 import { ScrollArea } from '@/Components/ui/scroll-area';
 import { socket } from '@/service/socket';
@@ -84,6 +88,7 @@ export const EventDetailsPage = () => {
   const { currentEvent: event, loading } = useSelector((state) => state.studentEvents);
   const { messages: chatMessages, status: chatStatus } = useSelector((state) => state.eventInteraction) || { messages: [], status: 'idle' };
   const registrationStatus = useSelector((state) => state.registration.status);
+  const { myLeadTeams, teamsLoading } = useSelector((state) => state.registration);
   const announcements = event?.announcements || [];
   const sponsors = event?.sponsors || [];
   const reviews = event?.ratings || [];
@@ -106,6 +111,10 @@ export const EventDetailsPage = () => {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportText, setReportText] = useState('');
 
+  // --- New State for Team Search UI ---
+  const [teamSearchQuery, setTeamSearchQuery] = useState('');
+  const [showTeamDropdown, setShowTeamDropdown] = useState(false);
+
   const chatEndRef = useRef(null);
 
   const isStudentView = user?.role === 'student';
@@ -127,6 +136,11 @@ export const EventDetailsPage = () => {
     dispatch(fetchEventDetails(id));
     if (user?.role === 'student' && user.id) {
       dispatch(getRegistrationStatus({ eventId: id, participantId: user?.id }));
+    }
+    // Fetch teams if the user is a student
+    if (user?.role === 'student') {
+      dispatch(fetchMyLeadTeams());
+      console.log("Dispatched fetchMyLeadTeams", myLeadTeams);
     }
     dispatch(fetchAllMessages(id));
 
@@ -158,7 +172,7 @@ export const EventDetailsPage = () => {
       socket.on('connect', onConnect);
       return () => socket.off('connect', onConnect);
     }
-  }, [id, dispatch, user?.id]); 
+  }, [id, dispatch, user?.id, user?.role]); 
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -168,9 +182,12 @@ export const EventDetailsPage = () => {
 
     setRegistering(true);
     try {
+      const selectedTeam = myLeadTeams.find(team => team._id === registrationFormData.teamId);
+
       const finalRegistrationData = {
         ...registrationFormData,
         eventId: id,
+        teamName: selectedTeam?.teamName,
         registrationData: event.config.registrationFields.map(field => ({
           question: field.title,
           answer: customFieldsData[field.title] || ''
@@ -302,6 +319,7 @@ export const EventDetailsPage = () => {
     );
   }
 
+  console.log("Event details loaded:", event);
   return (
     <div className="min-h-screen pt-20 pb-12 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -347,7 +365,6 @@ export const EventDetailsPage = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <Card className="dark:bg-gray-800 dark:border-gray-700">
-              {/* REPLACED TABS WITH SEGMENTED CONTROL */}
               <div className="p-4 border-b dark:border-gray-700 overflow-x-auto">
                 <div className="min-w-max">
                   <SegmentedControl
@@ -362,7 +379,7 @@ export const EventDetailsPage = () => {
                     ]}
                     value={activeTab}
                     onChange={setActiveTab}
-                    variant="student" // Consistent with student theme
+                    variant="student"
                   />
                 </div>
               </div>
@@ -771,23 +788,138 @@ export const EventDetailsPage = () => {
                         </div>
                       ) : (                      
                         <form onSubmit={handleRegistrationSubmit} className="space-y-6">                        
+                          {/* --- UPDATED TEAM SELECTION UI START --- */}
                           {event?.config?.registrationType === 'Team' && (
-                            <div className="space-y-2">
-                              <Label htmlFor="teamName" className="dark:text-gray-300">Team Name *</Label>
-                              <Input
-                                id="teamName"
-                                required
-                                placeholder="Enter your team name"
-                                onChange={(e) => handleRegistrationFormChange('teamName', e.target.value)}
-                                className="dark:bg-gray-900 dark:border-gray-600"
-                              />
+                            <div className="space-y-4">
+                              <Label className="dark:text-gray-300">Select Your Team *</Label>
+
+                              {(() => {
+                                const selectedTeamId = registrationFormData.teamId;
+                                const selectedTeam = myLeadTeams.find(t => t._id === selectedTeamId);
+
+                                // 1. STATE: NO TEAM SELECTED - SHOW SEARCH INPUT
+                                if (!selectedTeam) {
+                                  // ... inside the registration tab render logic
+
+                                  const filteredTeams = myLeadTeams.filter(team =>
+                                    // FIX: Added (team.name || '') to prevent crash if name is missing
+                                    (team?.teamName  || '').toLowerCase().includes(teamSearchQuery.toLowerCase())
+                                  );
+
+                                  return (
+                                    <div className="relative">
+                                      <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        <Input
+                                          placeholder="Search for your team..."
+                                          value={teamSearchQuery}
+                                          onChange={(e) => {
+                                            setTeamSearchQuery(e.target.value);
+                                            setShowTeamDropdown(true);
+                                          }}
+                                          onFocus={() => setShowTeamDropdown(true)}
+                                          className="pl-10 dark:bg-gray-900 dark:border-gray-600"
+                                        />
+                                      </div>
+
+                                      <AnimatePresence>
+                                        {showTeamDropdown && teamSearchQuery && (
+                                          <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                                          >
+                                            {teamsLoading ? (
+                                              <div className="p-4 text-center text-sm text-gray-500">Loading teams...</div>
+                                            ) : filteredTeams.length > 0 ? (
+                                              filteredTeams.map((team) => (
+                                                <button
+                                                  key={team._id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    handleRegistrationFormChange('teamId', team._id);
+                                                    setTeamSearchQuery('');
+                                                    setShowTeamDropdown(false);
+                                                  }}
+                                                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 border-b last:border-0 dark:border-gray-700"
+                                                >
+                                                  <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300 flex items-center justify-center text-xs font-bold">
+                                                    {team.teamName.substring(0, 2).toUpperCase()}
+                                                  </div>
+                                                  <div className="flex-1">
+                                                    <p className="text-sm font-semibold dark:text-gray-200">{team.teamName}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                      {team.members?.length || 0} members
+                                                    </p>
+                                                  </div>
+                                                </button>
+                                              ))
+                                            ) : (
+                                              <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                No teams found matching "{teamSearchQuery}"
+                                              </div>
+                                            )}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                      
+                                      {myLeadTeams.length === 0 && !teamsLoading && (
+                                         <p className="text-xs text-red-500 mt-2">
+                                           You don't lead any teams. Please create a team first.
+                                         </p>
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                // 2. STATE: TEAM SELECTED - SHOW CARD
+                                return (
+                                  <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 flex items-center justify-between group"
+                                  >
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                        {selectedTeam.teamName.substring(0, 2).toUpperCase()}
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <h4 className="font-bold text-gray-900 dark:text-white">{selectedTeam.teamName}</h4>
+                                          <Badge variant="secondary" className="text-xs bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200">
+                                            <Shield className="w-3 h-3 mr-1" />
+                                            Selected
+                                          </Badge>
+                                        </div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          {selectedTeam.members?.length} Members • Leader: You
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRegistrationFormChange('teamId', null)}
+                                      className="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                    >
+                                      <X className="w-5 h-5" />
+                                    </Button>
+                                  </motion.div>
+                                );
+                              })()}
+
                               {event?.config?.teamSizeRange && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  Team size: {event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members
-                                </p>
+                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border dark:border-gray-700">
+                                  <Users className="w-4 h-4" />
+                                  <span>Required Team Size: <span className="font-semibold text-gray-700 dark:text-gray-300">{event.config.teamSizeRange.min} - {event.config.teamSizeRange.max} members</span></span>
+                                </div>
                               )}
                             </div>
                           )}
+                          {/* --- UPDATED TEAM SELECTION UI END --- */}
 
                           {event?.config?.fees > 0 && (
                             <div className="space-y-4 border-t pt-4 dark:border-gray-700">
