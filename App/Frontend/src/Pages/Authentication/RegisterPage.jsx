@@ -164,11 +164,6 @@ export const RegisterPage = () => {
       toast.error('Password must be at least 8 characters long');
       return;
     }
-    if (!validatePassword(formData.password)) {
-      console.log('Password complexity not met:', formData.password); // Debug log
-      toast.error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
-      return;
-    }
 
     try {
       console.log('Submitting registration for:', {
