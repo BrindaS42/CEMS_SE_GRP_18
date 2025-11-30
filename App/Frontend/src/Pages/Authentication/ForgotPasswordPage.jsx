@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, ArrowLeft, Lock } from 'lucide-react';
+import { Mail, ArrowLeft, Lock, Info, Check, X, Eye, EyeOff} from 'lucide-react';
 import { Button } from '../../Components/ui/button.jsx';
 import { Input } from '../../Components/ui/input.jsx';
 import { Label } from '../../Components/ui/label.jsx';
