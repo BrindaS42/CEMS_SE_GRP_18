@@ -9,7 +9,6 @@
     "dev": "nodemon server.js",
     "seed": "node --experimental-specifier-resolution=node ./Scripts/seed_mongo.js",
     "test": "echo \"Running backend tests... (to be implemented)\""
-
   },
   "repository": {
     "type": "git",
@@ -21,6 +20,7 @@
   "author": "Team Project Group",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.13.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.2",
     "nodemailer": "^7.0.10",
+    "sendgrid": "^5.2.3",
     "socket-io": "^1.0.0",
     "socket.io": "^4.8.1",
     "validator": "^13.15.15",

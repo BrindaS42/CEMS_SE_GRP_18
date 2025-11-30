@@ -163,7 +163,7 @@ export const requestPasswordReset = async (req, res) => {
     await user.save();
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: process.env.SENDGRID_FROM_EMAIL,
       to: toEmail,
       subject: 'Password Reset OTP - Campus Event Manager',
       html: `
@@ -277,7 +277,7 @@ export const generateOtpForAcc = async (req, res) => {
     await user.save();
 
     const mailOptions = {
-      from: `"Campus Event Manager" <${process.env.GMAIL_USER}>`,
+      from: `"Campus Event Manager" <${process.env.SENDGRID_FROM_EMAIL}>`,
       to: user.email,
       subject: "Verify Your Account - Campus Event Manager",
       html: `
@@ -385,7 +385,7 @@ export const requestForgotPassword = async (req, res) => {
     await user.save();
 
     const mailOptions = {
-      from: `"Campus Event Manager" <${process.env.GMAIL_USER}>`,
+      from: `"Campus Event Manager" <${process.env.SENDGRID_FROM_EMAIL}>`,
       to: user.email,
       subject: `Password Reset for ${user.role} Account - Campus Event Manager`,
       html: `
